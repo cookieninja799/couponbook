@@ -271,6 +271,62 @@ export default [
       locked: true,
       foodieGroup: "raleigh",
       cuisineType: "Family"
+    },
+    {
+      id: 21,
+      title: "Happy Hour Special",
+      description: "Enjoy half-price drinks during our extended happy hour.",
+      qr_code_url: require('@/assets/qr.png'),
+      valid_from: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      merchantName: "Lost Province",
+      merchantLogo: require('@/assets/logo.png'),
+      couponType: "discount",
+      locked: true,
+      foodieGroup: "wnc",
+      cuisineType: "Bar"
+    },
+    {
+      id: 22,
+      title: "Free Appetizer",
+      description: "Order any entree and receive a complimentary appetizer.",
+      qr_code_url: require('@/assets/qr.png'),
+      valid_from: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      merchantName: "Sabeing Boone King",
+      merchantLogo: require('@/assets/logo.png'),
+      couponType: "free",
+      locked: true,
+      foodieGroup: "wnc",
+      cuisineType: "Thai"
+    },
+    {
+      id: 23,
+      title: "20% Off Your Meal",
+      description: "Save 20% on your entire bill when you dine in.",
+      qr_code_url: require('@/assets/qr.png'),
+      valid_from: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      merchantName: "Appalachian Grill",
+      merchantLogo: require('@/assets/logo.png'),
+      couponType: "discount",
+      locked: true,
+      foodieGroup: "wnc",
+      cuisineType: "Contemporary"
+    },
+    {
+      id: 24,
+      title: "Buy One Get One Free",
+      description: "Enjoy a free dish when you purchase another of equal or lesser value.",
+      qr_code_url: require('@/assets/qr.png'),
+      valid_from: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      merchantName: "Coyote Kitchen",
+      merchantLogo: require('@/assets/logo.png'),
+      couponType: "bogo",
+      locked: true,
+      foodieGroup: "wnc",
+      cuisineType: "Fusion"
     }
   ];
   

@@ -69,6 +69,7 @@
             <option value="charlotte">Charlotte</option>
             <option value="chapel hill">Chapel Hill</option>
             <option value="raleigh">Raleigh</option>
+            <option value="wnc">WNC</option>
           </select>
         </div>
         <!-- Filter by Coupon Access -->
