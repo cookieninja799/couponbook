@@ -31,9 +31,9 @@
 
     <!-- Locked overlay on individual coupon card -->
     <div v-if="coupon.locked && !hasPurchasedCouponBook" class="locked-overlay">
-      <p>Locked: Purchase coupon book to unlock</p>
+      <p>Locked: Join coupon book to unlock</p>
       <button class="redirect-btn" @click="redirectToGroup">
-        Purchase {{ titleCase(coupon.foodieGroup) }} Coupon Book
+        Join {{ titleCase(coupon.foodieGroup) }} Coupon Book
       </button>
     </div>
   </div>
@@ -81,10 +81,10 @@ export default {
     redirectToGroup() {
       // Map the coupon.foodieGroup to a group id.
       const mapping = {
-        'charlotte': 1,
-        'raleigh': 2,
-        'chapel hill': 3,
-        'wnc': 4
+        'charlotte': 3,
+        'raleigh': 4,
+        'chapel hill': 1,
+        'wnc': 2
       };
       // Using lowercase to avoid casing issues.
       const groupId = mapping[this.coupon.foodieGroup.toLowerCase()];

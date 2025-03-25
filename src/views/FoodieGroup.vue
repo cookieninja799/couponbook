@@ -33,18 +33,12 @@
           @redeem="handleRedeemCoupon" 
           @purchase-coupon-book="handlePurchaseCoupon" 
         />
-        <div v-if="!hasPurchasedCouponBook" class="locked-overlay">
-          <p>Locked: Purchase the coupon book to unlock coupons.</p>
-        </div>
       </section>
 
       <!-- Events Section -->
       <section class="events-section section-card">
         <h2>Group Events</h2>
         <EventList :events="events" :hasAccess="hasPurchasedCouponBook" />
-        <div v-if="!hasPurchasedCouponBook" class="locked-overlay">
-          <p>Locked: Purchase the coupon book to RSVP for events.</p>
-        </div>
       </section>
 
       <!-- Map Section -->
@@ -245,22 +239,6 @@ export default {
 }
 .purchase-btn:hover {
   background-color: #0056b3;
-}
-
-/* Locked Overlay */
-.locked-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-weight: bold;
-  color: #555;
 }
 
 /* Map Section */
