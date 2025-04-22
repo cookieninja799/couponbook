@@ -17,8 +17,8 @@
           <li><router-link to="/coupon-book">Browse Local Coupons</router-link></li>
           <li><router-link to="/foodie-groups">Foodie Groups</router-link></li>
           <li><router-link to="/event-page">Events</router-link></li>
-          <li v-if="!isLoggedIn">
-                      <button @click="login" class="auth-btn">Sign In</button>
+          <li v-if="!isAuthenticated">
+            <button @click="login" class="auth-btn">Sign In</button>
           </li>
           <li v-else>
             <button @click="logout" class="auth-btn">Log Out</button>
@@ -30,8 +30,10 @@
 </template>
 
 <script>
-import {computed } from 'vue';
-import { signIn, signOut } from '@/services/authService';
+import { computed } from 'vue';
+import { useStore } from 'vuex';
+
+const store = useStore();
 export default {
   name: "AppHeader",
   data() {
@@ -44,19 +46,10 @@ export default {
       this.isMenuOpen = !this.isMenuOpen;
     }
   }, 
-  setup() {
-    const isLoggedIn = computed(() => {
-      try {
-        return !!JSON.parse(localStorage.getItem('user'))?.access_token;
-      } catch {
-        return false;
-      }
-    });
-    function login() { signIn(); }
-    function logout() { signOut(); }
-    return { isLoggedIn, login, logout };
-  }
 };
+const isAuthenticated = computed(() => store.getters['auth/isAuthenticated']);
+function login()  { store.dispatch('auth/login'); }
+function logout() { store.dispatch('auth/logout'); }
 </script>
 
 <style scoped>

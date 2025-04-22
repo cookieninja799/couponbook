@@ -14,7 +14,8 @@
     "oidc-client-ts": "^3.2.0",
     "vue": "^3.2.13",
     "vue-router": "^4.5.0",
-    "vuedraggable": "^2.24.3"
+    "vuedraggable": "^2.24.3",
+    "vuex": "^4.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",
