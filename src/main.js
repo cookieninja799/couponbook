@@ -1,30 +1,23 @@
-// Import the createApp function from Vue 3
+// src/main.js
 import { createApp } from 'vue'
-
-// Import the root component
 import App from './App.vue'
-
-// Import the router and the Vuex store
 import router from './router'
 import store from './store'
-
-// Import global styles (if any)
 import './assets/styles/global.css'
 
-// Optionally, import and use plugins
 import surveyjs from './plugins/surveyjs'
 import vueQRCode from './plugins/vueQRCode'
 
-// Create the Vue application instance
-const app = createApp(App)
+// NEW: bring in your auth service
+import { userManager } from '@/services/authService';
 
-// Register the router and store with the application
+const app = createApp(App);
+
+// make userManager available via inject()
+app.provide('userManager', userManager);
+
 app.use(router)
 app.use(store)
-
-// Register any additional plugins
 app.use(surveyjs)
 app.use(vueQRCode)
-
-// Mount the app to the #app element in index.html
 app.mount('#app')

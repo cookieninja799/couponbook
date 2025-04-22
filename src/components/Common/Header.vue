@@ -17,6 +17,12 @@
           <li><router-link to="/coupon-book">Browse Local Coupons</router-link></li>
           <li><router-link to="/foodie-groups">Foodie Groups</router-link></li>
           <li><router-link to="/event-page">Events</router-link></li>
+          <li v-if="!isLoggedIn">
+                      <button @click="login" class="auth-btn">Sign In</button>
+          </li>
+          <li v-else>
+            <button @click="logout" class="auth-btn">Log Out</button>
+          </li>
         </ul>
       </nav>
     </div>
@@ -24,6 +30,8 @@
 </template>
 
 <script>
+import {computed } from 'vue';
+import { signIn, signOut } from '@/services/authService';
 export default {
   name: "AppHeader",
   data() {
@@ -35,11 +43,35 @@ export default {
     toggleMenu() {
       this.isMenuOpen = !this.isMenuOpen;
     }
+  }, 
+  setup() {
+    const isLoggedIn = computed(() => {
+      try {
+        return !!JSON.parse(localStorage.getItem('user'))?.access_token;
+      } catch {
+        return false;
+      }
+    });
+    function login() { signIn(); }
+    function logout() { signOut(); }
+    return { isLoggedIn, login, logout };
   }
 };
 </script>
 
 <style scoped>
+.auth-btn {
+  background: none;
+  border: 1px solid #007bff;
+  color: #007bff;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.auth-btn:hover {
+  background: #007bff;
+  color: white;
+}
 .app-header {
   background-color: #fff;
   border-bottom: 1px solid #ddd;
