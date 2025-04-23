@@ -28,30 +28,29 @@
     </div>
   </header>
 </template>
-
 <script>
-import { computed } from 'vue';
-import { useStore } from 'vuex';
+import { mapGetters, mapActions } from 'vuex';
 
-const store = useStore();
 export default {
-  name: "AppHeader",
+  name: 'AppHeader',
   data() {
     return {
       isMenuOpen: false
     };
   },
+  computed: {
+    // pulls auth/isAuthenticated getter into this.isAuthenticated
+    ...mapGetters('auth', ['isAuthenticated'])
+  },
   methods: {
     toggleMenu() {
       this.isMenuOpen = !this.isMenuOpen;
-    }
-  }, 
+    },
+    // exposes this.login() and this.logout()
+    ...mapActions('auth', ['login', 'logout'])
+  }
 };
-const isAuthenticated = computed(() => store.getters['auth/isAuthenticated']);
-function login()  { store.dispatch('auth/login'); }
-function logout() { store.dispatch('auth/logout'); }
 </script>
-
 <style scoped>
 .auth-btn {
   background: none;
