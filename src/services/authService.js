@@ -33,3 +33,16 @@ export function signOut() {
     `${cognitoDomain}/logout?client_id=${clientId}` +
     `&logout_uri=${encodeURIComponent(logoutUri)}`;
 }
+
+/*export function signOut() {
+  const cognitoDomain = 'https://us-east-1o1hbhzssq.auth.us-east-1.amazoncognito.com'; // Verify this domain
+  const clientId = cognitoAuthConfig.client_id; // Make sure cognitoAuthConfig is accessible here
+  const origin = window.location.origin; // Use origin for the logout URI
+  const logoutUri = origin;
+
+  // Ensure the correct parameter name is used (logout_uri or post_logout_redirect_uri)
+  // Cognito documentation typically specifies 'logout_uri' for this manual endpoint call.
+  window.location.href =
+    `${cognitoDomain}/logout?client_id=${clientId}` +
+    `&logout_uri=${encodeURIComponent(logoutUri)}`;
+}*/

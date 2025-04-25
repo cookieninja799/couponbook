@@ -5,8 +5,6 @@ import EventPage from '../views/EventPage.vue'
 import FoodieGroupView from '../views/FoodieGroup.vue'
 import FoodieGroupList from '../views/FoodieGroupList.vue'
 import Profile from '../views/Profile.vue'
-import Login from '@/components/Auth/Login.vue'
-import Register from '@/components/Auth/Register.vue'
 import AuthCallback from '@/views/AuthCallback.vue'
 
 // Import dashboards directly from their component paths:
@@ -45,16 +43,6 @@ const routes = [
     path: '/profile',
     name: 'Profile',
     component: Profile
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: Login
-  },
-  {
-    path: '/register',
-    name: 'Register',
-    component: Register
   },
   { path: '/callback', 
     name: 'AuthCallback', 

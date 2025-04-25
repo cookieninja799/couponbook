@@ -10,8 +10,6 @@
           <li><router-link to="/dashboard/foodie-group">Foodie Group Dashboard</router-link></li>
           <li><router-link to="/dashboard/super-admin">Super Admin Dashboard</router-link></li>
           <li><router-link to="/profile">Profile</router-link></li>
-          <li><router-link to="/login">Login</router-link></li>
-          <li><router-link to="/register">Register</router-link></li>
         </ul>
       </nav>
     </div>
