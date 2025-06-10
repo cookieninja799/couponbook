@@ -50,71 +50,93 @@ enum AttendanceStatus {
 /////////////////////
 
 model User {
-  id            String                      @id @default(uuid())
-  cognitoSub    String                      @unique
-  email         String                      @unique
-  name          String
-  role          Role                        @default(customer)
-  memberships   FoodieGroupMembership[]     // M-to-M
-  purchases     Purchase[]
-  rsvps         EventRsvp[]
-  redemptions   CouponRedemption[]
-  createdAt     DateTime                    @default(now())
-  updatedAt     DateTime                    @updatedAt
-  deletedAt     DateTime?                   // soft-delete
+  id         String @id @default(uuid())
+  cognitoSub String @unique
+  email      String @unique
+  name       String
+  role       Role   @default(customer)
+
+  // 🌟 NEW — user can own many merchants
+  merchants Merchant[] @relation("UserMerchants")
+
+  memberships FoodieGroupMembership[]
+  purchases   Purchase[]
+  rsvps       EventRsvp[]
+  redemptions CouponRedemption[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 }
 
 model FoodieGroup {
-  id            String                      @id @default(uuid())
-  slug          String                      @unique
-  name          String
-  description   String?
-  location      String?
+  id             String  @id @default(uuid())
+  slug           String  @unique
+  name           String
+  description    String?
+  location       String?
   bannerImageUrl String?
-  map           Json?
-  socialLinks   Json?
-  memberships   FoodieGroupMembership[]     // M-to-M
-  coupons       Coupon[]
-  events        Event[]
-  createdAt     DateTime                    @default(now())
-  updatedAt     DateTime                    @updatedAt
-  archivedAt    DateTime?                   // soft-archive
+  map            Json?
+  socialLinks    Json?
+
+  memberships FoodieGroupMembership[]
+  coupons     Coupon[]
+  events      Event[]
+
+  // 🌟 NEW — purchases & submission queues related to this group
+  purchases         Purchase[]
+  couponSubmissions CouponSubmission[]
+  eventSubmissions  EventSubmission[]
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  archivedAt DateTime?
 }
 
 model FoodieGroupMembership {
-  id            String                      @id @default(uuid())
-  user          User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId        String
-  foodieGroup   FoodieGroup                 @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId       String
-  role          Role                        @default(customer)
-  joinedAt      DateTime                    @default(now())
-  deletedAt     DateTime?                   // soft-delete
+  id String @id @default(uuid())
 
-  @@unique([userId, groupId])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  foodieGroup FoodieGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId     String
+
+  role      Role      @default(customer)
+  joinedAt  DateTime  @default(now())
+  deletedAt DateTime? // soft-delete
+
+  @@unique([userId, groupId]) // a user joins a group only once
   @@index([groupId])
   @@index([userId])
 }
 
 model Merchant {
-  id            String                      @id @default(uuid())
-  name          String
-  logoUrl       String?
-  owner         User                        @relation(fields: [ownerId], references: [id])
-  ownerId       String
-  coupons       Coupon[]
-  events        Event[]
-  deletedAt     DateTime?                   // soft-delete
+  id      String  @id @default(uuid())
+  name    String
+  logoUrl String?
 
-  createdAt     DateTime                    @default(now())
-  updatedAt     DateTime                    @updatedAt
+  // keep the relation name in-sync with User side
+  owner   User   @relation("UserMerchants", fields: [ownerId], references: [id])
+  ownerId String
+
+  coupons Coupon[]
+  events  Event[]
+
+  // 🌟 NEW — submissions that reference this merchant
+  couponSubmissions CouponSubmission[]
+  eventSubmissions  EventSubmission[]
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Coupon {
-  id            String                      @id @default(uuid())
-  foodieGroup   FoodieGroup                 @relation(fields: [groupId], references: [id])
+  id            String      @id @default(uuid())
+  foodieGroup   FoodieGroup @relation(fields: [groupId], references: [id])
   groupId       String
-  merchant      Merchant                    @relation(fields: [merchantId], references: [id])
+  merchant      Merchant    @relation(fields: [merchantId], references: [id])
   merchantId    String
   title         String
   description   String?
@@ -123,25 +145,25 @@ model Coupon {
   validFrom     DateTime
   expiresAt     DateTime
   qrCodeUrl     String?
-  locked        Boolean                     @default(true)
+  locked        Boolean     @default(true)
 
-  redemptions   CouponRedemption[]
+  redemptions CouponRedemption[]
 
-  createdAt     DateTime                    @default(now())
-  updatedAt     DateTime                    @updatedAt
-  deletedAt     DateTime?                   // soft-delete
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // soft-delete
 
-  @@index([foodieGroupId: groupId])
+  @@index([groupId], map: "idx_coupon_groupId")
 }
 
 model Purchase {
-  id                   String                @id @default(uuid())
-  user                 User                  @relation(fields: [userId], references: [id])
+  id                   String         @id @default(uuid())
+  user                 User           @relation(fields: [userId], references: [id])
   userId               String
-  foodieGroup          FoodieGroup           @relation(fields: [groupId], references: [id])
+  foodieGroup          FoodieGroup    @relation(fields: [groupId], references: [id])
   groupId              String
-  stripeCheckoutId     String                @unique
-  stripeSubscriptionId String?               @unique
+  stripeCheckoutId     String         @unique
+  stripeSubscriptionId String?        @unique
   amountCents          Int
   currency             String
   status               PurchaseStatus
@@ -149,18 +171,18 @@ model Purchase {
   expiresAt            DateTime?
   refundedAt           DateTime?
 
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([groupId])
 }
 
 model Event {
-  id            String                      @id @default(uuid())
-  foodieGroup   FoodieGroup                 @relation(fields: [groupId], references: [id])
+  id            String      @id @default(uuid())
+  foodieGroup   FoodieGroup @relation(fields: [groupId], references: [id])
   groupId       String
-  merchant      Merchant                    @relation(fields: [merchantId], references: [id])
+  merchant      Merchant    @relation(fields: [merchantId], references: [id])
   merchantId    String
   name          String
   description   String?
@@ -170,40 +192,40 @@ model Event {
   capacity      Int
   coverImageUrl String?
 
-  rsvps         EventRsvp[]
+  rsvps EventRsvp[]
 
-  createdAt     DateTime                    @default(now())
-  updatedAt     DateTime                    @updatedAt
-  deletedAt     DateTime?                   // soft-delete
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // soft-delete
 
   @@index([groupId, startDatetime])
 }
 
 model EventRsvp {
-  id            String                      @id @default(uuid())
-  event         Event                       @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  eventId       String
-  user          User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId        String
-  attendees     Int
-  status        AttendanceStatus
-  createdAt     DateTime                    @default(now())
-  updatedAt     DateTime                    @updatedAt
-  deletedAt     DateTime?                   // soft-delete
+  id        String           @id @default(uuid())
+  event     Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  attendees Int
+  status    AttendanceStatus
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  deletedAt DateTime? // soft-delete
 
   @@unique([eventId, userId])
   @@index([eventId])
 }
 
 model CouponRedemption {
-  id            String                      @id @default(uuid())
-  coupon        Coupon                      @relation(fields: [couponId], references: [id], onDelete: Cascade)
-  couponId      String
-  user          User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId        String
-  redeemedAt    DateTime                    @default(now())
-  locationMeta  Json?
-  deletedAt     DateTime?                   // soft-delete
+  id           String    @id @default(uuid())
+  coupon       Coupon    @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  couponId     String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  redeemedAt   DateTime  @default(now())
+  locationMeta Json?
+  deletedAt    DateTime? // soft-delete
 
   @@unique([couponId, userId])
   @@index([couponId])
@@ -214,25 +236,25 @@ model CouponRedemption {
 /////////////////////
 
 model CouponSubmission {
-  id            String                      @id @default(uuid())
-  foodieGroup   FoodieGroup                 @relation(fields: [groupId], references: [id])
-  groupId       String
-  merchant      Merchant?                   @relation(fields: [merchantId], references: [id], onDelete: SetNull)
-  merchantId    String?
-  state         SubmissionState
-  submittedAt   DateTime                    @default(now())
+  id             String          @id @default(uuid())
+  foodieGroup    FoodieGroup     @relation(fields: [groupId], references: [id])
+  groupId        String
+  merchant       Merchant?       @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+  merchantId     String?
+  state          SubmissionState
+  submittedAt    DateTime        @default(now())
   submissionData Json
-  deletedAt     DateTime?                   // soft-delete
+  deletedAt      DateTime? // soft-delete
 }
 
 model EventSubmission {
-  id            String                      @id @default(uuid())
-  foodieGroup   FoodieGroup                 @relation(fields: [groupId], references: [id])
-  groupId       String
-  merchant      Merchant?                   @relation(fields: [merchantId], references: [id], onDelete: SetNull)
-  merchantId    String?
-  state         SubmissionState
-  submittedAt   DateTime                    @default(now())
+  id             String          @id @default(uuid())
+  foodieGroup    FoodieGroup     @relation(fields: [groupId], references: [id])
+  groupId        String
+  merchant       Merchant?       @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+  merchantId     String?
+  state          SubmissionState
+  submittedAt    DateTime        @default(now())
   submissionData Json
-  deletedAt     DateTime?                   // soft-delete
+  deletedAt      DateTime? // soft-delete
 }
