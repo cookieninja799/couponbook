@@ -1,24 +1,28 @@
-const router = require('express').Router();
-const prisma = require('../prisma');
+// server/src/routes/coupons.js
+import { Router }  from 'express';
+import { db }      from '../db.js';
+import { coupons } from '../schema.js';
+import { isNull, desc } from 'drizzle-orm';
 
-// GET /api/v1/coupons
-router.get('/', async (req, res, next) => {
+const router = Router();
+
+router.get('/', async (_req, res, next) => {
   try {
-    const coupons = await prisma.coupon.findMany({
-      where: { deletedAt: null },
-      orderBy: { validFrom: 'desc' }
-    });
-    res.json(coupons);
-  } catch (e) { next(e) }
+    const rows = await db.select()
+                         .from(coupons)
+                         .where(isNull(coupons.deletedAt))
+                         .orderBy(desc(coupons.validFrom));
+    res.json(rows);
+  } catch (e) { next(e); }
 });
 
-// POST /api/v1/coupons
 router.post('/', async (req, res, next) => {
   try {
-    const data = req.body;
-    const created = await prisma.coupon.create({ data });
+    const [created] = await db.insert(coupons)
+                              .values(req.body)
+                              .returning();
     res.status(201).json(created);
-  } catch (e) { next(e) }
+  } catch (e) { next(e); }
 });
 
-module.exports = router;
+export default router;

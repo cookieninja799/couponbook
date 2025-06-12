@@ -1,38 +1,40 @@
 // server/src/index.js
-require('dotenv').config();
-const express = require('express');
-const cors    = require('cors');
-const connectDB = require('./db');
-const auth    = require('./middleware/auth');
+import 'dotenv/config';
+import express from 'express';
+import cors    from 'cors';
 
-const couponsRouter = require('./routes/coupons');
-const eventsRouter  = require('./routes/events');
-const groupsRouter  = require('./routes/groups');
-const usersRouter   = require('./routes/users');
+import { connectDB }   from './db.js';              // new Drizzle pool
+import * as auth       from './middleware/auth.js'; // keeps auth.required()
 
-;(async () => {
-  await connectDB();
+import couponsRouter from './routes/coupons.js';
+import eventsRouter  from './routes/events.js';
+import groupsRouter  from './routes/groups.js';
+import usersRouter   from './routes/users.js';
 
-  const app = express();
-  app.use(cors());
-  app.use(express.json());
+/* ─────────────────────────────────────────
+   Kick-off
+────────────────────────────────────────── */
+await connectDB();                 // top-level await (Node ≥ 14.8 ESM)
 
-  // health check
-  app.get('/health', (req, res) => res.json({ ok: true }));
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-  // Public user routes (register/login)
-  app.use('/api/v1/users', usersRouter);
+/* health check */
+app.get('/health', (_req, res) => res.json({ ok: true }));
 
-  // Protect everything else
-  app.use('/api/v1', auth.required);
+/* public user routes (signup / login) */
+app.use('/api/v1/users', usersRouter);
 
-  app.use('/api/v1/coupons', couponsRouter);
-  app.use('/api/v1/events',  eventsRouter);
-  app.use('/api/v1/groups',  groupsRouter);
-  // (you can mount other routers here)
+/* protect everything else */
+app.use('/api/v1', auth.required);
 
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () =>
-    console.log(`🚀  Server listening on http://localhost:${PORT}`)
-  );
-})();
+app.use('/api/v1/coupons', couponsRouter);
+app.use('/api/v1/events',  eventsRouter);
+app.use('/api/v1/groups',  groupsRouter);
+/* add more routers here */
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () =>
+  console.log(`🚀  Server listening on http://localhost:${PORT}`)
+);

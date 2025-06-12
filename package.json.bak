@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "@aws-amplify/auth": "^6.12.3",
-    "@aws-sdk/client-rds-data": "^3.828.0",
     "amazon-cognito-identity-js": "^6.3.15",
     "bcrypt": "^5.1.1",
     "core-js": "^3.8.3",
@@ -28,19 +27,14 @@
     "@babel/core": "^7.12.16",
     "@babel/eslint-parser": "^7.12.16",
     "@prisma/client": "^6.9.0",
-    "@types/pg": "^8.15.4",
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-service": "~5.0.0",
     "concurrently": "^9.1.2",
-    "drizzle-kit": "^0.31.1",
-    "drizzle-orm": "^0.44.2",
     "eslint": "^7.32.0",
     "eslint-plugin-vue": "^8.0.3",
     "nodemon": "^3.1.10",
-    "pg": "^8.16.0",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.20.2"
+    "pg": "^8.16.0"
   },
   "eslintConfig": {
     "root": true,
