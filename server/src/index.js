@@ -2,14 +2,12 @@
 import 'dotenv/config';
 import express from 'express';
 import cors    from 'cors';
-
-import { connectDB }   from './db.js';              // new Drizzle pool
-import * as auth       from './middleware/auth.js'; // keeps auth.required()
-
+import { connectDB } from './db.js';
+import * as auth     from './middleware/auth.js';
+import usersRouter   from './routes/users.js';
 import couponsRouter from './routes/coupons.js';
 import eventsRouter  from './routes/events.js';
 import groupsRouter  from './routes/groups.js';
-import usersRouter   from './routes/users.js';
 
 /* ─────────────────────────────────────────
    Kick-off
@@ -23,13 +21,13 @@ app.use(express.json());
 /* health check */
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
+// right here, before any app.use…
+
 /* public user routes (signup / login) */
 app.use('/api/v1/users', usersRouter);
-
+app.use('/api/v1/coupons', couponsRouter);
 /* protect everything else */
 app.use('/api/v1', auth.required);
-
-app.use('/api/v1/coupons', couponsRouter);
 app.use('/api/v1/events',  eventsRouter);
 app.use('/api/v1/groups',  groupsRouter);
 /* add more routers here */

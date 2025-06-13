@@ -18,6 +18,9 @@ async function getPems () {
   return pems;
 }
 
+export function required() {
+  return verifyJwt();
+}
 /**
  * Express middleware – verifies a Cognito-issued JWT.
  * On success sets req.user = decoded payload, else 401.

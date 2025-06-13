@@ -1,14 +1,40 @@
 // server/src/db.js
 import 'dotenv/config';
-import { Pool }      from 'pg';
-import { drizzle }   from 'drizzle-orm/node-postgres';
-import * as schema   from './schema.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from './schema.js';
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db   = drizzle(pool, { schema });
+// ————————————————
+// derive __dirname in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
 
-// (optional) warm-up connection so index.js stays identical
-export async function connectDB () {
+// resolve your cert relative to this file
+const caPath = path.resolve(__dirname, '/home/cookieninja/viva-spot-coupon-book/server/certs/global-bundle.pem');
+
+let caCert;
+try {
+  caCert = fs.readFileSync(caPath, 'utf8');
+  console.log('🔒 Loaded RDS CA from', caPath);
+} catch (err) {
+  console.error('⚠️  Failed to load CA at', caPath, err.message);
+  process.exit(1);
+}
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: true,
+    ca: caCert,
+  },
+});
+
+export const db = drizzle(pool, { schema });
+
+export async function connectDB() {
   await pool.connect();
   console.log('🟢  Drizzle connected');
 }
