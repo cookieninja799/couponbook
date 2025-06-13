@@ -5,7 +5,9 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "dev": "nodemon --loader ts-node/esm server/src/index.js",
+    "migrate": "drizzle-kit generate && drizzle-kit push"
   },
   "dependencies": {
     "@aws-amplify/auth": "^6.12.3",
@@ -39,6 +41,7 @@
     "eslint-plugin-vue": "^8.0.3",
     "nodemon": "^3.1.10",
     "pg": "^8.16.0",
+    "pg-connection-string": "^2.9.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.2"
   },
@@ -61,5 +64,6 @@
     "last 2 versions",
     "not dead",
     "not ie 11"
-  ]
+  ],
+  "type": "module"
 }
