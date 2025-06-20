@@ -17,7 +17,7 @@ export default defineConfig({
     password,
     database,
     ssl: {
-      ca: readFileSync('./rds-ca.pem', 'utf8'),   // 👈 RDS CA bundle
+      ca: readFileSync('./server/certs/rds-ca.pem', 'utf8'),   // 👈 RDS CA bundle
       rejectUnauthorized: true
     }
   }
