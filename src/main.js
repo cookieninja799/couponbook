@@ -3,6 +3,8 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import store from './store'
+import { surveyPlugin } from 'survey-vue3-ui'
+import 'survey-core/survey-core.css'
 import './assets/styles/global.css'
 
 import surveyjs from './plugins/surveyjs'
@@ -19,5 +21,6 @@ app.provide('userManager', userManager);
 app.use(router)
 app.use(store)
 app.use(surveyjs)
+app.use(surveyPlugin) 
 app.use(vueQRCode)
 app.mount('#app')

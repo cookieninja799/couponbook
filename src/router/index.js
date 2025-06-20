@@ -6,6 +6,7 @@ import FoodieGroupView from '../views/FoodieGroup.vue'
 import FoodieGroupList from '../views/FoodieGroupList.vue'
 import Profile from '../views/Profile.vue'
 import AuthCallback from '@/views/AuthCallback.vue'
+import Submissions    from '@/views/Submissions.vue'
 
 // Import dashboards directly from their component paths:
 import AdminDashboard from '../components/Dashboard/AdminDashboard.vue'
@@ -63,6 +64,11 @@ const routes = [
     path: '/dashboard/super-admin',
     name: 'SuperAdminDashboard',
     component: SuperAdminDashboard
+  },
+  {
+    path: '/submissions',
+    name: 'Submissions',
+    component: Submissions
   }
 ]
 

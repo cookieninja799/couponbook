@@ -1,11 +1,17 @@
+// src/data/foodieGroups.js
+import chapelHillBanner from '@/assets/images/chapel-hill.jpg';
+import wncBanner       from '@/assets/images/R9A5610.jpg';
+import charlotteBanner from '@/assets/images/charlotte.jpg';
+import raleighBanner   from '@/assets/images/raleigh.jpg';
+
 export default [
   {
     id: 1,
     name: "Chapel Hill Carrboro Foodies",
     description: "Exclusive deals for Chapel Hill and Carrboro food enthusiasts.",
-    location: "Chapel Hill & Carrboro, NC",
+    location: "Chapel Hill, NC",
     foodieGroup: "chapel hill",
-    bannerImage: require('@/assets/images/chapel-hill.jpg'),
+    bannerImage: chapelHillBanner,
     mapCoordinates: {
       lat: 35.9132,
       lng: -79.0558
@@ -22,7 +28,7 @@ export default [
     description: "Discover the best local deals and dining experiences in Western NC.",
     location: "Boone, NC",
     foodieGroup: "wnc",
-    bannerImage: require('@/assets/images/R9A5610.jpg'),
+    bannerImage: wncBanner,
     mapCoordinates: {
       lat: 36.2164,
       lng: -81.6749
@@ -39,7 +45,7 @@ export default [
     description: "Discover the best local deals and dining experiences in Charlotte.",
     location: "Charlotte, NC",
     foodieGroup: "charlotte",
-    bannerImage: require('@/assets/images/charlotte.jpg'),
+    bannerImage: charlotteBanner,
     mapCoordinates: {
       lat: 35.2271,
       lng: -80.8431
@@ -56,7 +62,7 @@ export default [
     description: "Your guide to the hottest restaurants and exclusive offers in Raleigh.",
     location: "Raleigh, NC",
     foodieGroup: "raleigh",
-    bannerImage: require('@/assets/images/raleigh.jpg'),
+    bannerImage: raleighBanner,
     mapCoordinates: {
       lat: 35.7796,
       lng: -78.6382
