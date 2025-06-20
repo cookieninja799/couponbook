@@ -6,7 +6,7 @@
   </template>
   
   <script>
-  import { couponSurveyJson } from '@/data/couponSurvey'
+  import { couponSurveyJson } from '@/data/src/data/couponSurvey'
   import { ref, onMounted } from 'vue'
   import { useRouter }      from 'vue-router'
   import { Model }          from 'survey-core'
