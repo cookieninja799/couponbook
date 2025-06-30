@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db } from "../db";           // your Drizzle DB client
-import { merchant } from "../schema";
+import { db } from "../db.js";           // your Drizzle DB client
+import { merchants } from "../schema.js";
 
 const router = Router();
 
