@@ -8,7 +8,7 @@ import usersRouter   from './routes/users.js';
 import couponsRouter from './routes/coupons.js';
 import eventsRouter  from './routes/events.js';
 import groupsRouter  from './routes/groups.js';
-import merchantRouter from './routes/merchants.js'
+import merchantsRouter from './routes/merchants.js'
 /* ─────────────────────────────────────────
    Kick-off
 ────────────────────────────────────────── */
@@ -25,7 +25,7 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 
 /* public user routes (signup / login) */
 app.use('/api/v1/users', usersRouter);
-app.use("/api/merchants", merchantsRouter);
+app.use("/api/v1/merchants", merchantsRouter);
 app.use('/api/v1/coupons', couponsRouter);
 /* protect everything else */
 app.use('/api/v1', auth.required);

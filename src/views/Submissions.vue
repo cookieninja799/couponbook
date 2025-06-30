@@ -25,15 +25,30 @@
         survey.value.onComplete.add(async sender => {
           const data = sender.data
           try {
-            let res = await fetch('/api/v1/coupon_submissions', {
-              method: 'POST',
-              headers: {'Content-Type':'application/json'},
-              body: JSON.stringify({
-                group_id:        data.group_id,
-                merchant_id:     data.merchant_id,
-                state:           'pending',
-                submission_data: data
+            // ✅ create the coupon directly
+              const res = await fetch('/api/v1/coupons', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  group_id:       d.group_id,
+                  merchant_id:    d.merchant_id,
+                  title:          d.title,
+                  description:    d.description,
+                  coupon_type:    d.couponType,
+                  discount_value: parseFloat(d.discountValue) || 0,
+                  valid_from:     d.valid_from,
+                  expires_at:     d.expires_at,
+                  qr_code_url:    d.qr_code_url,
+                  locked:         d.lockeds
+                })
               })
+              if (!res.ok) throw new Error('Coupon creation failed')
+              alert('✅ Coupon submitted successfully!')
+              router.push({ name: 'BrowseCoupons' })
+            } catch (err) {
+              console.error(err)
+              alert(`⚠️ ${err.message}`)
+            }
             })
             if (!res.ok) throw new Error('Submission failed')
   

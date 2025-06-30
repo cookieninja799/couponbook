@@ -7,13 +7,14 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from './schema.js';
 
+console.log('📦 DATABASE_URL is:', process.env.DATABASE_URL);
 // ————————————————
 // derive __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 // resolve your cert relative to this file
-const caPath = path.resolve(__dirname, '/home/cookieninja/viva-spot-coupon-book/server/certs/global-bundle.pem');
+const caPath = path.resolve(__dirname, '/home/cookieninja/viva-spot-coupon-book/server/certs/rds-combined-ca-bundle.pem');
 
 let caCert;
 try {
@@ -25,15 +26,20 @@ try {
 }
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  // 📌 switch to explicit params or still use connectionString without sslmode
+  host:     process.env.DB_HOST,
+  port:     Number(process.env.DB_PORT),
+  user:     process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
   ssl: {
+    ca:               caCert,
     rejectUnauthorized: true,
-    ca: caCert,
+    minVersion:       'TLSv1.2',
   },
 });
 
 export const db = drizzle(pool, { schema });
-
 export async function connectDB() {
   await pool.connect();
   console.log('🟢  Drizzle connected');
