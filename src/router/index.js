@@ -1,3 +1,4 @@
+// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import CouponBook from '../views/CouponBook.vue'
@@ -6,7 +7,7 @@ import FoodieGroupView from '../views/FoodieGroup.vue'
 import FoodieGroupList from '../views/FoodieGroupList.vue'
 import Profile from '../views/Profile.vue'
 import AuthCallback from '@/views/AuthCallback.vue'
-import Submissions    from '@/views/Submissions.vue'
+import CouponSubmissions from '@/views/CouponSubmissions.vue'
 
 // Import dashboards directly from their component paths:
 import AdminDashboard from '../components/Dashboard/AdminDashboard.vue'
@@ -67,8 +68,8 @@ const routes = [
   },
   {
     path: '/submissions',
-    name: 'Submissions',
-    component: Submissions
+    name: 'CouponSubmissions',
+    component: CouponSubmissions
   }
 ]
 

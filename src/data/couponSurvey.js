@@ -1,6 +1,4 @@
 // src/data/couponSurvey.js
-
-// src/data/couponSurvey.js
 export const couponSurveyJson = {
   title: "Create a Coupon",
   showProgressBar: "top",
@@ -25,8 +23,8 @@ export const couponSurveyJson = {
           
           //  OPTION B: Fetch live via REST  
           choicesByUrl: {
-            url: "http://localhost:3000/api/merchants",         // your endpoint
-            path: "data",                  // JSON path to array
+            url: "http://localhost:3000/api/v1/merchants",         // your endpoint
+            path: "",                  // JSON path to array
             valueName: "id",               // field for the value
             titleName: "name"              // field for the display text
           },
