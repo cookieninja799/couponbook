@@ -1,3 +1,4 @@
+<!-- src/views/CouponBook.vue -->
 <template>
   <div class="coupon-book-view">
   

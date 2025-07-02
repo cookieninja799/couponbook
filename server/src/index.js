@@ -7,7 +7,7 @@ import * as auth     from './middleware/auth.js';
 import usersRouter   from './routes/users.js';
 import couponsRouter from './routes/coupons.js';
 import eventsRouter  from './routes/events.js';
-import groupsRouter  from './routes/groups.js';
+import groupsRouter  from './routes/foodieGroups.js';
 import merchantsRouter from './routes/merchants.js'
 /* ─────────────────────────────────────────
    Kick-off
@@ -27,10 +27,10 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/v1/users', usersRouter);
 app.use("/api/v1/merchants", merchantsRouter);
 app.use('/api/v1/coupons', couponsRouter);
+app.use('/api/v1/groups',  groupsRouter);
 /* protect everything else */
 app.use('/api/v1', auth.required);
 app.use('/api/v1/events',  eventsRouter);
-app.use('/api/v1/groups',  groupsRouter);
 /* add more routers here */
 
 const PORT = process.env.PORT || 3000;

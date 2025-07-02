@@ -17,6 +17,18 @@ const router = useRouter()
 const survey = ref(new Model(couponSurveyJson))
 
 onMounted(async () => {
+   try {
+    const respG = await fetch('http://localhost:3000/api/v1/groups')
+    if (!respG.ok) throw new Error('Failed to load groups')
+    const groups = await respG.json()
+    const qg = survey.value.getQuestionByName('group_id')
+    if (qg) {
+      qg.choices = groups.map(g => ({ value: g.id, text: g.name }))
+    }
+  } catch (err) {
+    console.error(err)
+    alert('⚠️ Could not load group list')
+  }
   // 1) Load merchants
   try {
     const resp = await fetch('http://localhost:3000/api/v1/merchants')
@@ -33,32 +45,35 @@ onMounted(async () => {
 
   // 2) Handle form completion
   survey.value.onComplete.add(async sender => {
-    const data = sender.data
-    try {
-      const res = await fetch('/api/v1/coupons', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          group_id:       data.group_id,
-          merchant_id:    data.merchant_id,
-          title:          data.title,
-          description:    data.description,
-          coupon_type:    data.couponType,
-          discount_value: parseFloat(data.discountValue) || 0,
-          valid_from:     data.valid_from,
-          expires_at:     data.expires_at,
-          qr_code_url:    data.qr_code_url,
-          locked:         data.locked
-        })
+  const d = sender.data;
+  console.log('🖨️ Form data:', d);
+  try {
+    const res = await fetch('http://localhost:3000/api/v1/coupons', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        group_id:       d.group_id,
+        merchant_id:    d.merchant_id,
+        title:          d.title,
+        description:    d.description,
+        coupon_type:    d.coupon_type,       // make sure this matches your question name
+        discount_value: parseFloat(d.discount_value) || 0,
+        valid_from:     d.valid_from,
+        expires_at:     d.expires_at,
+        qr_code_url:    d.qr_code_url,
+        locked:         d.locked
       })
-      if (!res.ok) throw new Error('Coupon creation failed')
-      alert('✅ Coupon submitted successfully!')
-      router.push({ name: 'BrowseCoupons' })
-    } catch (err) {
-      console.error(err)
-      alert(`⚠️ ${err.message}`)
-    }
-  })
+    });
+    const text = await res.text();
+    console.log('⬅️  Response:', res.status, text);
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    alert('✅ Coupon submitted successfully!');
+    router.push({ name: 'CouponBook' });
+  } catch (err) {
+    console.error('❌ Submission error:', err);
+    alert(`⚠️ Coupon creation failed: ${err.message}`);
+  }
+  });
 })
 </script>
 

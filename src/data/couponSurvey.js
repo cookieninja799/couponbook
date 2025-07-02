@@ -11,6 +11,14 @@ export const couponSurveyJson = {
           name: "group_id",
           defaultValue: "22222222-2222-2222-2222-222222222222"
         },
+        {
+          type: "dropdown",
+          name: "group_id",
+          title: "Select Foodie Group",
+          isRequired: true,
+          choices: [],
+          searchEnabled: true
+        },
         // ↓ Replace the hidden merchant_id with a dropdown ↓
         {
           type: "dropdown",
