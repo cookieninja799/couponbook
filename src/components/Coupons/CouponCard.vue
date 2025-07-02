@@ -2,38 +2,40 @@
   <div class="coupon-card">
     <h3 class="coupon-title">{{ coupon.title }}</h3>
     
-    <div class="merchant-info" v-if="coupon.merchantName">
+    <div class="merchant-info" v-if="coupon.merchant_name">
       <img 
-        v-if="coupon.merchantLogo" 
-        :src="coupon.merchantLogo" 
-        alt="Merchant Logo" 
+        v-if="coupon.merchant_logo" 
+        :src="coupon.merchant_logo" 
+        :alt="`Logo for ${coupon.merchant_name}`" 
         class="merchant-logo"
       />
-      <span class="merchant-name">{{ coupon.merchantName }}</span>
+      <img
+        :src="coupon.merchant_logo || '/logo.png'"
+        :alt="`Logo for ${coupon.merchant_name || 'Merchant'}`"
+        class="merchant-logo"
+      />
+      <span class="merchant-name">{{ coupon.merchant_name }}</span>
     </div>
     
     <p class="coupon-description">{{ coupon.description }}</p>
     
     <div class="validity" v-if="coupon.valid_from && coupon.expires_at">
-      <small>Valid from: {{ formatDate(coupon.valid_from) }}</small>
-      <br>
+      <small>Valid from: {{ formatDate(coupon.valid_from) }}</small><br>
       <small>Expires: {{ formatDate(coupon.expires_at) }}</small>
     </div>
     
-    <!-- Main redeem button always shows "Redeem" -->
     <button 
       class="redeem-btn"
       @click="handleClick"
       :disabled="coupon.locked && !hasPurchasedCouponBook"
     >
-      {{ buttonText }}
+      Redeem
     </button>
 
-    <!-- Locked overlay on individual coupon card -->
     <div v-if="coupon.locked && !hasPurchasedCouponBook" class="locked-overlay">
       <p>Locked: Join coupon book to unlock</p>
       <button class="redirect-btn" @click="redirectToGroup">
-        Join {{ titleCase(coupon.foodieGroup) }} Coupon Book
+        Join {{ coupon.foodie_group_name }} Coupon Book
       </button>
     </div>
   </div>
@@ -47,15 +49,9 @@ export default {
       type: Object,
       required: true
     },
-    // Indicates if the user has purchased the coupon book.
     hasPurchasedCouponBook: {
       type: Boolean,
       default: false
-    }
-  },
-  computed: {
-    buttonText() {
-      return "Redeem";
     }
   },
   methods: {
@@ -63,33 +59,20 @@ export default {
       const date = new Date(dateStr);
       return date.toLocaleDateString();
     },
-    titleCase(str) {
-      if (!str) return "";
-      return str
-        .split(" ")
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(" ");
-    },
     handleClick() {
       if (this.coupon.locked && !this.hasPurchasedCouponBook) {
-        // Redirect to purchase page.
         this.redirectToGroup();
       } else {
         this.$emit('redeem', this.coupon);
       }
     },
     redirectToGroup() {
-      // Map the coupon.foodieGroup to a group id.
-      const mapping = {
-        'charlotte': 3,
-        'raleigh': 4,
-        'chapel hill': 1,
-        'wnc': 2
-      };
-      // Using lowercase to avoid casing issues.
-      const groupId = mapping[this.coupon.foodieGroup.toLowerCase()];
+      const groupId = this.coupon.foodie_group_id;
       if (groupId) {
-        this.$router.push({ name: 'FoodieGroupView', params: { id: groupId } });
+        this.$router.push({ 
+          name: 'FoodieGroupView', 
+          params: { id: groupId } 
+        });
       } else {
         alert("Unable to determine group. Please contact support.");
       }
@@ -100,12 +83,11 @@ export default {
 
 <style scoped>
 .coupon-card {
-  position: relative; /* Allow overlay positioning */
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   width: 250px;
-  height: 450px;
   padding: 1rem;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -126,8 +108,8 @@ export default {
 }
 
 .merchant-logo {
-  height: 80px;
   width: 80px;
+  height: 80px;
   object-fit: contain;
   border-radius: 50%;
   border: 2px solid #ddd;
@@ -147,6 +129,7 @@ export default {
 .validity {
   font-size: 0.8rem;
   color: #555;
+  margin: .5rem 0;
 }
 
 .redeem-btn {
@@ -157,23 +140,19 @@ export default {
   border-radius: 4px;
   cursor: pointer;
   min-height: 50px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .redeem-btn:hover {
   background: #218838;
 }
 
-/* Locked overlay styles */
 .locked-overlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.9);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -191,7 +170,6 @@ export default {
   padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
 }
 
 .redirect-btn:hover {
