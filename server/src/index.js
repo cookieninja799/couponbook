@@ -9,6 +9,7 @@ import couponsRouter from './routes/coupons.js';
 import eventsRouter  from './routes/events.js';
 import groupsRouter  from './routes/foodieGroups.js';
 import merchantsRouter from './routes/merchants.js'
+import couponSubmissionsRouter from './routes/couponSubmissions.js';
 /* ─────────────────────────────────────────
    Kick-off
 ────────────────────────────────────────── */
@@ -28,6 +29,7 @@ app.use('/api/v1/users', usersRouter);
 app.use("/api/v1/merchants", merchantsRouter);
 app.use('/api/v1/coupons', couponsRouter);
 app.use('/api/v1/groups',  groupsRouter);
+app.use('/api/v1/coupon-submissions', couponSubmissionsRouter);
 /* protect everything else */
 app.use('/api/v1', auth.required);
 app.use('/api/v1/events',  eventsRouter);

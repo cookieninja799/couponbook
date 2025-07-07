@@ -1,13 +1,14 @@
-<template>  
+<!-- src/components/Dashboard/FoodieGroupDashboard.vue -->
+<template>
   <div class="foodie-group-dashboard">
     <h1>Foodie Group Dashboard</h1>
     <p>
-      Manage your Foodie Group here. Approve or reject submissions, view group statistics,
-      create new coupons/events, update your group's details, and monitor active activity.
+      Manage your Foodie Group here. Approve or reject coupon submissions,
+      view group statistics, update your group's details, and monitor activity.
     </p>
-    
+
     <!-- Edit Group Section -->
-    <section class="dashboard-section edit-group">
+    <section class="dashboard-section edit-group" v-if="groupLoaded">
       <h2>Edit Group Details</h2>
       <form @submit.prevent="saveGroupDetails">
         <div class="form-group">
@@ -16,246 +17,257 @@
         </div>
         <div class="form-group">
           <label for="groupDescription">Group Description:</label>
-          <textarea id="groupDescription" v-model="group.description" rows="3" required></textarea>
+          <textarea
+            id="groupDescription"
+            v-model="group.description"
+            rows="3"
+            required
+          ></textarea>
         </div>
         <div class="form-group">
           <label for="location">Location:</label>
-          <input id="location" type="text" v-model="group.location" placeholder="Enter location" />
+          <input
+            id="location"
+            type="text"
+            v-model="group.location"
+            placeholder="Enter location"
+          />
         </div>
         <div class="form-group">
           <label for="bannerImage">Banner Image URL:</label>
-          <input id="bannerImage" type="text" v-model="group.bannerImage" placeholder="Enter banner image URL" />
+          <input
+            id="bannerImage"
+            type="text"
+            v-model="group.bannerImage"
+            placeholder="Enter banner image URL"
+          />
         </div>
         <div class="form-group">
           <label for="facebook">Facebook URL:</label>
-          <input id="facebook" type="text" v-model="group.socialMedia.facebook" placeholder="Enter Facebook URL" />
+          <input
+            id="facebook"
+            type="text"
+            v-model="group.socialMedia.facebook"
+            placeholder="Enter Facebook URL"
+          />
         </div>
         <div class="form-group">
           <label for="instagram">Instagram URL:</label>
-          <input id="instagram" type="text" v-model="group.socialMedia.instagram" placeholder="Enter Instagram URL" />
+          <input
+            id="instagram"
+            type="text"
+            v-model="group.socialMedia.instagram"
+            placeholder="Enter Instagram URL"
+          />
         </div>
         <div class="form-group">
           <label for="twitter">Twitter URL:</label>
-          <input id="twitter" type="text" v-model="group.socialMedia.twitter" placeholder="Enter Twitter URL" />
+          <input
+            id="twitter"
+            type="text"
+            v-model="group.socialMedia.twitter"
+            placeholder="Enter Twitter URL"
+          />
         </div>
         <button type="submit">Save Changes</button>
       </form>
     </section>
-    
-    <!-- Submissions Board (Kanban Style) -->
-    <section class="dashboard-section submissions-board">
+
+    <!-- Coupons Board (Kanban Style) -->
+    <section class="dashboard-section submissions-board" v-if="groupLoaded">
       <div class="kanban-column pending">
         <h2>Pending Submissions</h2>
         <div class="column-content">
           <div class="pending-coupons card">
             <h3>Coupon Submissions</h3>
             <ul>
-              <li v-for="coupon in pendingCoupons" :key="coupon.id">
-                <strong>{{ coupon.description }}</strong>
-                <br>
-                Submitted by: {{ coupon.merchantName }}
-                <br>
-                Expires: {{ formatDate(coupon.expires_at) }}
+              <li v-for="c in pendingCoupons" :key="c.id">
+                <strong>{{ c.description }}</strong><br />
+                Submitted by: {{ c.merchantName }} ({{ "Id: " + c.merchantId }})<br/>
+                Expires: {{ formatDate(c.expires_at) }}
                 <div class="action-buttons">
-                  <button @click="approveCoupon(coupon)">Approve</button>
-                  <button @click="rejectCoupon(coupon)">Reject</button>
-                </div>
-              </li>
-            </ul>
-          </div>
-          <div class="pending-events card">
-            <h3>Event Submissions</h3>
-            <ul>
-              <li v-for="event in pendingEvents" :key="event.id">
-                <strong>{{ event.name }}</strong>
-                <br>
-                Submitted by: {{ event.merchantName }}
-                <br>
-                Scheduled for: {{ formatDateTime(event.event_date) }}
-                <div class="action-buttons">
-                  <button @click="approveEvent(event)">Approve</button>
-                  <button @click="rejectEvent(event)">Reject</button>
+                  <button @click="approveCoupon(c)">Approve</button>
+                  <button @click="rejectCoupon(c)">Reject</button>
                 </div>
               </li>
             </ul>
           </div>
         </div>
       </div>
-      
+
       <div class="kanban-column active">
-        <h2>Active Submissions</h2>
+        <h2>Active Coupons</h2>
         <div class="column-content">
           <div class="active-coupons card">
             <h3>Active Coupons</h3>
             <ul>
-              <li v-for="coupon in activeCoupons" :key="coupon.id">
-                <strong>{{ coupon.description }}</strong>
-                <br>
-                Submitted by: {{ coupon.merchantName }}
-                <br>
-                Redemptions: {{ coupon.redemptions }}
-              </li>
-            </ul>
-          </div>
-          <div class="active-events card">
-            <h3>Active Events</h3>
-            <ul>
-              <li v-for="event in activeEvents" :key="event.id">
-                <strong>{{ event.name }}</strong>
-                <br>
-                Submitted by: {{ event.merchantName }}
-                <br>
-                Scheduled: {{ formatDateTime(event.event_date) }}
-                <br>
-                RSVPs: {{ event.rsvps }}
+              <li v-for="c in activeCoupons" :key="c.id">
+                <strong>{{ c.description }}</strong><br />
+                Submitted by: {{ c.merchantName }}<br />
+                Redemptions: {{ c.redemptions }}
               </li>
             </ul>
           </div>
         </div>
       </div>
     </section>
-    
+
     <!-- Group Statistics Section -->
-    <section class="dashboard-section group-stats">
+    <section class="dashboard-section group-stats" v-if="groupLoaded">
       <h2>Group Statistics</h2>
       <ul>
         <li>Total Members: {{ stats.totalMembers }}</li>
         <li>Total Coupons: {{ stats.totalCoupons }}</li>
-        <li>Total Events: {{ stats.totalEvents }}</li>
       </ul>
-    </section>
-    
-    <!-- Create New Submission Section -->
-    <section class="dashboard-section create-section">
-      <h2>Create New Submission</h2>
-      <p>Use the buttons below to create a new coupon or event.</p>
-      <button @click="createCoupon">Create Coupon</button>
-      <button @click="createEvent">Create Event</button>
     </section>
   </div>
 </template>
 
 <script>
+const API_BASE = 'http://localhost:3000/api/v1';
+
 export default {
-  name: "FoodieGroupDashboard",
+  name: 'FoodieGroupDashboard',
   data() {
     return {
       group: {
-        name: "Charlotte Foodie Group",
-        description: "Discover the best local deals and dining experiences in Charlotte.",
-        location: "Charlotte, NC",
-        bannerImage: "https://via.placeholder.com/1200x300?text=Banner+Image", // Placeholder URL
-        socialMedia: {
-          facebook: "https://facebook.com/CharlotteFoodieGroup",
-          instagram: "https://instagram.com/CharlotteFoodieGroup",
-          twitter: "https://twitter.com/CharlotteFoodieGroup"
-        }
+        id:           '28e7dccf-4a8f-4894-b50a-0f439958e9d8',
+        name:         '',
+        description:  '',
+        location:     '',
+        bannerImage:  '',
+        socialMedia:  { facebook: '', instagram: '', twitter: '' }
       },
-      // Dummy pending coupon submissions
-      pendingCoupons: [
-        {
-          id: 1,
-          description: "10% Off at Joe's Diner",
-          merchantName: "Joe's Diner",
-          expires_at: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: 2,
-          description: "Free Appetizer",
-          merchantName: "Bella's Bistro",
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ],
-      // Dummy pending event submissions
-      pendingEvents: [
-        {
-          id: 1,
-          name: "Taco Tuesday",
-          merchantName: "Taco Hub",
-          event_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: 2,
-          name: "Wine Tasting Evening",
-          merchantName: "Vino Venue",
-          event_date: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ],
-      // Dummy active submissions
-      activeCoupons: [
-        {
-          id: 3,
-          description: "15% Off at Bella's Bistro",
-          merchantName: "Bella's Bistro",
-          redemptions: 25
-        },
-        {
-          id: 4,
-          description: "Buy One Get One Free",
-          merchantName: "The Food Place",
-          redemptions: 40
-        }
-      ],
-      activeEvents: [
-        {
-          id: 3,
-          name: "Summer BBQ Bash",
-          merchantName: "Grill Master",
-          event_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-          rsvps: 15
-        },
-        {
-          id: 4,
-          name: "Jazz Night",
-          merchantName: "Blue Note",
-          event_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          rsvps: 20
-        }
-      ],
-      // Dummy group statistics
+      groupLoaded:    false,
+      pendingCoupons: [],
+      activeCoupons:  [],
       stats: {
-        totalMembers: 120,
-        totalCoupons: 45,
-        totalEvents: 5
+        totalMembers: 0,
+        totalCoupons: 0
       }
-    }
+    };
   },
+
+  async created() {
+    await this.loadGroupDetails();
+    await Promise.all([
+      this.loadPendingCoupons(),
+      this.loadActiveCoupons()
+    ]);
+  },
+
   methods: {
+    // Fetch group info from port 3000
+    async loadGroupDetails() {
+      try {
+        const res = await fetch(`${API_BASE}/groups/${this.group.id}`);
+        if (!res.ok) throw new Error(res.statusText);
+        const g = await res.json();
+
+        this.group.name        = g.name;
+        this.group.description = g.description;
+        this.group.location    = g.location;
+        this.group.bannerImage = g.bannerImageUrl;
+        this.group.socialMedia = {
+          facebook:  g.socialLinks.facebook,
+          instagram: g.socialLinks.instagram,
+          twitter:   g.socialLinks.twitter
+        };
+
+        this.groupLoaded = true;
+      } catch (err) {
+        console.error('Failed to load group:', err);
+      }
+    },
+
+    // Fetch pending submissions filtered by groupId on port 3000
+    async loadPendingCoupons() {
+      const res  = await fetch(
+        `${API_BASE}/coupon-submissions?groupId=${this.group.id}`
+      );
+      const list = await res.json();
+      this.pendingCoupons = list.map(sub => ({
+        id:           sub.id,
+        description:  sub.submissionData.description,
+        merchantId:   sub.merchantId,      // still available if you need it
+        merchantName: sub.merchantName,    // now the actual name
+        expires_at:   sub.submissionData.expires_at
+      }));
+    },
+    // Fetch active coupons & update stats
+    async loadActiveCoupons() {
+      const res = await fetch(
+        `${API_BASE}/coupons?groupId=${encodeURIComponent(this.group.id)}`
+      );
+      const list = await res.json();
+
+      this.activeCoupons = list.map(c => ({
+        id:           c.id,
+        description:  c.description,
+        merchantName: c.merchant_name,
+        redemptions:  c.redemptions || 0
+      }));
+      this.stats.totalCoupons = this.activeCoupons.length;
+    },
+
+    // Approve a pending submission via port 3000
+    async approveCoupon(coupon) {
+      // 1) optimistically remove it from the list:
+      this.pendingCoupons = this.pendingCoupons.filter(c => c.id !== coupon.id);
+
+      // 2) call the API
+      const res = await fetch(
+        `${API_BASE}/coupon-submissions/${coupon.id}`,
+        {
+          method:  'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ state: 'approved' })
+        }
+      );
+
+      // 3) turn into an active coupon
+      if (res.ok) {
+        const newCoupon = await res.json();
+        this.activeCoupons.push({
+          id:           newCoupon.id,
+          description:  newCoupon.description,
+          merchantName: newCoupon.merchant_name,
+          redemptions:  newCoupon.redemptions || 0
+        });
+        // update stats
+        this.stats.totalCoupons = this.activeCoupons.length;
+      } else {
+        // on error, re‐load pending to restore
+        await this.loadPendingCoupons();
+      }
+    },
+
+    // Reject a pending submission
+    async rejectCoupon(coupon) {
+      const res = await fetch(
+        `${API_BASE}/coupon-submissions/${coupon.id}`,
+        {
+          method:  'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ state: 'rejected' })
+        }
+      );
+      if (!res.ok) {
+        console.error('Failed to reject:', res.statusText);
+      }
+      // reload so that only `pending` state remains
+      await Promise.all([
+        this.loadPendingCoupons(),
+        this.loadActiveCoupons()   // optional if you want to refresh actives
+      ]);
+    },
+    // Format ISO date to locale string
+    formatDate(s) {
+      return new Date(s).toLocaleDateString();
+    },
+
     saveGroupDetails() {
-      alert(`Group details saved:
-Name: ${this.group.name}
-Description: ${this.group.description}
-Location: ${this.group.location}
-Banner URL: ${this.group.bannerImage}
-Facebook: ${this.group.socialMedia.facebook}
-Instagram: ${this.group.socialMedia.instagram}
-Twitter: ${this.group.socialMedia.twitter}`);
-    },
-    approveCoupon(coupon) {
-      alert(`Approved coupon: ${coupon.description} by ${coupon.merchantName}`);
-    },
-    rejectCoupon(coupon) {
-      alert(`Rejected coupon: ${coupon.description} by ${coupon.merchantName}`);
-    },
-    approveEvent(event) {
-      alert(`Approved event: ${event.name} by ${event.merchantName}`);
-    },
-    rejectEvent(event) {
-      alert(`Rejected event: ${event.name} by ${event.merchantName}`);
-    },
-    createCoupon() {
-      alert("Open coupon creation form");
-    },
-    createEvent() {
-      alert("Open event creation form");
-    },
-    formatDate(dateStr) {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString();
-    },
-    formatDateTime(dateStr) {
-      const date = new Date(dateStr);
-      return date.toLocaleString();
+      alert('Save group details not implemented yet');
     }
   }
 };
@@ -268,69 +280,67 @@ Twitter: ${this.group.socialMedia.twitter}`);
   margin: 0 auto;
 }
 
-/* Dashboard Section Card Styling */
 .dashboard-section {
-  background-color: #f9f9f9;
+  background: #f9f9f9;
   border: 1px solid #ddd;
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1.5rem;
 }
 
-/* Edit Group Section */
 .edit-group form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
-.edit-group .form-group {
+
+.form-group {
   display: flex;
   flex-direction: column;
 }
-.edit-group label {
+
+label {
   font-weight: bold;
   margin-bottom: 0.5rem;
 }
-.edit-group input,
-.edit-group textarea {
+
+input,
+textarea {
   padding: 0.5rem;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
 
-/* Kanban Board Styling */
 .submissions-board {
   display: flex;
   gap: 2rem;
   flex-wrap: wrap;
 }
+
 .kanban-column {
   flex: 1;
   min-width: 300px;
-  background-color: #fff;
+  background: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 1rem;
-  display: flex;
-  flex-direction: column;
   max-height: 500px;
   overflow-y: auto;
 }
-.kanban-column h2 {
-  text-align: center;
-  margin-bottom: 1rem;
-}
+
 .column-content {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
+
 .card {
-  background-color: #fefefe;
+  background: #fefefe;
   padding: 0.75rem;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
+
 .action-buttons {
   margin-top: 0.5rem;
 }
@@ -340,94 +350,5 @@ Twitter: ${this.group.socialMedia.twitter}`);
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
-}
-.action-buttons button:hover {
-  opacity: 0.9;
-}
-
-/* Create Section Buttons */
-.create-section button {
-  background-color: #007bff;
-  color: #fff;
-  margin-right: 1rem;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-}
-.create-section button:hover {
-  background-color: #0056b3;
-}
-
-/* Full-width Banner */
-.group-banner {
-  width: 100%;
-  height: 300px;
-  background-size: cover;
-  background-position: center;
-  position: relative;
-}
-.banner-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.banner-content {
-  text-align: center;
-  color: #fff;
-}
-.banner-content h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-}
-.banner-content p {
-  font-size: 1.25rem;
-  margin-bottom: 1rem;
-}
-
-/* Social Links in Header */
-.social-links {
-  margin-top: 1rem;
-}
-.social-links a {
-  margin: 0 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: #007bff;
-  color: #fff;
-  text-decoration: none;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
-}
-.social-links a:hover {
-  background-color: #0056b3;
-}
-
-/* Container for page content */
-.container {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 2rem;
-}
-
-/* Map Section */
-.map-section iframe {
-  border: none;
-  border-radius: 8px;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .banner-content h1 {
-    font-size: 2rem;
-  }
-  .banner-content p {
-    font-size: 1rem;
-  }
 }
 </style>

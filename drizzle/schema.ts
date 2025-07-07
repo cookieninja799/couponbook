@@ -1,3 +1,4 @@
+// drizzle/schema.ts
 import { pgTable, foreignKey, uuid, timestamp, jsonb, integer, varchar, text, doublePrecision, boolean, unique, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
