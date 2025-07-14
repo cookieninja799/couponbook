@@ -186,13 +186,16 @@ export default {
         `${API_BASE}/coupon-submissions?groupId=${this.group.id}`
       );
       const list = await res.json();
-      this.pendingCoupons = list.map(sub => ({
-        id:           sub.id,
-        description:  sub.submissionData.description,
-        merchantId:   sub.merchantId,      // still available if you need it
-        merchantName: sub.merchantName,    // now the actual name
-        expires_at:   sub.submissionData.expires_at
-      }));
+
+      // Only keep submissions whose state is still "pending"
+      this.pendingCoupons = list
+        .filter(sub => sub.state === 'pending')
+        .map(sub => ({
+          id:           sub.id,
+          description:  sub.submissionData.description,
+          merchantName: sub.merchantName,
+          expires_at:   sub.submissionData.expires_at
+        }));
     },
     // Fetch active coupons & update stats
     async loadActiveCoupons() {
@@ -212,35 +215,38 @@ export default {
 
     // Approve a pending submission via port 3000
     async approveCoupon(coupon) {
-      // 1) optimistically remove it from the list:
-      this.pendingCoupons = this.pendingCoupons.filter(c => c.id !== coupon.id);
+    // 1) Optimistically remove from pending
+    this.pendingCoupons = this.pendingCoupons.filter(c => c.id !== coupon.id);
 
-      // 2) call the API
-      const res = await fetch(
-        `${API_BASE}/coupon-submissions/${coupon.id}`,
-        {
-          method:  'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ state: 'approved' })
-        }
-      );
-
-      // 3) turn into an active coupon
-      if (res.ok) {
-        const newCoupon = await res.json();
-        this.activeCoupons.push({
-          id:           newCoupon.id,
-          description:  newCoupon.description,
-          merchantName: newCoupon.merchant_name,
-          redemptions:  newCoupon.redemptions || 0
-        });
-        // update stats
-        this.stats.totalCoupons = this.activeCoupons.length;
-      } else {
-        // on error, re‐load pending to restore
-        await this.loadPendingCoupons();
+    // 2) Tell the server to approve → it will insert into your coupons table
+    const res = await fetch(
+      `${API_BASE}/coupon-submissions/${coupon.id}`,
+      {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ state: 'approved' })
       }
-    },
+    );
+    if (!res.ok) {
+      console.error('Approve failed:', res.statusText);
+      // if you want to undo the optimistic remove on failure:
+      await this.loadPendingCoupons();
+      return;
+    }
+
+    // 3) Read back the newly‐inserted coupon record
+    const newCoupon = await res.json();
+    // 4) Push it into your active list
+    this.activeCoupons.push({
+      id:           newCoupon.id,
+      description:  newCoupon.description,
+      merchantName: newCoupon.merchant_name,
+      redemptions:  newCoupon.redemptions || 0
+    });
+
+    // 5) Update your stats
+    this.stats.totalCoupons = this.activeCoupons.length;
+  },
 
     // Reject a pending submission
     async rejectCoupon(coupon) {

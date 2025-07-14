@@ -98,6 +98,7 @@ router.put('/:id', async (req, res, next) => {
       .where(eq(couponSubmissions.id, req.params.id))
       .returning();
 
+    console.log('📦  updated submission state:', updated?.state, 'for id', updated?.id);
     if (!updated) {
       console.log('📦  submission not found for update');
       return res.status(404).json({ message: 'Submission not found' });

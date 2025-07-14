@@ -1,3 +1,4 @@
+<!-- src/views/FoodieGroup.vue -->
 <template>
   <div v-if="!group" class="not-found">
     <p>Group not found.</p>
@@ -12,20 +13,20 @@
         <div class="banner-content">
           <h1>{{ group.name }}</h1>
           <p>{{ group.description }}</p>
-          <div class="social-links" v-if="group.socialMedia">
+          <div class="social-links" v-if="group.socialLinks">
             <a 
-              v-if="group.socialMedia.facebook" 
-              :href="group.socialMedia.facebook" 
+              v-if="group.socialLinks.facebook" 
+              :href="group.socialLinks.facebook" 
               target="_blank"
             >Facebook</a>
             <a 
-              v-if="group.socialMedia.instagram" 
-              :href="group.socialMedia.instagram" 
+              v-if="group.socialLinks.instagram" 
+              :href="group.socialLinks.instagram" 
               target="_blank"
             >Instagram</a>
             <a 
-              v-if="group.socialMedia.twitter" 
-              :href="group.socialMedia.twitter" 
+              v-if="group.socialLinks.twitter" 
+              :href="group.socialLinks.twitter" 
               target="_blank"
             >Twitter</a>
           </div>
