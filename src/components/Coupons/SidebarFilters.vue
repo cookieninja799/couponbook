@@ -1,3 +1,4 @@
+<!--src/components/Coupons/SidebarFilters.vue-->
 <template>
   <aside class="sidebar-filters" :class="{ collapsed: isCollapsed }">
     <div class="filter-header">
@@ -61,15 +62,18 @@
             <option value="free">Free</option>
           </select>
         </div>
-        <!-- Filter by Foodie Group -->
+        <!-- Filter by Foodie Group (dynamic) -->
         <div class="filter-group">
           <label for="foodieGroup">Foodie Group:</label>
           <select id="foodieGroup" v-model="foodieGroup" @change="applyFilter">
             <option value="">All</option>
-            <option value="charlotte">Charlotte</option>
-            <option value="chapel hill">Chapel Hill</option>
-            <option value="raleigh">Raleigh</option>
-            <option value="wnc">WNC</option>
+            <option
+              v-for="group in groups"
+              :key="group.id"
+              :value="group.id"
+            >
+              {{ group.name }}
+            </option>
           </select>
         </div>
         <!-- Filter by Coupon Access -->
@@ -97,8 +101,19 @@ export default {
       cuisineType: "",
       foodieGroup: "",
       locked: "",
-      isCollapsed: false
+      isCollapsed: false,
+      groups: []
     };
+  },
+  async mounted() {
+    try {
+      const resp = await fetch("http://localhost:3000/api/v1/groups");
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      this.groups = await resp.json();
+    } catch (err) {
+      console.error("Could not load foodie groups:", err);
+      // optionally: show user feedback
+    }
   },
   methods: {
     toggleCollapse() {

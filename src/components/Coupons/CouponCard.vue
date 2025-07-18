@@ -1,3 +1,4 @@
+<!---src/components/Coupons/CouponCard.vue-->
 <template>
   <div class="coupon-card">
     <h3 class="coupon-title">{{ coupon.title }}</h3>
@@ -27,18 +28,20 @@
     <button 
       class="redeem-btn"
       @click="handleClick"
-      :disabled="coupon.locked && !hasPurchasedCouponBook"
+      :disabled="isLocked && !hasPurchasedCouponBook"
     >
       Redeem
     </button>
 
-    <div v-if="coupon.locked && !hasPurchasedCouponBook" class="locked-overlay">
-      <p>Locked: Join coupon book to unlock</p>
-      <button class="redirect-btn" @click="redirectToGroup">
-        Join {{ coupon.foodie_group_name }} Coupon Book
-      </button>
-    </div>
+  
+      <div v-if="isLocked && !hasPurchasedCouponBook" class="locked-overlay">
+        <p>Locked: Join coupon book to unlock</p>
+        <button class="redirect-btn" @click="redirectToGroup">
+          Join {{ coupon.foodie_group_name }} Coupon Book
+        </button>
+      </div>
   </div>
+  
 </template>
 
 <script>
@@ -54,13 +57,22 @@ export default {
       default: false
     }
   },
+  computed: {
+    // Always unlocked for Vivaspot Community
+    isLocked() {
+      if (this.coupon.foodie_group_name === 'Vivaspot Community') {
+        return false;
+      }
+      return this.coupon.locked;
+    }
+  },
   methods: {
     formatDate(dateStr) {
       const date = new Date(dateStr);
       return date.toLocaleDateString();
     },
     handleClick() {
-      if (this.coupon.locked && !this.hasPurchasedCouponBook) {
+      if (this.isLocked && !this.hasPurchasedCouponBook) {
         this.redirectToGroup();
       } else {
         this.$emit('redeem', this.coupon);

@@ -163,7 +163,10 @@ export default {
         filtered = filtered.filter(c => c.coupon_type === this.filters.couponType);
       }
       if (this.filters.foodieGroup) {
-        filtered = filtered.filter(c => c.foodie_group === this.filters.foodieGroup);
+        filtered = filtered.filter(c =>
+          // match the selected group ID
+          c.foodie_group_id === this.filters.foodieGroup
+        );
       }
       if (this.filters.locked) {
         filtered = filtered.filter(c =>
