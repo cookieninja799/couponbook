@@ -246,27 +246,46 @@ export default {
 
     // 5) Update your stats
     this.stats.totalCoupons = this.activeCoupons.length;
-  },
+    },
 
-    // Reject a pending submission
+    // Reject a pending submission (with a reason)
     async rejectCoupon(coupon) {
+      // Ask the admin for a rejection reason
+      const reason = window.prompt(
+        'Please enter a brief reason for rejection:',
+        ''
+      );
+      if (reason === null) {
+        // User cancelled the prompt
+        return;
+      }
+
+      // Optimistically remove it from the UI
+      this.pendingCoupons = this.pendingCoupons.filter(c => c.id !== coupon.id);
+
+      // Send the rejection + message
       const res = await fetch(
         `${API_BASE}/coupon-submissions/${coupon.id}`,
         {
           method:  'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ state: 'rejected' })
+          body: JSON.stringify({
+            state:   'rejected',
+            message: reason
+          })
         }
       );
+
       if (!res.ok) {
         console.error('Failed to reject:', res.statusText);
+        // rollback UI if you like
+        await this.loadPendingCoupons();
+      } else {
+        // Optionally refresh actives if your backend does anything on reject
+        await this.loadActiveCoupons();
       }
-      // reload so that only `pending` state remains
-      await Promise.all([
-        this.loadPendingCoupons(),
-        this.loadActiveCoupons()   // optional if you want to refresh actives
-      ]);
     },
+    
     // Format ISO date to locale string
     formatDate(s) {
       return new Date(s).toLocaleDateString();

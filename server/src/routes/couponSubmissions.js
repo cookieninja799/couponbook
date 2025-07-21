@@ -89,45 +89,107 @@ router.post('/', async (req, res, next) => {
 
 // ─── PUT update submission (approve/reject) ─────────────────────────────
 router.put('/:id', async (req, res, next) => {
-  console.log('📦  PUT /api/v1/coupon-submissions/' + req.params.id, req.body);
-  try {
-    const { state } = req.body; // 'approved' or 'rejected'
-    const [updated] = await db
-      .update(couponSubmissions)
-      .set({ state })
-      .where(eq(couponSubmissions.id, req.params.id))
-      .returning();
+  const submissionId = req.params.id;
+  const { state, message } = req.body; // message only used on reject
+  console.log(`📦  PUT /api/v1/coupon-submissions/${submissionId}`, { state, message });
 
-    console.log('📦  updated submission state:', updated?.state, 'for id', updated?.id);
-    if (!updated) {
-      console.log('📦  submission not found for update');
-      return res.status(404).json({ message: 'Submission not found' });
+  try {
+    // 1) Update state (and rejectionMessage if provided)
+    const updateData = { state };
+    if (state === 'rejected' && message) {
+      updateData.rejectionMessage = message;
     }
 
-    // On approval, promote to live coupons
+    const [updated] = await db
+      .update(couponSubmissions)
+      .set(updateData)
+      .where(eq(couponSubmissions.id, submissionId))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ message: 'Submission not found' });
+    }
+    console.log(`📦  submission ${submissionId} updated to "${state}"`);
+
+    // 2) Approved? promote to live coupon + notify merchant
     if (state === 'approved') {
-      const data = updated.submissionData;
+      const { submissionData, groupId, merchantId } = updated;
+      const couponPayload = {
+        groupId,
+        merchantId,
+        title:         submissionData.title,
+        description:   submissionData.description,
+        couponType:    submissionData.coupon_type,
+        discountValue: submissionData.discount_value,
+        validFrom:     new Date(submissionData.valid_from),
+        expiresAt:     new Date(submissionData.expires_at),
+        qrCodeUrl:     submissionData.qr_code_url,
+        locked:        submissionData.locked,
+      };
+
       const [newCoupon] = await db
         .insert(coupons)
-        .values({
-          groupId:      updated.groupId,
-          merchantId:   updated.merchantId,
-          title:        data.title,
-          description:  data.description,
-          couponType:   data.coupon_type,
-          discountValue:data.discount_value,
-          validFrom:    new Date(data.valid_from),
-          expiresAt:    new Date(data.expires_at),
-          qrCodeUrl:    data.qr_code_url,
-          locked:       data.locked
-        })
+        .values(couponPayload)
         .returning();
+
+      console.log(`📦  created coupon ${newCoupon.id} from submission ${submissionId}`);
+
+      // fire-and-forget notification
+      (async () => {
+        try {
+          await fetch(
+            'https://n8n.vivaspot.com/webhook-test/65d14fa4-31fc-461e-86b6-367d303ff1b9',
+            {
+              method:  'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                submissionId,
+                groupId,
+                merchantId,
+                coupon: newCoupon,
+              }),
+            }
+          );
+          console.log('📦  approval webhook sent');
+        } catch (err) {
+          console.error('❌ approval webhook error:', err);
+        }
+      })();
+
       return res.json(newCoupon);
     }
 
-    res.json(updated);
+    // 3) Rejected? notify merchant with message
+    if (state === 'rejected') {
+      (async () => {
+        try {
+          await fetch(
+            'https://n8n.vivaspot.com/webhook-test/6705fb4b-ba61-4189-a10b-304a0600a86e',
+            {
+              method:  'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                submissionId,
+                groupId:    updated.groupId,
+                merchantId: updated.merchantId,
+                message:    updated.rejectionMessage,
+              }),
+            }
+          );
+          console.log('📦  rejection webhook sent');
+        } catch (err) {
+          console.error('❌ rejection webhook error:', err);
+        }
+      })();
+
+      return res.json(updated);
+    }
+
+    // 4) Other states (if any)
+    return res.json(updated);
+
   } catch (err) {
-    console.error('📦  error in PUT /coupon-submissions/:id', err);
+    console.error(`❌ Error in PUT /coupon-submissions/${submissionId}:`, err);
     next(err);
   }
 });
