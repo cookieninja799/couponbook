@@ -43,7 +43,7 @@ export default {
   },
   async mounted() {
     try {
-      const res = await fetch('http://localhost:3000/api/v1/groups');
+      const res = await fetch('/api/v1/groups');
       if (!res.ok) throw new Error(`Server responded ${res.status}`);
       this.groups = await res.json();
     } catch (err) {

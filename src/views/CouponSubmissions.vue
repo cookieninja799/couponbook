@@ -13,7 +13,7 @@ import { Model }            from 'survey-core'
 import { SurveyComponent }  from 'survey-vue3-ui'
 import { couponSurveyJson } from '@/data/couponSurvey.js'
 
-const API_BASE    = 'http://localhost:3000/api/v1'
+const API_BASE    = '/api/v1'
 const WEBHOOK_URL = 'https://n8n.vivaspot.com/webhook-test/7d15576d-01a3-49c8-b0f4-6c490e54baa7'
 const TEST_EMAIL  = 'thommy@ivalu8.com'
 

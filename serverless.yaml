@@ -18,6 +18,21 @@ provider:
   runtime: nodejs20.x
   region: us-east-1
   stage: prod
+
+  # <-- add this:
+  httpApi:
+    cors:
+      allowedOrigins:
+        - '*'                       # or restrict to your frontend domain
+      allowedHeaders:
+        - '*'                       # or list headers you use
+      allowedMethods:
+        - OPTIONS
+        - GET
+        - POST
+        - PUT
+        - DELETE
+
   environment:
     DB_HOST: ${env:DB_HOST}
     DB_PORT: ${env:DB_PORT}
@@ -27,7 +42,7 @@ provider:
 
 functions:
   api:
-    handler: lambda.handler
+    handler: lambda.handler      # matches module.exports.handler in lambda.js
     events:
       - httpApi:
           path: /{proxy+}

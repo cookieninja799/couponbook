@@ -107,7 +107,7 @@ export default {
   },
   async mounted() {
     try {
-      const resp = await fetch("http://localhost:3000/api/v1/groups");
+      const resp = await fetch("/api/v1/groups");
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       this.groups = await resp.json();
     } catch (err) {

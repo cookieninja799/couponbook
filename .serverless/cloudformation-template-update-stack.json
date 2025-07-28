@@ -162,7 +162,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/coupon-book-api/prod/1753109598043-2025-07-21T14:53:18.043Z/coupon-book-api.zip"
+          "S3Key": "serverless/coupon-book-api/prod/1753710931724-2025-07-28T13:55:31.724Z/coupon-book-api.zip"
         },
         "Handler": "lambda.handler",
         "Runtime": "nodejs20.x",
@@ -189,21 +189,36 @@
         "ApiLogGroup"
       ]
     },
-    "ApiLambdaVersionbcWCq4wrorNpLvvRRMKNj7USykDlMOSB92OhlgQE7g": {
+    "ApiLambdaVersionxCSlI12PDhOQ7dCdRh72EdSoszJos0z0TSvlTFfT5k": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ApiLambdaFunction"
         },
-        "CodeSha256": "NlYo4z3tIR8u4VGf7iuiyX5e7vp8oSIKmGF1jQZlClU="
+        "CodeSha256": "UZEBl08JrSXw6FN+806LxoQuXSFv2vgdlrhIUiozESU="
       }
     },
     "HttpApi": {
       "Type": "AWS::ApiGatewayV2::Api",
       "Properties": {
         "Name": "prod-coupon-book-api",
-        "ProtocolType": "HTTP"
+        "ProtocolType": "HTTP",
+        "CorsConfiguration": {
+          "AllowHeaders": [
+            "*"
+          ],
+          "AllowMethods": [
+            "OPTIONS",
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE"
+          ],
+          "AllowOrigins": [
+            "*"
+          ]
+        }
       }
     },
     "HttpApiStage": {
@@ -307,7 +322,7 @@
     "ApiLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ApiLambdaVersionbcWCq4wrorNpLvvRRMKNj7USykDlMOSB92OhlgQE7g"
+        "Ref": "ApiLambdaVersionxCSlI12PDhOQ7dCdRh72EdSoszJos0z0TSvlTFfT5k"
       },
       "Export": {
         "Name": "sls-coupon-book-api-prod-ApiLambdaFunctionQualifiedArn"

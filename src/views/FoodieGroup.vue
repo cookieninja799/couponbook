@@ -147,7 +147,7 @@ export default {
   methods: {
     async fetchGroup(id) {
       try {
-        const res = await fetch(`http://localhost:3000/api/v1/groups/${id}`);
+        const res = await fetch(`/api/v1/groups/${id}`);
         if (!res.ok) throw new Error(res.statusText);
         this.group = await res.json();
       } catch (err) {
@@ -156,7 +156,7 @@ export default {
     },
     async fetchCoupons(groupId) {
       try {
-        const res = await fetch('http://localhost:3000/api/v1/coupons');
+        const res = await fetch('/api/v1/coupons');
         if (!res.ok) throw new Error(`Status ${res.status}`);
         const all = await res.json();
         // filter just this group’s coupons

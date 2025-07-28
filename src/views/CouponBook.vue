@@ -107,7 +107,7 @@ export default {
   methods: {
     async fetchCoupons() {
       try {
-        const res = await fetch('http://localhost:3000/api/v1/coupons');
+        const res = await fetch('/api/v1/coupons');
         if (!res.ok) throw new Error(`Server responded ${res.status}`);
         this.coupons = await res.json();
       } catch (err) {
