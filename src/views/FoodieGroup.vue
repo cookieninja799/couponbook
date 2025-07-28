@@ -170,8 +170,13 @@ export default {
     },
 
     purchaseCouponBook() {
-      this.hasPurchasedCouponBook = true;
-      alert(`You've purchased the ${this.group.name} Coupon Book!`);
+      const code = window.prompt('Enter unlock code to purchase:');
+      if (code === 'testcode-123') {
+        this.hasPurchasedCouponBook = true;
+        alert(`✅ "${this.group.name}" unlocked!`);
+      } else {
+        alert('❌ Invalid code. Please try again.');
+      }
     },
 
     handleRedeemCoupon(coupon) {

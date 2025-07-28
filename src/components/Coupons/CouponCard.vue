@@ -1,18 +1,12 @@
-<!---src/components/Coupons/CouponCard.vue-->
 <template>
   <div class="coupon-card">
     <h3 class="coupon-title">{{ coupon.title }}</h3>
     
     <div class="merchant-info" v-if="coupon.merchant_name">
+      <!-- unchanged merchant logo markup -->
       <img 
-        v-if="coupon.merchant_logo" 
-        :src="coupon.merchant_logo" 
+        :src="coupon.merchant_logo || '/logo.png'" 
         :alt="`Logo for ${coupon.merchant_name}`" 
-        class="merchant-logo"
-      />
-      <img
-        :src="coupon.merchant_logo || '/logo.png'"
-        :alt="`Logo for ${coupon.merchant_name || 'Merchant'}`"
         class="merchant-logo"
       />
       <span class="merchant-name">{{ coupon.merchant_name }}</span>
@@ -25,23 +19,19 @@
       <small>Expires: {{ formatDate(coupon.expires_at) }}</small>
     </div>
     
-    <button 
-      class="redeem-btn"
+    <button
+      class="action-btn"
+      :class="{ locked: isLocked && !hasPurchasedCouponBook }"
       @click="handleClick"
-      :disabled="isLocked && !hasPurchasedCouponBook"
     >
-      Redeem
+      <template v-if="isLocked && !hasPurchasedCouponBook">
+        🔒 Join {{ coupon.foodie_group_name }} Coupon Book
+      </template>
+      <template v-else>
+        Redeem
+      </template>
     </button>
-
-  
-      <div v-if="isLocked && !hasPurchasedCouponBook" class="locked-overlay">
-        <p>Locked: Join coupon book to unlock</p>
-        <button class="redirect-btn" @click="redirectToGroup">
-          Join {{ coupon.foodie_group_name }} Coupon Book
-        </button>
-      </div>
   </div>
-  
 </template>
 
 <script>
@@ -58,18 +48,17 @@ export default {
     }
   },
   computed: {
-    // Always unlocked for Vivaspot Community
+    // Vivaspot Community is always unlocked
     isLocked() {
-      if (this.coupon.foodie_group_name === 'Vivaspot Community') {
-        return false;
-      }
-      return this.coupon.locked;
+      return (
+        this.coupon.foodie_group_name !== 'Vivaspot Community' &&
+        this.coupon.locked
+      );
     }
   },
   methods: {
     formatDate(dateStr) {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString();
+      return new Date(dateStr).toLocaleDateString();
     },
     handleClick() {
       if (this.isLocked && !this.hasPurchasedCouponBook) {
@@ -81,12 +70,12 @@ export default {
     redirectToGroup() {
       const groupId = this.coupon.foodie_group_id;
       if (groupId) {
-        this.$router.push({ 
-          name: 'FoodieGroupView', 
-          params: { id: groupId } 
+        this.$router.push({
+          name: 'FoodieGroupView',
+          params: { id: groupId }
         });
       } else {
-        alert("Unable to determine group. Please contact support.");
+        alert('Unable to determine group. Please contact support.');
       }
     }
   }
@@ -107,10 +96,7 @@ export default {
   text-align: center;
 }
 
-.coupon-title {
-  font-size: 1.3rem;
-  color: #333;
-}
+.coupon-title { font-size: 1.3rem; color: #333; }
 
 .merchant-info {
   display: flex;
@@ -129,14 +115,9 @@ export default {
   margin-bottom: 0.5rem;
 }
 
-.merchant-name {
-  font-weight: bold;
-  font-size: 0.9rem;
-}
+.merchant-name { font-weight: bold; font-size: 0.9rem; }
 
-.coupon-description {
-  font-size: 1.1rem;
-}
+.coupon-description { font-size: 1.1rem; }
 
 .validity {
   font-size: 0.8rem;
@@ -144,47 +125,32 @@ export default {
   margin: .5rem 0;
 }
 
-.redeem-btn {
-  background: #28a745;
-  color: #fff;
+/* unified button style */
+.action-btn {
   border: none;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1rem;
   border-radius: 4px;
+  font-size: 1rem;
   cursor: pointer;
-  min-height: 50px;
+  min-height: 48px;
+  transition: background 0.2s ease;
 }
 
-.redeem-btn:hover {
+/* unlocked state */
+.action-btn:not(.locked) {
+  background: #28a745;
+  color: #fff;
+}
+.action-btn:not(.locked):hover {
   background: #218838;
 }
 
-.locked-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255,255,255,0.9);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  color: #555;
-  border-radius: 4px;
-}
-
-.redirect-btn {
-  margin-top: 0.5rem;
-  background-color: #007bff;
+/* locked state */
+.action-btn.locked {
+  background: #007bff;
   color: #fff;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
 }
-
-.redirect-btn:hover {
-  background-color: #0056b3;
+.action-btn.locked:hover {
+  background: #0056b3;
 }
 </style>
