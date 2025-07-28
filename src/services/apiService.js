@@ -7,7 +7,7 @@ if (!remote && process.env.NODE_ENV === 'production') {
 }
 
 const api = axios.create({
-  baseURL: remote || 'http://localhost:3000/api/v1',
+  baseURL: '/api/v1',
 });
 
 export default api;

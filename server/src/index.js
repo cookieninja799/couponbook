@@ -16,7 +16,7 @@ import couponSubmissionsRouter from './routes/couponSubmissions.js';
 await connectDB();                 // top-level await (Node ≥ 14.8 ESM)
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
 /* health check */
