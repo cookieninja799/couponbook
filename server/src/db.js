@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 // resolve your cert relative to this file
-const caPath = path.resolve(__dirname, '/home/cookieninja/viva-spot-coupon-book/server/certs/rds-combined-ca-bundle.pem');
+const caPath = path.resolve(__dirname, '../certs/rds-combined-ca-bundle.pem');
 
 let caCert;
 try {
