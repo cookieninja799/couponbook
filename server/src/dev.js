@@ -1,4 +1,4 @@
-// server/src/index.js
+// server/src/dev.js
 import 'dotenv/config';
 import express from 'express';
 import cors    from 'cors';
@@ -10,7 +10,6 @@ import eventsRouter  from './routes/events.js';
 import groupsRouter  from './routes/foodieGroups.js';
 import merchantsRouter from './routes/merchants.js'
 import couponSubmissionsRouter from './routes/couponSubmissions.js';
-import serverless from 'serverless-http';
 
 /* ─────────────────────────────────────────
    Kick-off
@@ -37,11 +36,9 @@ app.use('/api/v1', auth.required);
 app.use('/api/v1/events',  eventsRouter);
 /* add more routers here */
 
-/*const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () =>
   console.log(`🚀  Server listening on ${PORT}`)
-);*/
-
-export const handler = serverless(app);
+);
 
 //module.exports = app;
