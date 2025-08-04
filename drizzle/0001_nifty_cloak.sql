@@ -1,0 +1,1 @@
+ALTER TABLE "coupon" ADD COLUMN "cuisine_type" varchar(255);

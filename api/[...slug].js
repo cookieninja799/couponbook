@@ -1,14 +1,14 @@
 // api/[...slug].js
-import serverlessExpress from '@vendia/serverless-express';
-import app from '../server/src/index.js';    // <-- your existing Express app
+import app from '../server/src/index.js';
 
-export const config = {
-  runtime: 'nodejs',                     // tell Vercel which Node to use
-};
-
-const handler = serverlessExpress({ app });
-
-// every incoming request to /api/* gets routed here:
-export default async function (req, res) {
-  return handler(req, res);
+/**
+ * Vercel will call this for any /api/* request.
+ * We simply delegate to our Express app.
+ */
+export default function handler(req, res) {
+  // express apps are callable as (req, res)
+  return app(req, res);
 }
+
+// (optional) you can force Node 18 runtime, but Vercel defaults to that:
+// export const config = { runtime: 'nodejs18.x' };

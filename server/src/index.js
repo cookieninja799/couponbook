@@ -10,7 +10,6 @@ import eventsRouter  from './routes/events.js';
 import groupsRouter  from './routes/foodieGroups.js';
 import merchantsRouter from './routes/merchants.js'
 import couponSubmissionsRouter from './routes/couponSubmissions.js';
-import serverless from 'serverless-http';
 
 /* ─────────────────────────────────────────
    Kick-off
@@ -42,6 +41,6 @@ app.listen(PORT, () =>
   console.log(`🚀  Server listening on ${PORT}`)
 );*/
 
-export const handler = serverless(app);
+export default app;
 
 //module.exports = app;

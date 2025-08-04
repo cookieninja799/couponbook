@@ -7,7 +7,8 @@
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "dev": "nodemon --loader ts-node/esm server/src/dev.js",
-    "migrate": "drizzle-kit generate && drizzle-kit push"
+    "migrate": "drizzle-kit generate && drizzle-kit push",
+    "pull-schema": "drizzle-kit pull"
   },
   "dependencies": {
     "@aws-amplify/auth": "^6.12.3",
