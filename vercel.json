@@ -1,16 +1,10 @@
 {
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/[...slug].js",
-      "continue": true
-    }
-  ],
-  "functions": {
-    "api/**/*.js": {
-      "excludeFiles": ["**"],  
-      "memory": 256,
-      "maxDuration": 10
-    }
+    "version": 2,
+    "rewrites": [
+      {
+        "source": "/api/:path*",
+        "destination": "/api/[...slug]"
+      }
+    ]
   }
-}
+  
