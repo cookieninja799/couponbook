@@ -1,29 +1,29 @@
 // server/src/routes/events.js
 import express from 'express';
 import { db } from '../db.js';
-import { events } from '../schema.ts';
+import { event } from '../schema.ts';
 import { eq } from 'drizzle-orm';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-// GET /api/events
+// GET /api/event
 router.get('/', async (req, res, next) => {
   try {
-    const allEvents = await db.select().from(events);
-    res.json(allEvents);
+    const allEvent = await db.select().from(event);
+    res.json(allEvent);
   } catch (err) {
     next(err);
   }
 });
 
-// GET /api/events/:id
+// GET /api/event/:id
 router.get('/:id', async (req, res, next) => {
   try {
     const [event] = await db
       .select()
-      .from(events)
-      .where(eq(events.id, Number(req.params.id)));
+      .from(event)
+      .where(eq(event.id, Number(req.params.id)));
     if (event) return res.json(event);
     res.status(404).json({ message: 'Event not found' });
   } catch (err) {
@@ -31,12 +31,12 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// POST /api/events
+// POST /api/event
 router.post('/', auth(), async (req, res, next) => {
   try {
     const { name, description, startDate, endDate, location } = req.body;
     const [newEvent] = await db
-      .insert(events)
+      .insert(event)
       .values({
         name,
         description,
@@ -51,12 +51,12 @@ router.post('/', auth(), async (req, res, next) => {
   }
 });
 
-// PUT /api/events/:id
+// PUT /api/event/:id
 router.put('/:id', auth(), async (req, res, next) => {
   try {
     const { name, description, startDate, endDate, location } = req.body;
     const [updated] = await db
-      .update(events)
+      .update(event)
       .set({
         name,
         description,
@@ -64,7 +64,7 @@ router.put('/:id', auth(), async (req, res, next) => {
         end_date: new Date(endDate),
         location,
       })
-      .where(eq(events.id, Number(req.params.id)))
+      .where(eq(event.id, Number(req.params.id)))
       .returning();
     if (updated) return res.json(updated);
     res.status(404).json({ message: 'Event not found' });
@@ -73,10 +73,10 @@ router.put('/:id', auth(), async (req, res, next) => {
   }
 });
 
-// DELETE /api/events/:id
+// DELETE /api/event/:id
 router.delete('/:id', auth(), async (req, res, next) => {
   try {
-    const deleteResult = await db.delete(events).where(eq(events.id, Number(req.params.id)));
+    const deleteResult = await db.delete(event).where(eq(event.id, Number(req.params.id)));
     if (deleteResult.count) return res.json({ message: 'Event deleted' });
     res.status(404).json({ message: 'Event not found' });
   } catch (err) {

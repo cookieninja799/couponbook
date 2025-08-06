@@ -1,34 +1,34 @@
-// server/src/routes/merchants.js
+// server/src/routes/merchant.js
 import express from 'express';
 import { db } from '../db.js';
-import { merchants } from '../schema.js';
+import { merchant } from '../schema.js';
 import { eq } from 'drizzle-orm';
 
 const router = express.Router();
 
-console.log('📦  merchants router loaded');
+console.log('📦  merchant router loaded');
 
-// ─── GET all merchants ───────────────────────────────────────────────
+// ─── GET all merchant ───────────────────────────────────────────────
 router.get('/', async (req, res, next) => {
-  console.log('📦  GET /api/merchants hit');
+  console.log('📦  GET /api/merchant hit');
   try {
-    const allMerchants = await db.select().from(merchants);
-    console.log(`📦  returning ${allMerchants.length} merchants`);
-    res.json(allMerchants);
+    const allMerchant = await db.select().from(merchant);
+    console.log(`📦  returning ${allMerchant.length} merchant`);
+    res.json(allMerchant);
   } catch (err) {
-    console.error('📦  error in GET /merchants', err);
+    console.error('📦  error in GET /merchant', err);
     next(err);
   }
 });
 
 // ─── GET a single merchant by ID ─────────────────────────────────────
 router.get('/:id', async (req, res, next) => {
-  console.log('📦  GET /api/merchants/' + req.params.id);
+  console.log('📦  GET /api/merchant/' + req.params.id);
   try {
     const [row] = await db
       .select()
-      .from(merchants)
-      .where(eq(merchants.id, req.params.id));
+      .from(merchant)
+      .where(eq(merchant.id, req.params.id));
 
     if (!row) {
       console.log('📦  merchant not found');
@@ -36,19 +36,19 @@ router.get('/:id', async (req, res, next) => {
     }
     res.json(row);
   } catch (err) {
-    console.error('📦  error in GET /merchants/:id', err);
+    console.error('📦  error in GET /merchant/:id', err);
     next(err);
   }
 });
 
 // ─── POST create a new merchant ───────────────────────────────────────
 router.post('/', async (req, res, next) => {
-  console.log('📦  POST /api/merchants', req.body);
+  console.log('📦  POST /api/merchant', req.body);
   try {
     const { name, logo_url, owner_id } = req.body;
 
     const [newMerchant] = await db
-      .insert(merchants)
+      .insert(merchant)
       .values({
         name,
         logoUrl: logo_url,    // maps incoming snake_case to Drizzle field
@@ -58,14 +58,14 @@ router.post('/', async (req, res, next) => {
 
     res.status(201).json(newMerchant);
   } catch (err) {
-    console.error('📦  error in POST /merchants', err);
+    console.error('📦  error in POST /merchant', err);
     next(err);
   }
 });
 
 // ─── PUT update an existing merchant ──────────────────────────────────
 router.put('/:id', async (req, res, next) => {
-  console.log('📦  PUT /api/merchants/' + req.params.id, req.body);
+  console.log('📦  PUT /api/merchant/' + req.params.id, req.body);
   try {
     const updates = {};
     if (req.body.name       !== undefined) updates.name    = req.body.name;
@@ -73,30 +73,30 @@ router.put('/:id', async (req, res, next) => {
     if (req.body.owner_id   !== undefined) updates.ownerId = req.body.owner_id;
 
     const [updated] = await db
-      .update(merchants)
+      .update(merchant)
       .set(updates)
-      .where(eq(merchants.id, req.params.id))
+      .where(eq(merchant.id, req.params.id))
       .returning();
 
     if (!updated) {
-      console.log('📦  merchants not found for update');
+      console.log('📦  merchant not found for update');
       return res.status(404).json({ message: 'Merchant not found' });
     }
     console.log('📦  updated merchant id:', updated.id);
     res.json(updated);
   } catch (err) {
-    console.error('📦  error in PUT /merchants/:id', err);
+    console.error('📦  error in PUT /merchant/:id', err);
     next(err);
   }
 });
 
 // ─── DELETE a merchant ────────────────────────────────────────────────
 router.delete('/:id', async (req, res, next) => {
-  console.log('📦  DELETE /api/merchants/' + req.params.id);
+  console.log('📦  DELETE /api/merchant/' + req.params.id);
   try {
     const result = await db
-      .delete(merchants)
-      .where(eq(merchants.id, req.params.id));
+      .delete(merchant)
+      .where(eq(merchant.id, req.params.id));
 
     if (!result.count) {
       console.log('📦  merchant not found for delete');
@@ -105,7 +105,7 @@ router.delete('/:id', async (req, res, next) => {
     console.log('📦  deleted merchant count:', result.count);
     res.json({ message: 'Merchant deleted' });
   } catch (err) {
-    console.error('📦  error in DELETE /merchants/:id', err);
+    console.error('📦  error in DELETE /merchant/:id', err);
     next(err);
   }
 });

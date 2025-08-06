@@ -2,7 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { CognitoIdentityProviderClient, SignUpCommand } from '@aws-sdk/client-cognito-identity-provider';
 import { db } from '../db.js';
-import { users } from '../schema.js';
+import { user } from '../schema.js';
 import { eq } from 'drizzle-orm';
 
 const router = express.Router();
@@ -26,7 +26,7 @@ router.post('/signup', async (req, res) => {
   
       // 2) Persist to your Postgres user table
       const [newUser] = await db
-        .insert(users)
+        .insert(user)
         .values({
           cognito_sub: UserSub,
           email,

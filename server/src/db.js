@@ -5,7 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from './schema.ts';
+import * as schema from './schema.js';
 
 console.log('📦 DATABASE_URL is:', process.env.DATABASE_URL);
 // ————————————————

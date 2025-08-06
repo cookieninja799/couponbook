@@ -1,18 +1,18 @@
-// server/src/routes/foodieGroups.js
+// server/src/routes/foodieGroup.js
 import express from 'express';
 import { db } from '../db.js';
-import { foodieGroups } from '../schema.js';
+import { foodieGroup } from '../schema.js';
 import { eq } from 'drizzle-orm';
 
 const router = express.Router();
 
-console.log('📦  foodieGroups router loaded');
+console.log('📦  foodieGroup router loaded');
 
 // ─── GET /api/v1/groups ───────────────────────────────────────────────
 router.get('/', async (req, res, next) => {
   console.log('📦  GET /api/v1/groups hit');
   try {
-    const allGroups = await db.select().from(foodieGroups);
+    const allGroups = await db.select().from(foodieGroup);
     console.log(`📦  returning ${allGroups.length} groups`);
     res.json(allGroups);
   } catch (err) {
@@ -27,8 +27,8 @@ router.get('/:id', async (req, res, next) => {
   try {
     const [group] = await db
       .select()
-      .from(foodieGroups)
-      .where(eq(foodieGroups.id, req.params.id));
+      .from(foodieGroup)
+      .where(eq(foodieGroup.id, req.params.id));
 
     if (!group) {
       console.log('📦  group not found');
@@ -48,7 +48,7 @@ router.post('/', async (req, res, next) => {
     const { name, description } = req.body;
 
     const [newGroup] = await db
-      .insert(foodieGroups)
+      .insert(foodieGroup)
       .values({
         name,           // incoming snake_case = field name
         description
@@ -71,9 +71,9 @@ router.put('/:id', async (req, res, next) => {
     if (req.body.description !== undefined) updates.description = req.body.description;
 
     const [updated] = await db
-      .update(foodieGroups)
+      .update(foodieGroup)
       .set(updates)
-      .where(eq(foodieGroups.id, req.params.id))
+      .where(eq(foodieGroup.id, req.params.id))
       .returning();
 
     if (!updated) {
@@ -93,8 +93,8 @@ router.delete('/:id', async (req, res, next) => {
   console.log('📦  DELETE /api/v1/groups/' + req.params.id);
   try {
     const result = await db
-      .delete(foodieGroups)
-      .where(eq(foodieGroups.id, req.params.id));
+      .delete(foodieGroup)
+      .where(eq(foodieGroup.id, req.params.id));
 
     if (!result.count) {
       console.log('📦  group not found for delete');

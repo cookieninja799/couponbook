@@ -1,5 +1,5 @@
 // api/[...slug].js
-import app from '../server/src/index.js';
+import app from '../server-dist/index.js';
 
 /**
  * Vercel will call this for any /api/* request.

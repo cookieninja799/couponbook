@@ -1,0 +1,17 @@
+// server/tsconfig.json
+{
+    "compilerOptions": {
+      "outDir": "../server-dist",
+      "rootDir": "src",
+      "module": "ESNext",
+      "target": "ES2020",
+      "moduleResolution": "Node",
+      "esModuleInterop": true,
+      "resolveJsonModule": true,
+      "skipLibCheck": true,       // ← skip all .d.ts in node_modules
+      "strict": false             // optional: relax strictness if you hit more hiccups
+    },
+    "include": ["src/**/*.ts", "src/**/*.js"],
+    "exclude": ["node_modules"]
+  }
+  
