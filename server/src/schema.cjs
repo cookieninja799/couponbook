@@ -1,3 +1,4 @@
+// server/src/schema.js
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.purchase = exports.foodieGroupMembership = exports.merchant = exports.foodieGroup = exports.user = exports.couponRedemption = exports.event = exports.eventSubmission = exports.coupon = exports.eventRsvp = exports.couponSubmission = exports.submissionState = exports.role = exports.purchaseStatus = exports.couponType = exports.attendanceStatus = void 0;

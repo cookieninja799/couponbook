@@ -1,7 +1,7 @@
 // server/src/routes/events.js
 import express from 'express';
 import { db } from '../db.js';
-import { event } from '../schema.ts';
+import { event } from '../schema.js';
 import { eq } from 'drizzle-orm';
 import auth from '../middleware/auth.js';
 

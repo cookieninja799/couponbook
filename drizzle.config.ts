@@ -8,17 +8,23 @@ const { host, port, database, user, password } = parse(process.env.DATABASE_URL!
 
 export default defineConfig({
   dialect: 'postgresql',
-  schema: './server/src/schema.ts',     // your TS schema definition
-  out: './drizzle',     // emit JS here!
+
+  // ← This is the TS file you write by hand (or pull)
+  schema: './server/src/schema.ts',
+
+  // ← This is where Drizzle will emit your migrations
+  out:    './drizzle',
+
   dbCredentials: {
     host,
-    port: Number(port) || 5432,
+    port:     Number(port) || 5432,
     user,
     password,
     database,
     ssl: {
-      ca: readFileSync('./server/certs/rds-ca.pem', 'utf8'),
+      ca:               readFileSync('./server/certs/rds-ca.pem', 'utf8'),
       rejectUnauthorized: true
     }
-  }
+  },
+
 });
