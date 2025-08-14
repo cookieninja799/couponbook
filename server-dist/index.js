@@ -2,7 +2,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { connectDB } from './db.js';
+import { connectDB, pool } from './db.js';
 import * as auth from './middleware/auth.js';
 import usersRouter from './routes/users.js';
 import couponsRouter from './routes/coupons.js';
@@ -21,6 +21,16 @@ app.get('/api/health', (_req, res) => {
         hasDatabaseUrl: !!process.env.DATABASE_URL,
         hasPgCaCert: !!process.env.PG_CA_CERT,
     });
+});
+app.get('/api/db-ping', async (req, res, next) => {
+    try {
+        const t = Date.now();
+        const r = await pool.query('SELECT 1 AS ok');
+        res.json({ ok: r.rows[0].ok === 1, ms: Date.now() - t });
+    }
+    catch (e) {
+        next(e);
+    }
 });
 // Try a background connect, but don't crash if it fails
 connectDB()

@@ -7,11 +7,9 @@ const router = express.Router();
 console.log('📦  coupons router loaded');
 // GET all coupons
 router.get('/', async (req, res, next) => {
-    console.log('📦  GET /api/v1/coupons hit');
     try {
         const allCoupons = await db
             .select({
-            // coupon fields
             id: coupon.id,
             title: coupon.title,
             description: coupon.description,
@@ -21,23 +19,33 @@ router.get('/', async (req, res, next) => {
             expires_at: coupon.expiresAt,
             qr_code_url: coupon.qrCodeUrl,
             locked: coupon.locked,
-            // merchant info
             merchant_id: coupon.merchantId,
             merchant_name: merchant.name,
             merchant_logo: merchant.logoUrl,
-            // foodie group info
             foodie_group_id: coupon.groupId,
             foodie_group_name: foodieGroup.name,
         })
             .from(coupon)
             .leftJoin(merchant, eq(merchant.id, coupon.merchantId))
             .leftJoin(foodieGroup, eq(foodieGroup.id, coupon.groupId));
-        console.log(`📦  returning ${allCoupons.length} coupons`);
         res.json(allCoupons);
     }
     catch (err) {
-        console.error('📦  error in GET /api/v1/coupons', err);
-        next(err);
+        console.error('📦 error in GET /api/v1/coupons', err);
+        // Try to surface PG-ish fields if present
+        const isPgError = err && typeof err === 'object' && ('code' in err || 'detail' in err);
+        if (isPgError) {
+            // e.g. code "42P01" -> relation does not exist
+            return res.status(500).json({
+                error: 'DB_ERROR',
+                code: err.code ?? null,
+                message: err.message ?? String(err),
+                detail: err.detail ?? null,
+                table: err.table ?? null,
+                schema: err.schema ?? null,
+            });
+        }
+        return res.status(500).json({ error: err?.message || 'Server error' });
     }
 });
 // GET a single coupon by ID
