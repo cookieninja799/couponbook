@@ -13,7 +13,6 @@ const __dirname = path.dirname(__filename);
 // --- helpers ---
 function splitCertBlocks(pemText) {
   if (!pemText) return [];
-  // normalize CRLF -> LF to avoid hidden issues
   const txt = pemText.replace(/\r\n/g, '\n');
   const blocks = txt.match(/-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g) || [];
   return blocks.map(b => b.trim() + '\n');
@@ -40,7 +39,7 @@ function resolveSsl() {
     }
   }
 
-  // 2) Next: a path via env (PG_CA_FILE)
+  // 2) Next: a file path in env (PG_CA_FILE)
   const pathVar = process.env.PG_CA_FILE?.trim();
   if (pathVar && fs.existsSync(pathVar)) {
     const ca = splitCertBlocks(fs.readFileSync(pathVar, 'utf8'));
@@ -48,17 +47,17 @@ function resolveSsl() {
     return { rejectUnauthorized: true, minVersion: 'TLSv1.2', servername: guessServername(), ca };
   }
 
-  // 3) Candidate files in the repo
+  // 3) Fall back to known repo paths (both dev & dist)
   const candidates = [
-    // minimal/two‑cert you built
-    path.resolve(__dirname, '../server/certs/rds-min-ca.pem'),
-    // your previous combined file name
-    path.resolve(__dirname, '../server/certs/rds-combined-ca-bundle.pem'),
-    path.resolve(process.cwd(), 'server/certs/rds-min-ca.pem'),
+    // when running from repo root in dev
+    path.resolve(process.cwd(), 'server/certs/rds-min-clean.pem'),
     path.resolve(process.cwd(), 'server/certs/rds-combined-ca-bundle.pem'),
-    // full regional bundle (safe fallback)
     path.resolve(process.cwd(), 'server/certs/us-east-1-bundle.pem'),
-    path.resolve(__dirname, '../server/certs/us-east-1-bundle.pem'),
+    path.resolve(process.cwd(), 'server/certs/us-east-1-root-only.pem'),
+
+    // when running out of server-dist on Vercel
+    path.resolve(__dirname, './certs/us-east-1-bundle.pem'),
+    path.resolve(__dirname, './certs/us-east-1-root-only.pem'),
   ];
 
   console.log('🔎 SSL CA candidates:\n - ' + candidates.join('\n - '));
@@ -69,7 +68,6 @@ function resolveSsl() {
         console.log(`✅ Using CA file: ${p} (${caBlocks.length} cert${caBlocks.length !== 1 ? 's' : ''})`);
         return { rejectUnauthorized: true, minVersion: 'TLSv1.2', servername: guessServername(), ca: caBlocks };
       }
-      // If it exists but we found zero blocks, keep looking
       console.warn(`⚠️  CA file had 0 cert blocks: ${p}`);
     }
   }
@@ -86,7 +84,7 @@ function resolveSsl() {
 
 const ssl = resolveSsl();
 
-// Build pool config (unchanged idea, but we normalize the URL scheme)
+// Build pool config (normalize URL scheme)
 const poolConfig = process.env.DATABASE_URL
   ? { connectionString: process.env.DATABASE_URL.replace('postgres://', 'postgresql://'), ssl }
   : {
@@ -98,7 +96,7 @@ const poolConfig = process.env.DATABASE_URL
       ssl,
     };
 
-// ✅ Fast timeouts
+// Short timeouts so lambdas fail fast
 export const pool = new Pool({
   ...poolConfig,
   connectionTimeoutMillis: 2000,

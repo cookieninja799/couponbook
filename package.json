@@ -10,7 +10,7 @@
     "migrate": "drizzle-kit generate && drizzle-kit push",
     "pull-schema": "drizzle-kit pull",
     "build:server": "tsc -p server/tsconfig.json",
-  "vercel-build": "npm run build:server && npm run build"
+    "vercel-build": "npm run build:server && npm run build"
   },
   "dependencies": {
     "@aws-amplify/auth": "^6.12.3",
