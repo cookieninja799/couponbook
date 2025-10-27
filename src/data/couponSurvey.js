@@ -90,12 +90,12 @@ export const couponSurveyJson = {
             defaultValueExpression: "addDays(today(), 7)",
             isRequired: true
           },
-          {
+          /*{
             type: "boolean",
             name: "locked",
             title: "Require unlock to redeem?",
             defaultValue: true
-          },
+          },**/
           {
             type: "text",
             name: "cuisine_type",
@@ -105,7 +105,7 @@ export const couponSurveyJson = {
           }          
         ]
       },
-      {
+      /*{
         name: "qr",
         elements: [
           {
@@ -115,7 +115,7 @@ export const couponSurveyJson = {
             description: "Enter a link to the QR code (or leave blank to auto-generate)."
           }
         ]
-      }
+      }*/
     ]
   };
   

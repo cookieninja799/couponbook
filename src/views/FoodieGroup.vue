@@ -1,4 +1,6 @@
-<!-- src/views/FoodieGroup.vue -->
+<!-- ============================================= -->
+<!-- src/views/FoodieGroup.vue (with OverlayBlock) -->
+<!-- ============================================= -->
 <template>
   <div v-if="!group" class="not-found">
     <p>Group not found.</p>
@@ -14,21 +16,9 @@
           <h1>{{ group.name }}</h1>
           <p>{{ group.description }}</p>
           <div class="social-links" v-if="group.socialLinks">
-            <a 
-              v-if="group.socialLinks.facebook" 
-              :href="group.socialLinks.facebook" 
-              target="_blank"
-            >Facebook</a>
-            <a 
-              v-if="group.socialLinks.instagram" 
-              :href="group.socialLinks.instagram" 
-              target="_blank"
-            >Instagram</a>
-            <a 
-              v-if="group.socialLinks.twitter" 
-              :href="group.socialLinks.twitter" 
-              target="_blank"
-            >Twitter</a>
+            <a v-if="group.socialLinks.facebook" :href="group.socialLinks.facebook" target="_blank">Facebook</a>
+            <a v-if="group.socialLinks.instagram" :href="group.socialLinks.instagram" target="_blank">Instagram</a>
+            <a v-if="group.socialLinks.twitter" :href="group.socialLinks.twitter" target="_blank">Twitter</a>
           </div>
         </div>
       </div>
@@ -37,12 +27,8 @@
     <div class="foodie-group-view container">
       <!-- Purchase Coupon Book Banner -->
       <div v-if="!hasPurchasedCouponBook" class="purchase-banner">
-        <p>
-          Purchase the coupon book to unlock all group coupons and RSVP for events.
-        </p>
-        <button @click="purchaseCouponBook" class="purchase-btn">
-          Purchase Coupon Book
-        </button>
+        <p>Purchase the coupon book to unlock all group coupons and RSVP for events.</p>
+        <button @click="purchaseCouponBook" class="purchase-btn">Purchase Coupon Book</button>
       </div>
 
       <!-- Coupons Section -->
@@ -58,13 +44,18 @@
         />
       </section>
 
-      <!-- Events Section (static sample data) -->
+      <!-- Events Section Wrapped with OverlayBlock -->
       <section class="events-section section-card">
-        <h2>Group Events</h2>
-        <EventList 
-          :events="events" 
-          :hasAccess="hasPurchasedCouponBook" 
-        />
+        <OverlayBlock
+          :is-dimmed="true"
+          title="Events are coming soon!"
+          message="Our events feature is in preview and will be unlocked soon for Foodie Groups."
+          cta-text="Notify Me"
+          @cta="alert('You’ll be notified when events are live!')"
+        >
+          <h2>Group Events</h2>
+          <EventList :events="events" :hasAccess="hasPurchasedCouponBook" />
+        </OverlayBlock>
       </section>
 
       <!-- Map Section -->
@@ -86,64 +77,31 @@
 
 <script>
 import CouponList from '@/components/Coupons/CouponList.vue';
-import EventList  from '@/components/Events/EventList.vue';
+import EventList from '@/components/Events/EventList.vue';
+import OverlayBlock from '@/components/Common/OverlayBlock.vue';
 
 export default {
-  name: "FoodieGroupView",
-  components: { CouponList, EventList },
-
+  name: 'FoodieGroupView',
+  components: { CouponList, EventList, OverlayBlock },
   data() {
     return {
       group: null,
       hasPurchasedCouponBook: false,
-
-      // coupons loaded from API
       coupons: [],
       loadingCoupons: true,
       couponError: null,
-
-      // inline sample events
       events: [
-        {
-          id: 1,
-          name: 'Wine Tasting Night',
-          description: 'Sample a curated selection of fine wines paired with gourmet appetizers.',
-          event_date: '2025-06-21T18:00:00',
-          merchantLogo: '/logo.png',
-          merchantName: 'The Vineyard Bistro',
-          location: 'Downtown',
-          showRSVP: false
-        },
-        {
-          id: 2,
-          name: 'Sushi Rolling Workshop',
-          description: 'Learn the art of sushi making with hands-on instruction from expert chefs.',
-          event_date: '2025-07-15T10:00:00',
-          merchantLogo: '/logo.png',
-          merchantName: 'Sushi Delight',
-          location: 'Uptown',
-          showRSVP: false
-        },
-        {
-          id: 3,
-          name: 'Burger Bonanza',
-          description: 'Enjoy an evening of gourmet burgers and creative sides, with live cooking demos.',
-          event_date: '2025-08-05T09:00:00',
-          merchantLogo: '/logo.png',
-          merchantName: 'Burger Hub',
-          location: 'Midtown',
-          showRSVP: false
-        }
+        { id: 1, name: 'Wine Tasting Night', description: 'Sample a curated selection of fine wines paired with gourmet appetizers.', event_date: '2025-06-21T18:00:00', merchantLogo: '/logo.png', merchantName: 'The Vineyard Bistro', location: 'Downtown', showRSVP: false },
+        { id: 2, name: 'Sushi Rolling Workshop', description: 'Learn the art of sushi making with hands-on instruction from expert chefs.', event_date: '2025-07-15T10:00:00', merchantLogo: '/logo.png', merchantName: 'Sushi Delight', location: 'Uptown', showRSVP: false },
+        { id: 3, name: 'Burger Bonanza', description: 'Enjoy an evening of gourmet burgers and creative sides, with live cooking demos.', event_date: '2025-08-05T09:00:00', merchantLogo: '/logo.png', merchantName: 'Burger Hub', location: 'Midtown', showRSVP: false }
       ]
     };
   },
-
   created() {
-    const id = this.$route.params.id;    // e.g. "de9ec277-7329-4f64-b5df-40a618420677"
+    const id = this.$route.params.id;
     this.fetchGroup(id);
     this.fetchCoupons(id);
   },
-
   methods: {
     async fetchGroup(id) {
       try {
@@ -151,7 +109,7 @@ export default {
         if (!res.ok) throw new Error(res.statusText);
         this.group = await res.json();
       } catch (err) {
-        console.error("Failed to load group", err);
+        console.error('Failed to load group', err);
       }
     },
     async fetchCoupons(groupId) {
@@ -159,16 +117,14 @@ export default {
         const res = await fetch('/api/v1/coupons');
         if (!res.ok) throw new Error(`Status ${res.status}`);
         const all = await res.json();
-        // filter just this group’s coupons
         this.coupons = all.filter(c => String(c.foodie_group_id) === String(groupId));
       } catch (err) {
-        console.error("Failed to load coupons", err);
+        console.error('Failed to load coupons', err);
         this.couponError = err.message;
       } finally {
         this.loadingCoupons = false;
       }
     },
-
     purchaseCouponBook() {
       const code = window.prompt('Enter unlock code to purchase:');
       if (code === 'testcode-123') {
@@ -178,12 +134,10 @@ export default {
         alert('❌ Invalid code. Please try again.');
       }
     },
-
     handleRedeemCoupon(coupon) {
-      console.log("Redeeming coupon:", coupon);
+      console.log('Redeeming coupon:', coupon);
     }
   },
-
   computed: {
     groupCoupons() {
       return this.coupons;

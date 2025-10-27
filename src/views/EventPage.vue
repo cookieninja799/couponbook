@@ -1,20 +1,34 @@
+<!-- src/views/EventPageView.vue -->
 <template>
   <div class="event-page-view">
     <section class="featured-events">
       <h1>Upcoming Events</h1>
-      <EventList :events="events" />
+
+      <!-- Greyed-out overlay applied here -->
+      <OverlayBlock
+        :is-dimmed="!eventsEnabled"
+        title="Events are coming soon!"
+        message="We’re rolling this feature out. Want early access or notifications when it’s live?"
+        cta-text="Notify Me"
+        @cta="goNotify"
+      >
+        <EventList :events="events" />
+      </OverlayBlock>
     </section>
   </div>
 </template>
 
 <script>
-import EventList from '@/components/Events/EventList.vue';
+import EventList from '@/components/Events/EventList.vue'
+import OverlayBlock from '@/components/Common/OverlayBlock.vue'
 
 export default {
-  name: "EventPageView",
-  components: { EventList },
+  name: 'EventPageView',
+  components: { EventList, OverlayBlock },
   data() {
     return {
+      // Flip to true when you want to enable events on this page
+      eventsEnabled: false,
       events: [
         {
           id: 1,
@@ -67,9 +81,15 @@ export default {
           showRSVP: false
         }
       ]
-    };
+    }
+  },
+  methods: {
+    goNotify() {
+      // Route anywhere you like for signup/interest
+      this.$router.push({ name: 'Contact', query: { topic: 'events-early-access' } })
+    }
   }
-};
+}
 </script>
 
 <style scoped>
@@ -78,5 +98,19 @@ export default {
   max-width: 1000px;
   margin: 0 auto;
   text-align: center;
+}
+
+/* Light mode overrides for OverlayBlock (your requested values) */
+.featured-events {
+  /* These cascade into OverlayBlock via CSS variables */
+  --overlay-veil-bg: rgba(112, 112, 112, 0.85);
+  --overlay-card-bg: #ffffff;
+  --overlay-card-fg: #38424c;
+  --overlay-card-border: rgba(56, 66, 76, 0.15);
+  --overlay-radius: 8px;
+  --overlay-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  --overlay-btn-bg: #FF6B35;
+  --overlay-btn-bg-hover: #DD6146;
+  --overlay-btn-fg: #ffffff;
 }
 </style>
