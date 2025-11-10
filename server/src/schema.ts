@@ -18,15 +18,15 @@ export const couponSubmission = pgTable("coupon_submission", {
 	deletedAt: timestamp("deleted_at", { mode: 'string' }),
 }, (table) => [
 	foreignKey({
-			columns: [table.groupId],
-			foreignColumns: [foodieGroup.id],
-			name: "coupon_submission_group_id_foodie_group_id_fk"
-		}),
+		columns: [table.groupId],
+		foreignColumns: [foodieGroup.id],
+		name: "coupon_submission_group_id_foodie_group_id_fk"
+	}),
 	foreignKey({
-			columns: [table.merchantId],
-			foreignColumns: [merchant.id],
-			name: "coupon_submission_merchant_id_merchant_id_fk"
-		}).onDelete("set null"),
+		columns: [table.merchantId],
+		foreignColumns: [merchant.id],
+		name: "coupon_submission_merchant_id_merchant_id_fk"
+	}).onDelete("set null"),
 ]);
 
 export const eventRsvp = pgTable("event_rsvp", {
@@ -40,15 +40,15 @@ export const eventRsvp = pgTable("event_rsvp", {
 	deletedAt: timestamp("deleted_at", { mode: 'string' }),
 }, (table) => [
 	foreignKey({
-			columns: [table.eventId],
-			foreignColumns: [event.id],
-			name: "event_rsvp_event_id_event_id_fk"
-		}).onDelete("cascade"),
+		columns: [table.eventId],
+		foreignColumns: [event.id],
+		name: "event_rsvp_event_id_event_id_fk"
+	}).onDelete("cascade"),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "event_rsvp_user_id_user_id_fk"
-		}).onDelete("cascade"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "event_rsvp_user_id_user_id_fk"
+	}).onDelete("cascade"),
 ]);
 
 export const coupon = pgTable("coupon", {
@@ -69,15 +69,15 @@ export const coupon = pgTable("coupon", {
 	cuisineType: varchar("cuisine_type", { length: 255 }),
 }, (table) => [
 	foreignKey({
-			columns: [table.groupId],
-			foreignColumns: [foodieGroup.id],
-			name: "coupon_group_id_foodie_group_id_fk"
-		}),
+		columns: [table.groupId],
+		foreignColumns: [foodieGroup.id],
+		name: "coupon_group_id_foodie_group_id_fk"
+	}),
 	foreignKey({
-			columns: [table.merchantId],
-			foreignColumns: [merchant.id],
-			name: "coupon_merchant_id_merchant_id_fk"
-		}),
+		columns: [table.merchantId],
+		foreignColumns: [merchant.id],
+		name: "coupon_merchant_id_merchant_id_fk"
+	}),
 ]);
 
 export const eventSubmission = pgTable("event_submission", {
@@ -90,15 +90,15 @@ export const eventSubmission = pgTable("event_submission", {
 	deletedAt: timestamp("deleted_at", { mode: 'string' }),
 }, (table) => [
 	foreignKey({
-			columns: [table.groupId],
-			foreignColumns: [foodieGroup.id],
-			name: "event_submission_group_id_foodie_group_id_fk"
-		}),
+		columns: [table.groupId],
+		foreignColumns: [foodieGroup.id],
+		name: "event_submission_group_id_foodie_group_id_fk"
+	}),
 	foreignKey({
-			columns: [table.merchantId],
-			foreignColumns: [merchant.id],
-			name: "event_submission_merchant_id_merchant_id_fk"
-		}).onDelete("set null"),
+		columns: [table.merchantId],
+		foreignColumns: [merchant.id],
+		name: "event_submission_merchant_id_merchant_id_fk"
+	}).onDelete("set null"),
 ]);
 
 export const event = pgTable("event", {
@@ -117,37 +117,39 @@ export const event = pgTable("event", {
 	deletedAt: timestamp("deleted_at", { mode: 'string' }),
 }, (table) => [
 	foreignKey({
-			columns: [table.groupId],
-			foreignColumns: [foodieGroup.id],
-			name: "event_group_id_foodie_group_id_fk"
-		}),
+		columns: [table.groupId],
+		foreignColumns: [foodieGroup.id],
+		name: "event_group_id_foodie_group_id_fk"
+	}),
 	foreignKey({
-			columns: [table.merchantId],
-			foreignColumns: [merchant.id],
-			name: "event_merchant_id_merchant_id_fk"
-		}),
+		columns: [table.merchantId],
+		foreignColumns: [merchant.id],
+		name: "event_merchant_id_merchant_id_fk"
+	}),
 ]);
 
-export const couponRedemption = pgTable("coupon_redemption", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	couponId: uuid("coupon_id").notNull(),
-	userId: uuid("user_id").notNull(),
-	redeemedAt: timestamp("redeemed_at", { mode: 'string' }).defaultNow().notNull(),
-	locationMeta: jsonb("location_meta"),
-	deletedAt: timestamp("deleted_at", { mode: 'string' }),
-}, (table) => [
-	foreignKey({
+export const couponRedemption = pgTable(
+	"coupon_redemption",
+	{
+		id: uuid().defaultRandom().primaryKey().notNull(),
+		couponId: uuid("coupon_id").notNull(),
+		userId: uuid("user_id").notNull(),
+		redeemedAt: timestamp("redeemed_at", { mode: 'string' }).defaultNow().notNull(),
+		locationMeta: jsonb("location_meta"),
+		deletedAt: timestamp("deleted_at", { mode: 'string' }),
+	}, (table) => [
+		foreignKey({
 			columns: [table.couponId],
 			foreignColumns: [coupon.id],
 			name: "coupon_redemption_coupon_id_coupon_id_fk"
 		}).onDelete("cascade"),
-	foreignKey({
+		foreignKey({
 			columns: [table.userId],
 			foreignColumns: [user.id],
 			name: "coupon_redemption_user_id_user_id_fk"
 		}).onDelete("cascade"),
-	unique("coupon_redemption_user_coupon_unique").on(table.couponId, table.userId),
-]);
+		unique("coupon_redemption_user_coupon_unique").on(table.couponId, table.userId),
+	]);
 
 export const user = pgTable("user", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -189,10 +191,10 @@ export const merchant = pgTable("merchant", {
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.ownerId],
-			foreignColumns: [user.id],
-			name: "merchant_owner_id_user_id_fk"
-		}),
+		columns: [table.ownerId],
+		foreignColumns: [user.id],
+		name: "merchant_owner_id_user_id_fk"
+	}),
 ]);
 
 export const foodieGroupMembership = pgTable("foodie_group_membership", {
@@ -204,15 +206,15 @@ export const foodieGroupMembership = pgTable("foodie_group_membership", {
 	deletedAt: timestamp("deleted_at", { mode: 'string' }),
 }, (table) => [
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "foodie_group_membership_user_id_user_id_fk"
-		}).onDelete("cascade"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "foodie_group_membership_user_id_user_id_fk"
+	}).onDelete("cascade"),
 	foreignKey({
-			columns: [table.groupId],
-			foreignColumns: [foodieGroup.id],
-			name: "foodie_group_membership_group_id_foodie_group_id_fk"
-		}).onDelete("cascade"),
+		columns: [table.groupId],
+		foreignColumns: [foodieGroup.id],
+		name: "foodie_group_membership_group_id_foodie_group_id_fk"
+	}).onDelete("cascade"),
 ]);
 
 export const purchase = pgTable("purchase", {
@@ -231,14 +233,14 @@ export const purchase = pgTable("purchase", {
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "purchase_user_id_user_id_fk"
-		}),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "purchase_user_id_user_id_fk"
+	}),
 	foreignKey({
-			columns: [table.groupId],
-			foreignColumns: [foodieGroup.id],
-			name: "purchase_group_id_foodie_group_id_fk"
-		}),
+		columns: [table.groupId],
+		foreignColumns: [foodieGroup.id],
+		name: "purchase_group_id_foodie_group_id_fk"
+	}),
 	unique("purchase_stripe_checkout_id_unique").on(table.stripeCheckoutId),
 ]);
