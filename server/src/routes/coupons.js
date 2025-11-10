@@ -152,66 +152,79 @@ router.delete('/:id', async (req, res, next) => {
 });
 
 // POST /api/v1/coupons/:id/redeem
-router.post('/:id/redeem', /* auth() */ async (req, res, next) => {
+router.post('/:id/redeem', auth(), async (req, res, next) => {
     try {
-      const couponId = req.params.id;
+        const couponId = req.params.id;
+        console.log('🎟️  Redeem attempt start', {
+          couponId,
+          authed: !!req.user,
+          sub: req.user?.sub,
+        });
   
       // 1) Ensure coupon exists
       const [c] = await db.select().from(coupon).where(eq(coupon.id, couponId));
       if (!c) {
+        console.log('🎟️  Coupon not found');
         return res.status(404).json({ error: 'Coupon not found' });
       }
   
       // 2) (Optional) validity window check
       const now = new Date();
       if (c.validFrom && new Date(c.validFrom) > now) {
+        console.warn('⛔ Coupon not yet valid', { couponId, validFrom: c.validFrom, now });
         return res.status(400).json({ error: 'Coupon is not yet valid' });
       }
       if (c.expiresAt && new Date(c.expiresAt) < now) {
+        console.warn('⛔ Coupon expired', { couponId, expiresAt: c.expiresAt, now });
         return res.status(400).json({ error: 'Coupon is expired' });
       }
   
-      // 3) If authenticated, log redemption to DB and enforce one-per-user
-      const idToken = (req.headers.authorization || '').replace(/^Bearer /i, '');
-      const isAuthed = Boolean(idToken && req.user?.sub); // if you later enable auth(), req.user will be set
-  
-      if (isAuthed) {
-        // Resolve the app user by Cognito sub
-        const sub = req.user.sub;
-        const [u] = await db.select().from(user).where(eq(user.cognitoSub, sub)).limit(1);
-  
-        if (!u) {
-          // If ID token valid but local row missing, you can create or just 401
-          // For now, just bail cleanly:
-          return res.status(401).json({ error: 'User not synced' });
-        }
-  
-        // Has this user already redeemed this coupon?
-        const [existing] = await db
-          .select()
-          .from(couponRedemption)
-          .where(and(eq(couponRedemption.couponId, couponId), eq(couponRedemption.userId, u.id)))
-          .limit(1);
-  
-        if (existing) {
-          return res.status(409).json({ error: 'Already redeemed', redeemed_at: existing.redeemedAt });
-        }
-  
-        // Insert redemption
-        const loc = req.body?.location_meta ?? null; // optional from client
-        const [row] = await db
-          .insert(couponRedemption)
-          .values({ couponId, userId: u.id, locationMeta: loc ?? null })
-          .returning();
-  
-        return res.status(201).json({ redeemed_at: row.redeemedAt, coupon_id: couponId, user_id: u.id });
-      }
-  
-      // 4) No auth: return success for now so UI flows; do not write DB
-      //    (Later, enable auth() above and require a token from the client.)
-      return res.status(201).json({ redeemed_at: new Date().toISOString(), coupon_id: couponId, anonymous: true });
+   // 3) Auth required: map req.user.sub -> local user row
+    if (!req.user?.sub) {
+      console.warn('🔒 Missing req.user.sub (JWT not verified)');
+      return res.status(401).json({ error: 'Sign in required to redeem this coupon' });
+    }
+
+    // Find local user by provider sub; if not found, auto-provision or 409
+    let [u] = await db.select().from(user).where(eq(user.providerSub, req.user.sub));
+    if (!u) {
+      console.log('👤 No local user for sub; creating', { sub: req.user.sub, email: req.user?.email });
+      const insertRes = await db.insert(user).values({
+        // adjust these fields to your user schema
+        provider: 'cognito',
+        providerSub: req.user.sub,
+        email: req.user?.email ?? null,
+        createdAt: new Date(),
+      }).returning();
+      u = insertRes[0];
+    }
+
+    // 4) One-per-user check
+    const [existing] = await db
+      .select()
+      .from(couponRedemption)
+      .where(and(eq(couponRedemption.couponId, c.id), eq(couponRedemption.userId, u.id)));
+
+    if (existing) {
+      console.log('♻️  Already redeemed; returning 200', { couponId: c.id, userId: u.id });
+      return res.status(200).json({ ok: true, alreadyRedeemed: true });
+    }
+
+    // 5) Insert redemption
+    const [created] = await db.insert(couponRedemption).values({
+      couponId: c.id,
+      userId: u.id,
+      redeemedAt: new Date(),
+    }).returning();
+
+    console.log('✅ Redemption recorded', {
+      redemptionId: created.id,
+      couponId: c.id,
+      userId: u.id,
+    });
+    return res.status(201).json({ ok: true, redemptionId: created.id });
     } catch (err) {
-      console.error('error in POST /api/v1/coupons/:id/redeem', err);
+      console.error('🎟️  error in POST /api/v1/coupons/:id/redeem', err);
       next(err);
     }
   });

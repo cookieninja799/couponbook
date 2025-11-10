@@ -97,17 +97,48 @@ export default {
   },
 
   methods: {
-    getIdToken() {
-      // Adjust this to wherever you store the Cognito/OIDC ID token.
-      const fromLocal = localStorage.getItem('idToken');
-      if (fromLocal) return fromLocal;
+    /**
+     * Robust ID token getter:
+     * - localStorage('oidc.user') -> .id_token (oidc-client-ts default)
+     * - localStorage('idToken')
+     * - window.auth.getIdToken() (may be sync or Promise)
+     * - window.oidcUser.id_token
+     */
+    async getIdToken() {
       try {
-        if (window?.auth?.getIdToken) return window.auth.getIdToken();
+        // 1) oidc-client-ts default storage (stringified user with id_token)
+        const oidcUserRaw = localStorage.getItem('oidc.user');
+        if (oidcUserRaw) {
+          try {
+            const parsed = JSON.parse(oidcUserRaw);
+            if (parsed?.id_token) return parsed.id_token;
+          } catch (_) {
+            console.error('Error parsing oidc.user', _);
+          }
+        }
+
+        // 2) simple custom key
+        const fromLocal = localStorage.getItem('idToken');
+        if (fromLocal) return fromLocal;
+
+        // 3) window.auth.getIdToken() may return a Promse or string
+        if (window?.auth?.getIdToken) {
+          const t = window.auth.getIdToken();
+          if (typeof t === 'string') return t;
+          if (t && typeof t.then === 'function') {
+            const resolved = await t;
+            if (resolved) return resolved;
+          }
+        }
+
+        // 4) window.oidcUser.id_token
         if (window?.oidcUser?.id_token) return window.oidcUser.id_token;
-      } catch (_) { 
-        console.error('Error getting ID token', _);
+
+        return null;
+      } catch (err) {
+        console.error('Error getting ID token', err);
+        return null;
       }
-      return '';
     },
 
     async confirmRedeem() {
@@ -115,17 +146,23 @@ export default {
       this.error = null;
       this.submitting = true;
 
+      // 🔐 Require token before making the call
+      const idToken = await this.getIdToken();
+      if (!idToken) {
+        this.error = 'Please sign in to redeem this coupon.';
+        this.submitting = false;
+        return;
+      }
+
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-        const idToken = this.getIdToken();
 
         const res = await fetch(`/api/v1/coupons/${this.couponId}/redeem`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...(idToken ? { Authorization: `Bearer ${idToken}` } : {})
+            'Authorization': `Bearer ${idToken}`
           },
           credentials: 'include',
           body: JSON.stringify({}),
@@ -140,26 +177,50 @@ export default {
 
         clearTimeout(timeoutId);
 
-        if (!res.ok) {
-          if (res.status === 409) {
-            // Already redeemed – prefer server's timestamp if provided
-            const j = await res.json().catch(() => ({}));
-            this.redeemed = true;
-            this.redeemedAt = j.redeemed_at || new Date().toISOString();
-            this.uninstallPrintBlocker();
-            try {
-              window.opener && window.opener.postMessage({ type: 'coupon-redeemed', couponId: this.couponId }, '*');
-            } catch (e) { /* opener not available or cross-origin */ }
-            return;
+        // Handle common auth & duplication cases up front
+        if (res.status === 401) {
+          this.error = 'Please sign in to redeem this coupon.';
+          return;
+        }
+
+        // If server uses 409 for already redeemed
+        if (res.status === 409) {
+          const j = await res.json().catch(() => ({}));
+          this.redeemed = true;
+          this.redeemedAt = j.redeemed_at || j.redeemedAt || new Date().toISOString();
+          this.uninstallPrintBlocker();
+          try {
+            window.opener && window.opener.postMessage({ type: 'coupon-redeemed', couponId: this.couponId }, '*');
+          } catch (_) {
+            console.error('Error posting message', _);
           }
-          const text = await res.text().catch(() => '');
+          return;
+        }
+
+        // Standard success path (201 created) OR 200 with alreadyRedeemed flag
+        const payload = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          const text = typeof payload === 'string' ? payload : (payload?.error || '');
           throw new Error(text || `Redeem failed (status ${res.status}).`);
         }
 
-        const payload = await res.json().catch(() => ({}));
+        if (payload?.alreadyRedeemed) {
+          // Server returns 200 { alreadyRedeemed: true }
+          this.redeemed = true;
+          this.redeemedAt = payload.redeemed_at || payload.redeemedAt || new Date().toISOString();
+          this.uninstallPrintBlocker();
+          try {
+            window.opener && window.opener.postMessage({ type: 'coupon-redeemed', couponId: this.couponId }, '*');
+          } catch (_) {
+            console.error('Error posting message', _);
+          }
+          return;
+        }
 
+        // Fresh redemption success
         this.redeemed = true;
-        this.redeemedAt = payload.redeemed_at || new Date().toISOString();
+        this.redeemedAt = payload.redeemed_at || payload.redeemedAt || new Date().toISOString();
 
         // If backend starts issuing secure download tokens
         if (payload.download_token && this.pdfUrl) {
@@ -172,7 +233,9 @@ export default {
 
         try {
           window.opener && window.opener.postMessage({ type: 'coupon-redeemed', couponId: this.couponId }, '*');
-        } catch (e) { /* opener not available or cross-origin */ }
+        } catch (_) {
+          console.error('Error posting message', _);
+        }
       } catch (e) {
         this.error = e?.message || 'Failed to redeem. Please try again.';
         alert(this.error);

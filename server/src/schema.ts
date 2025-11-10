@@ -146,6 +146,7 @@ export const couponRedemption = pgTable("coupon_redemption", {
 			foreignColumns: [user.id],
 			name: "coupon_redemption_user_id_user_id_fk"
 		}).onDelete("cascade"),
+	unique("coupon_redemption_user_coupon_unique").on(table.couponId, table.userId),
 ]);
 
 export const user = pgTable("user", {
