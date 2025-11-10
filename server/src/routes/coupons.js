@@ -1,8 +1,9 @@
 // server/src/routes/coupons.js
 import express from 'express';
 import { db } from '../db.js';
-import { coupon, merchant, foodieGroup } from '../schema.js';
-import { eq } from 'drizzle-orm';
+import { coupon, merchant, foodieGroup, couponRedemption, user } from '../schema.js';
+import { eq, and } from 'drizzle-orm';
+import auth from '../middleware/auth.js'; // auth() verifies Cognito token and sets req.user
 const router = express.Router();
 console.log('📦  coupons router loaded');
 // GET all coupons
@@ -149,4 +150,70 @@ router.delete('/:id', async (req, res, next) => {
         next(err);
     }
 });
+
+// POST /api/v1/coupons/:id/redeem
+router.post('/:id/redeem', /* auth() */ async (req, res, next) => {
+    try {
+      const couponId = req.params.id;
+  
+      // 1) Ensure coupon exists
+      const [c] = await db.select().from(coupon).where(eq(coupon.id, couponId));
+      if (!c) {
+        return res.status(404).json({ error: 'Coupon not found' });
+      }
+  
+      // 2) (Optional) validity window check
+      const now = new Date();
+      if (c.validFrom && new Date(c.validFrom) > now) {
+        return res.status(400).json({ error: 'Coupon is not yet valid' });
+      }
+      if (c.expiresAt && new Date(c.expiresAt) < now) {
+        return res.status(400).json({ error: 'Coupon is expired' });
+      }
+  
+      // 3) If authenticated, log redemption to DB and enforce one-per-user
+      const idToken = (req.headers.authorization || '').replace(/^Bearer /i, '');
+      const isAuthed = Boolean(idToken && req.user?.sub); // if you later enable auth(), req.user will be set
+  
+      if (isAuthed) {
+        // Resolve the app user by Cognito sub
+        const sub = req.user.sub;
+        const [u] = await db.select().from(user).where(eq(user.cognitoSub, sub)).limit(1);
+  
+        if (!u) {
+          // If ID token valid but local row missing, you can create or just 401
+          // For now, just bail cleanly:
+          return res.status(401).json({ error: 'User not synced' });
+        }
+  
+        // Has this user already redeemed this coupon?
+        const [existing] = await db
+          .select()
+          .from(couponRedemption)
+          .where(and(eq(couponRedemption.couponId, couponId), eq(couponRedemption.userId, u.id)))
+          .limit(1);
+  
+        if (existing) {
+          return res.status(409).json({ error: 'Already redeemed', redeemed_at: existing.redeemedAt });
+        }
+  
+        // Insert redemption
+        const loc = req.body?.location_meta ?? null; // optional from client
+        const [row] = await db
+          .insert(couponRedemption)
+          .values({ couponId, userId: u.id, locationMeta: loc ?? null })
+          .returning();
+  
+        return res.status(201).json({ redeemed_at: row.redeemedAt, coupon_id: couponId, user_id: u.id });
+      }
+  
+      // 4) No auth: return success for now so UI flows; do not write DB
+      //    (Later, enable auth() above and require a token from the client.)
+      return res.status(201).json({ redeemed_at: new Date().toISOString(), coupon_id: couponId, anonymous: true });
+    } catch (err) {
+      console.error('error in POST /api/v1/coupons/:id/redeem', err);
+      next(err);
+    }
+  });
+  
 export default router;
