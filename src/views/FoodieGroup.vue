@@ -1,5 +1,5 @@
 <!-- ============================================= -->
-<!-- src/views/FoodieGroup.vue (with OverlayBlock) -->
+<!-- src/views/FoodieGroup.vue (with confirm redeem) -->
 <!-- ============================================= -->
 <template>
   <div v-if="!group" class="not-found">
@@ -7,10 +7,7 @@
   </div>
   <div v-else>
     <!-- Dynamic Banner -->
-    <header 
-      class="group-banner" 
-      :style="{ backgroundImage: `url(${group.bannerImageUrl || '/default-banner.jpg'})` }"
-    >
+    <header class="group-banner" :style="{ backgroundImage: `url(${group.bannerImageUrl || '/default-banner.jpg'})` }">
       <div class="banner-overlay">
         <div class="banner-content">
           <h1>{{ group.name }}</h1>
@@ -36,23 +33,19 @@
         <h2>Group Coupons</h2>
         <p v-if="loadingCoupons">Loading coupons…</p>
         <p v-else-if="couponError" class="error">⚠️ {{ couponError }}</p>
-        <CouponList
-          v-else
-          :coupons="groupCoupons"
-          :hasPurchasedCouponBook="hasPurchasedCouponBook"
-          @redeem="handleRedeemCoupon"
-        />
+        <CouponList v-else :coupons="groupCoupons" :hasPurchasedCouponBook="hasPurchasedCouponBook"
+          @redeem="handleRedeemCoupon" />
       </section>
+
+      <!-- Confirm Redeem Modal -->
+      <CouponRedemption v-if="showRedeemDialog" :coupon="selectedCoupon" @confirm="confirmRedeem"
+        @cancel="closeRedeem" />
 
       <!-- Events Section Wrapped with OverlayBlock -->
       <section class="events-section section-card">
-        <OverlayBlock
-          :is-dimmed="true"
-          title="Events are coming soon!"
-          message="Our events feature is in preview and will be unlocked soon for Foodie Groups."
-          cta-text="Notify Me"
-          @cta="alert('You’ll be notified when events are live!')"
-        >
+        <OverlayBlock :is-dimmed="true" title="Events are coming soon!"
+          message="Our events feature is in preview and will be unlocked soon for Foodie Groups." cta-text="Notify Me"
+          @cta="alert('You’ll be notified when events are live!')">
           <h2>Group Events</h2>
           <EventList :events="events" :hasAccess="hasPurchasedCouponBook" />
         </OverlayBlock>
@@ -61,15 +54,8 @@
       <!-- Map Section -->
       <section class="map-section section-card">
         <h2>Location</h2>
-        <iframe
-          v-if="mapUrl"
-          width="100%"
-          height="300"
-          frameborder="0"
-          style="border:0"
-          :src="mapUrl"
-          allowfullscreen
-        />
+        <iframe v-if="mapUrl" width="100%" height="300" frameborder="0" style="border:0" :src="mapUrl"
+          allowfullscreen />
       </section>
     </div>
   </div>
@@ -77,12 +63,13 @@
 
 <script>
 import CouponList from '@/components/Coupons/CouponList.vue';
+import CouponRedemption from '@/components/Coupons/CouponRedemption.vue'; // ✅ NEW
 import EventList from '@/components/Events/EventList.vue';
 import OverlayBlock from '@/components/Common/OverlayBlock.vue';
 
 export default {
   name: 'FoodieGroupView',
-  components: { CouponList, EventList, OverlayBlock },
+  components: { CouponList, CouponRedemption, EventList, OverlayBlock }, // ✅ added CouponRedemption
   data() {
     return {
       group: null,
@@ -90,6 +77,9 @@ export default {
       coupons: [],
       loadingCoupons: true,
       couponError: null,
+      // ✅ modal state
+      showRedeemDialog: false,
+      selectedCoupon: null,
       events: [
         { id: 1, name: 'Wine Tasting Night', description: 'Sample a curated selection of fine wines paired with gourmet appetizers.', event_date: '2025-06-21T18:00:00', merchantLogo: '/logo.png', merchantName: 'The Vineyard Bistro', location: 'Downtown', showRSVP: false },
         { id: 2, name: 'Sushi Rolling Workshop', description: 'Learn the art of sushi making with hands-on instruction from expert chefs.', event_date: '2025-07-15T10:00:00', merchantLogo: '/logo.png', merchantName: 'Sushi Delight', location: 'Uptown', showRSVP: false },
@@ -117,7 +107,10 @@ export default {
         const res = await fetch('/api/v1/coupons');
         if (!res.ok) throw new Error(`Status ${res.status}`);
         const all = await res.json();
-        this.coupons = all.filter(c => String(c.foodie_group_id) === String(groupId));
+        // You may want to set redeemed_by_user coming from API if available
+        this.coupons = all
+          .filter(c => String(c.foodie_group_id) === String(groupId))
+          .map(c => ({ redeemed_by_user: false, ...c })); // default false if server doesn’t send it
       } catch (err) {
         console.error('Failed to load coupons', err);
         this.couponError = err.message;
@@ -134,8 +127,65 @@ export default {
         alert('❌ Invalid code. Please try again.');
       }
     },
+
+    // ✅ open confirm dialog
+    // inside methods: { ... }
     handleRedeemCoupon(coupon) {
-      console.log('Redeeming coupon:', coupon);
+      if (!coupon || coupon.redeemed_by_user) return;
+      // navigate to the redeem view as a full-screen, mobile-friendly page
+      this.$router.push({ name: 'CouponRedeemPopup', params: { id: coupon.id } });
+    },
+
+    // ✅ close dialog
+    closeRedeem() {
+      this.selectedCoupon = null;
+      this.showRedeemDialog = false;
+    },
+
+    // ✅ confirm → POST redemption, lock coupon, optional details open
+    async confirmRedeem(coupon) {
+      try {
+        const res = await fetch(`/api/v1/coupons/${coupon.id}/redeem`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => '');
+          if (res.status === 409) {
+            alert('You have already redeemed this coupon.');
+            this._markRedeemed(coupon.id, true);
+            return this.closeRedeem();
+          }
+          throw new Error(text || `Redeem failed (status ${res.status})`);
+        }
+
+        const payload = await res.json().catch(() => ({}));
+        this._markRedeemed(coupon.id, true, payload.redeemed_at);
+
+        // Was: catch (_) {}
+        try {
+          window.open(`/coupon-details/${coupon.id}`, '_blank');
+        } catch (e) {
+          // Popup blocked or window.open not available; user can click through manually
+          // console.debug('window.open failed:', e);
+        }
+      } catch (e) {
+        alert(e.message || 'Failed to redeem. Please try again.');
+      } finally {
+        this.closeRedeem();
+      }
+    },
+
+    // helper: update one coupon in local state
+    _markRedeemed(couponId, isRedeemed = true, redeemedAt = new Date().toISOString()) {
+      const idx = this.coupons.findIndex(c => String(c.id) === String(couponId));
+      if (idx !== -1) {
+        // Vue 2 friendly mutations
+        this.$set(this.coupons[idx], 'redeemed_by_user', isRedeemed);
+        this.$set(this.coupons[idx], 'redeemed_at', redeemedAt);
+      }
     }
   },
   computed: {
@@ -154,48 +204,99 @@ export default {
 
 <style scoped>
 .group-banner {
-  width: 100%; height: 300px;
+  width: 100%;
+  height: 300px;
   background-size: cover;
   background-position: center;
   position: relative;
 }
+
 .banner-overlay {
-  position: absolute; top:0; left:0;
-  width:100%; height:100%;
-  background: rgba(0,0,0,0.55);
-  display: flex; align-items:center; justify-content:center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.banner-content { text-align:center; color:#fff; }
-.banner-content h1 { font-size:2.5rem; margin-bottom:0.5rem; }
-.banner-content p    { font-size:1.25rem; margin-bottom:1rem; }
+
+.banner-content {
+  text-align: center;
+  color: #fff;
+}
+
+.banner-content h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.banner-content p {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+
 .social-links a {
-  margin:0 .5rem; padding:.5rem 1rem;
-  background:#007bff; color:#fff;
-  border-radius:4px; text-decoration:none;
-  transition:background .3s;
+  margin: 0 .5rem;
+  padding: .5rem 1rem;
+  background: #007bff;
+  color: #fff;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background .3s;
 }
-.social-links a:hover { background:#0056b3; }
 
-.container { max-width:1200px; margin:2rem auto; padding:0 2rem; }
+.social-links a:hover {
+  background: #0056b3;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+}
+
 .section-card {
-  background:#fff; padding:1.5rem; border-radius:8px;
-  box-shadow:0 2px 4px rgba(0,0,0,0.1); margin-bottom:2rem;
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
 }
-.purchase-banner {
-  background:#f8f8f8; padding:1rem; text-align:center;
-  border:1px solid #ddd; border-radius:8px; margin-bottom:1rem;
-}
-.purchase-btn {
-  margin-top:.5rem;
-  background:#007bff; color:#fff; border:none;
-  padding:.75rem 1.5rem; border-radius:4px;
-  cursor:pointer; transition:background .3s;
-}
-.purchase-btn:hover { background:#0056b3; }
 
-.error { color:red; margin-bottom:1rem; }
+.purchase-banner {
+  background: #f8f8f8;
+  padding: 1rem;
+  text-align: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.purchase-btn {
+  margin-top: .5rem;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: .75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background .3s;
+}
+
+.purchase-btn:hover {
+  background: #0056b3;
+}
+
+.error {
+  color: red;
+  margin-bottom: 1rem;
+}
 
 .map-section iframe {
-  border:none; border-radius:8px;
+  border: none;
+  border-radius: 8px;
 }
 </style>

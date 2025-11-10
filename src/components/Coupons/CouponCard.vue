@@ -22,9 +22,13 @@
     <button
       class="action-btn"
       :class="{ locked: isLocked && !hasPurchasedCouponBook }"
+      :disabled="coupon.redeemed_by_user"
       @click="handleClick"
     >
-      <template v-if="isLocked && !hasPurchasedCouponBook">
+      <template v-if="coupon.redeemed_by_user">
+        ✅ Redeemed
+      </template>
+      <template v-else-if="isLocked && !hasPurchasedCouponBook">
         🔒 Join {{ coupon.foodie_group_name }} Coupon Book
       </template>
       <template v-else>

@@ -31,6 +31,11 @@ const routes = [
     component: EventPage
   },
   {
+    path: '/coupon/redeem/:id',
+    name: 'CouponRedeemPopup',
+    component: () => import('@/components/Coupons/CouponRedeemPopup.vue')
+  },
+  {
     path: '/foodie-group/:id',
     name: 'FoodieGroupView',
     component: FoodieGroupView,
@@ -70,7 +75,7 @@ const routes = [
     path: '/submissions',
     name: 'CouponSubmissions',
     component: CouponSubmissions
-  }
+  },
 ]
 
 const router = createRouter({
