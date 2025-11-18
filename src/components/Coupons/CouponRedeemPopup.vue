@@ -44,6 +44,9 @@
 </template>
 
 <script>
+// Optional import; we also fall back to window.userManager
+import { userManager as svcUserManager } from "@/services/authService.js";
+
 export default {
   name: 'CouponRedeemPopup',
   data() {
@@ -55,7 +58,6 @@ export default {
       redeemedAt: null,
       submitting: false,
       blockPrintStyleEl: null,
-      // renamed to avoid vue/no-reserved-keys
       origPrint: null,
     };
   },
@@ -63,7 +65,6 @@ export default {
     couponId() {
       return this.$route.params.id;
     },
-    // Normalize API shape (snake_case or camelCase)
     couponDescription() {
       return this.coupon?.description ?? this.coupon?.desc ?? '';
     },
@@ -97,153 +98,196 @@ export default {
   },
 
   methods: {
-    /**
-     * Robust ID token getter:
-     * - localStorage('oidc.user') -> .id_token (oidc-client-ts default)
-     * - localStorage('idToken')
-     * - window.auth.getIdToken() (may be sync or Promise)
-     * - window.oidcUser.id_token
-     */
-    async getIdToken() {
-      try {
-        // 1) oidc-client-ts default storage (stringified user with id_token)
-        const oidcUserRaw = localStorage.getItem('oidc.user');
-        if (oidcUserRaw) {
-          try {
-            const parsed = JSON.parse(oidcUserRaw);
-            if (parsed?.id_token) return parsed.id_token;
-          } catch (_) {
-            console.error('Error parsing oidc.user', _);
-          }
-        }
-
-        // 2) simple custom key
-        const fromLocal = localStorage.getItem('idToken');
-        if (fromLocal) return fromLocal;
-
-        // 3) window.auth.getIdToken() may return a Promse or string
-        if (window?.auth?.getIdToken) {
-          const t = window.auth.getIdToken();
-          if (typeof t === 'string') return t;
-          if (t && typeof t.then === 'function') {
-            const resolved = await t;
-            if (resolved) return resolved;
-          }
-        }
-
-        // 4) window.oidcUser.id_token
-        if (window?.oidcUser?.id_token) return window.oidcUser.id_token;
-
-        return null;
-      } catch (err) {
-        console.error('Error getting ID token', err);
-        return null;
-      }
+    // ---- TOKEN HELPERS ------------------------------------------------------
+    manager() {
+      return svcUserManager || window.userManager || null;
     },
 
-    async confirmRedeem() {
-      if (this.submitting) return;
-      this.error = null;
-      this.submitting = true;
-
-      // 🔐 Require token before making the call
-      const idToken = await this.getIdToken();
-      if (!idToken) {
-        this.error = 'Please sign in to redeem this coupon.';
-        this.submitting = false;
-        return;
-      }
-
+    async getAccessToken() {
+      // 1) UserManager (preferred)
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-        const res = await fetch(`/api/v1/coupons/${this.couponId}/redeem`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          },
-          credentials: 'include',
-          body: JSON.stringify({}),
-          signal: controller.signal
-        }).catch((e) => {
-          throw new Error(
-            e?.name === 'AbortError'
-              ? 'Request timed out. Please try again.'
-              : 'Network error. Check your connection or CORS settings.'
-          );
-        });
-
-        clearTimeout(timeoutId);
-
-        // Handle common auth & duplication cases up front
-        if (res.status === 401) {
-          this.error = 'Please sign in to redeem this coupon.';
-          return;
-        }
-
-        // If server uses 409 for already redeemed
-        if (res.status === 409) {
-          const j = await res.json().catch(() => ({}));
-          this.redeemed = true;
-          this.redeemedAt = j.redeemed_at || j.redeemedAt || new Date().toISOString();
-          this.uninstallPrintBlocker();
-          try {
-            window.opener && window.opener.postMessage({ type: 'coupon-redeemed', couponId: this.couponId }, '*');
-          } catch (_) {
-            console.error('Error posting message', _);
+        const um = this.manager();
+        if (um?.getUser) {
+          let u = await um.getUser();
+          if (!u && um.signinSilent) {
+            try { u = await um.signinSilent(); }
+            catch (e) { void e; } // <- no-empty fix
           }
-          return;
-        }
-
-        // Standard success path (201 created) OR 200 with alreadyRedeemed flag
-        const payload = await res.json().catch(() => ({}));
-
-        if (!res.ok) {
-          const text = typeof payload === 'string' ? payload : (payload?.error || '');
-          throw new Error(text || `Redeem failed (status ${res.status}).`);
-        }
-
-        if (payload?.alreadyRedeemed) {
-          // Server returns 200 { alreadyRedeemed: true }
-          this.redeemed = true;
-          this.redeemedAt = payload.redeemed_at || payload.redeemedAt || new Date().toISOString();
-          this.uninstallPrintBlocker();
-          try {
-            window.opener && window.opener.postMessage({ type: 'coupon-redeemed', couponId: this.couponId }, '*');
-          } catch (_) {
-            console.error('Error posting message', _);
-          }
-          return;
-        }
-
-        // Fresh redemption success
-        this.redeemed = true;
-        this.redeemedAt = payload.redeemed_at || payload.redeemedAt || new Date().toISOString();
-
-        // If backend starts issuing secure download tokens
-        if (payload.download_token && this.pdfUrl) {
-          const u = new URL(this.pdfUrl, window.location.origin);
-          u.searchParams.set('token', payload.download_token);
-          this.coupon = { ...this.coupon, pdfUrl: u.toString(), pdf_url: u.toString() };
-        }
-
-        this.uninstallPrintBlocker();
-
-        try {
-          window.opener && window.opener.postMessage({ type: 'coupon-redeemed', couponId: this.couponId }, '*');
-        } catch (_) {
-          console.error('Error posting message', _);
+          if (u?.access_token) return u.access_token;
         }
       } catch (e) {
-        this.error = e?.message || 'Failed to redeem. Please try again.';
-        alert(this.error);
-      } finally {
-        this.submitting = false;
+        console.error('[redeem] userManager access_token lookup failed', e);
       }
+
+      // 2) Persisted access token
+      try {
+        const fromLocal = localStorage.getItem('accessToken');
+        if (fromLocal) return fromLocal;
+      } catch (e) { void e; } // <- no-empty fix
+
+      // 3) Scan OIDC storages
+      const scan = (storage) => {
+        try {
+          for (let i = 0; i < storage.length; i++) {
+            const k = storage.key(i);
+            if (k && k.startsWith('oidc.user:')) {
+              const raw = storage.getItem(k);
+              if (!raw) continue;
+              const obj = JSON.parse(raw);
+              if (obj?.access_token) return obj.access_token;
+            }
+          }
+        } catch (e) { void e; } // <- no-empty fix
+        return null;
+      };
+      const fromSession = scan(window.sessionStorage || {});
+      if (fromSession) return fromSession;
+      const fromLocalOidc = scan(window.localStorage || {});
+      if (fromLocalOidc) return fromLocalOidc;
+
+      return null;
     },
 
+    async getIdTokenFallback() {
+      // Only used if access token is missing
+      try {
+        const um = this.manager();
+        if (um?.getUser) {
+          const u = await um.getUser();
+          if (u?.id_token) return u.id_token;
+        }
+      } catch (e) { void e; } // <- no-empty fix
+
+      try {
+        const fromLocal = localStorage.getItem('idToken');
+        if (fromLocal) return fromLocal;
+      } catch (e) { void e; } // <- no-empty fix
+
+      const scan = (storage) => {
+        try {
+          for (let i = 0; i < storage.length; i++) {
+            const k = storage.key(i);
+            if (k && k.startsWith('oidc.user:')) {
+              const raw = storage.getItem(k);
+              const obj = raw && JSON.parse(raw);
+              if (obj?.id_token) return obj.id_token;
+            }
+          }
+        } catch (e) { void e; } // <- no-empty fix
+        return null;
+      };
+      const fromSession = scan(window.sessionStorage || {});
+      if (fromSession) return fromSession;
+      const fromLocalOidc = scan(window.localStorage || {});
+      if (fromLocalOidc) return fromLocalOidc;
+
+      return null;
+    },
+
+    // ---- ACTIONS ------------------------------------------------------------
+    async confirmRedeem() {
+  if (this.submitting) return;
+  this.error = null;
+  this.submitting = true;
+
+  // Prefer ACCESS token (what your middleware expects), then fallback to ID token
+  const accessToken = await this.getAccessToken();
+  const token = accessToken || await this.getIdTokenFallback();
+
+  if (!token) {
+    this.error = 'Please sign in to redeem this coupon.';
+    this.submitting = false;
+    return;
+  }
+
+  // 🔍 Debug: show token_use/aud/client_id locally (no lint errors)
+  try {
+    const mid = token.split('.')[1] || '';
+    const payload = mid ? JSON.parse(atob(mid)) : null;
+    console.debug('[redeem] sending token', {
+      present: true,
+      token_use: payload && payload.token_use,
+      aud: payload && payload.aud,
+      client_id: payload && payload.client_id,
+      iss: payload && payload.iss
+    });
+  } catch (e) { void e; }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const res = await fetch(`/api/v1/coupons/${this.couponId}/redeem`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      // credentials not required for same-origin bearer; harmless if left
+      body: JSON.stringify({}),
+      signal: controller.signal
+    }).catch((e) => {
+      throw new Error(
+        e?.name === 'AbortError'
+          ? 'Request timed out. Please try again.'
+          : 'Network error. Check your connection or CORS settings.'
+      );
+    });
+
+    clearTimeout(timeoutId);
+
+    if (res.status === 401) {
+      this.error = 'Please sign in to redeem this coupon.';
+      return;
+    }
+
+    if (res.status === 409) {
+      const j = await res.json().catch(() => ({}));
+      this.redeemed = true;
+      this.redeemedAt = j.redeemed_at || j.redeemedAt || new Date().toISOString();
+      this.uninstallPrintBlocker();
+      try { window.opener && window.opener.postMessage({ type: 'coupon-redeemed', couponId: this.couponId }, '*'); }
+      catch (e) { void e; }
+      return;
+    }
+
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const text = typeof payload === 'string' ? payload : (payload?.error || '');
+      throw new Error(text || `Redeem failed (status ${res.status}).`);
+    }
+
+    if (payload?.alreadyRedeemed) {
+      this.redeemed = true;
+      this.redeemedAt = payload.redeemed_at || payload.redeemedAt || new Date().toISOString();
+      this.uninstallPrintBlocker();
+      try { window.opener && window.opener.postMessage({ type: 'coupon-redeemed', couponId: this.couponId }, '*'); }
+      catch (e) { void e; }
+      return;
+    }
+
+    this.redeemed = true;
+    this.redeemedAt = payload.redeemed_at || payload.redeemedAt || new Date().toISOString();
+
+    if (payload.download_token && this.pdfUrl) {
+      const u = new URL(this.pdfUrl, window.location.origin);
+      u.searchParams.set('token', payload.download_token);
+      this.coupon = { ...this.coupon, pdfUrl: u.toString(), pdf_url: u.toString() };
+    }
+
+    this.uninstallPrintBlocker();
+    try { window.opener && window.opener.postMessage({ type: 'coupon-redeemed', couponId: this.couponId }, '*'); }
+    catch (e) { void e; }
+  } catch (e) {
+    this.error = e?.message || 'Failed to redeem. Please try again.';
+    alert(this.error);
+  } finally {
+    this.submitting = false;
+  }
+}
+,
+
+    // ---- PRINT GUARDS -------------------------------------------------------
     installPrintBlocker() {
       const css = `@media print { body { display: none !important; } }`;
       const el = document.createElement('style');
@@ -283,13 +327,8 @@ export default {
       }
     },
 
-    printCoupon() {
-      window.print();
-    },
-
-    windowClose() {
-      window.close();
-    },
+    printCoupon() { window.print(); },
+    windowClose() { window.close(); },
 
     cleanup() {
       window.removeEventListener('keydown', this.preventPrintHotkeys, true);
@@ -297,100 +336,28 @@ export default {
     },
 
     fmtDate(iso) {
-      try {
-        return new Date(iso).toLocaleString();
-      } catch {
-        return iso;
-      }
+      try { return new Date(iso).toLocaleString(); }
+      catch (e) { void e; return iso; } // <- no-empty fix
     }
   }
 };
 </script>
 
 <style scoped>
-.popup-wrap {
-  padding: 16px;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-}
-
-.popup-header {
-  margin-bottom: 12px;
-}
-
-.state {
-  padding: 12px;
-}
-
-.state.error {
-  color: #b00020;
-}
-
-.confirm .actions,
-.redeemed .actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.btn {
-  padding: 8px 14px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn.primary {
-  background: #007bff;
-  color: #fff;
-}
-
-.btn.ghost {
-  background: transparent;
-  border: 1px solid #ccc;
-}
-
-.success {
-  margin: 8px 0 12px;
-}
-
-.qr {
-  display: block;
-  width: 180px;
-  height: 180px;
-  object-fit: contain;
-  margin: 8px 0;
-}
-
-.note {
-  color: #555;
-  font-size: .9rem;
-  margin-top: 8px;
-}
-
-.page {
-  min-height: 100vh;
-  display: grid;
-  align-content: start;
-  padding: 16px;
-}
-
-.dialog {
-  width: 100%;
-  max-width: 520px;
-  margin: 24px auto;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
-  padding: 16px;
-}
-
+.popup-wrap { padding: 16px; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+.popup-header { margin-bottom: 12px; }
+.state { padding: 12px; }
+.state.error { color: #b00020; }
+.confirm .actions, .redeemed .actions { display: flex; gap: 8px; margin-top: 12px; }
+.btn { padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; }
+.btn.primary { background: #007bff; color: #fff; }
+.btn.ghost { background: transparent; border: 1px solid #ccc; }
+.success { margin: 8px 0 12px; }
+.qr { display: block; width: 180px; height: 180px; object-fit: contain; margin: 8px 0; }
+.note { color: #555; font-size: .9rem; margin-top: 8px; }
+.page { min-height: 100vh; display: grid; align-content: start; padding: 16px; }
+.dialog { width: 100%; max-width: 520px; margin: 24px auto; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, .12); padding: 16px; }
 @media (max-width: 768px) {
-  .dialog {
-    max-width: none;
-    margin: 0;
-    border-radius: 0;
-    min-height: 100vh;
-    box-shadow: none;
-  }
+  .dialog { max-width: none; margin: 0; border-radius: 0; min-height: 100vh; box-shadow: none; }
 }
 </style>

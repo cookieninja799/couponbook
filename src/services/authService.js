@@ -1,48 +1,98 @@
-// src/services/authService.js
-import { UserManager } from 'oidc-client-ts';
+import { UserManager, WebStorageStateStore } from "oidc-client-ts";
 
-// Dynamically build URIs based on current origin
 const origin = window.location.origin;
 const redirectUri = `${origin}/callback`;
 const logoutUri = origin;
 
 const cognitoAuthConfig = {
-  authority: 'https://cognito-idp.us-east-1.amazonaws.com/us-east-1_O1hbHZsSq',
-  client_id: '71mh713mljkcg4jftbcj85e24f',
+  authority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_O1hbHZsSq",
+  client_id: "71mh713mljkcg4jftbcj85e24f",
   redirect_uri: redirectUri,
   post_logout_redirect_uri: logoutUri,
-  response_type: 'code',
-  scope: 'openid email phone'
+  response_type: "code",
+  scope: "openid email phone", // keep same scope
+  userStore: new WebStorageStateStore({ store: window.localStorage }),
 };
 
 export const userManager = new UserManager(cognitoAuthConfig);
 
+// make globally available
+if (typeof window !== "undefined") {
+  window.userManager = userManager;
+}
+
 export async function signIn() {
   try {
+    console.log("🔑 Redirecting to Cognito Hosted UI…");
     await userManager.signinRedirect();
   } catch (e) {
-    console.error('Sign-in failed', e);
+    console.error("Sign-in failed", e);
   }
 }
 
-export function signOut() {
-  const cognitoDomain = 'https://us-east-1o1hbhzssq.auth.us-east-1.amazoncognito.com';
-  const clientId = cognitoAuthConfig.client_id;
-  // Redirect to Cognito logout endpoint with dynamic post-logout uri
-  window.location.href =
-    `${cognitoDomain}/logout?client_id=${clientId}` +
-    `&logout_uri=${encodeURIComponent(logoutUri)}`;
+export async function signOut() {
+  try {
+    const cognitoDomain =
+      "https://us-east-1o1hbhzssq.auth.us-east-1.amazoncognito.com";
+    const clientId = cognitoAuthConfig.client_id;
+    const logoutUrl =
+      `${cognitoDomain}/logout?client_id=${clientId}` +
+      `&logout_uri=${encodeURIComponent(logoutUri)}`;
+
+    await userManager.removeUser();
+    localStorage.removeItem("idToken");
+    localStorage.removeItem("accessToken");
+
+    console.log("🚪 Redirecting to Cognito logout…");
+    window.location.href = logoutUrl;
+  } catch (e) {
+    console.error("Sign-out error", e);
+  }
 }
 
-/*export function signOut() {
-  const cognitoDomain = 'https://us-east-1o1hbhzssq.auth.us-east-1.amazoncognito.com'; // Verify this domain
-  const clientId = cognitoAuthConfig.client_id; // Make sure cognitoAuthConfig is accessible here
-  const origin = window.location.origin; // Use origin for the logout URI
-  const logoutUri = origin;
+// ---------------- Utilities ----------------
+export async function getCurrentUser() {
+  try {
+    const user = await userManager.getUser();
+    if (user && !user.expired) return user;
+    if (userManager.signinSilent) {
+      const renewed = await userManager.signinSilent();
+      return renewed;
+    }
+  } catch (e) {
+    console.warn("getCurrentUser() failed", e);
+  }
+  return null;
+}
 
-  // Ensure the correct parameter name is used (logout_uri or post_logout_redirect_uri)
-  // Cognito documentation typically specifies 'logout_uri' for this manual endpoint call.
-  window.location.href =
-    `${cognitoDomain}/logout?client_id=${clientId}` +
-    `&logout_uri=${encodeURIComponent(logoutUri)}`;
-}*/
+// Use the ACCESS token for API calls
+export async function getAccessToken() {
+  const user = await getCurrentUser();
+  if (user?.access_token) return user.access_token;
+
+  const localToken = localStorage.getItem("accessToken");
+  if (localToken) return localToken;
+
+  return "";
+}
+
+// still available if you need id_token for profile displays
+export async function getIdToken() {
+  const user = await getCurrentUser();
+  if (user?.id_token) return user.id_token;
+  const localToken = localStorage.getItem("idToken");
+  if (localToken) return localToken;
+  return "";
+}
+
+export async function handleSignInCallback() {
+  try {
+    const user = await userManager.signinRedirectCallback();
+    if (user?.id_token) localStorage.setItem("idToken", user.id_token);
+    if (user?.access_token) localStorage.setItem("accessToken", user.access_token);
+    return user;
+  } catch (e) {
+    console.error("Callback handling failed", e);
+    throw e;
+  }
+}
