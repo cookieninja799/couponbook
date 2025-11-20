@@ -1,28 +1,27 @@
 <template>
   <div class="coupon-card">
     <h3 class="coupon-title">{{ coupon.title }}</h3>
-    
+
     <div class="merchant-info" v-if="coupon.merchant_name">
-      <!-- unchanged merchant logo markup -->
-      <img 
-        :src="coupon.merchant_logo || '/logo.png'" 
-        :alt="`Logo for ${coupon.merchant_name}`" 
+      <img
+        :src="coupon.merchant_logo || '/logo.png'"
+        :alt="`Logo for ${coupon.merchant_name}`"
         class="merchant-logo"
       />
       <span class="merchant-name">{{ coupon.merchant_name }}</span>
     </div>
-    
+
     <p class="coupon-description">{{ coupon.description }}</p>
-    
+
     <div class="validity" v-if="coupon.valid_from && coupon.expires_at">
-      <small>Valid from: {{ formatDate(coupon.valid_from) }}</small><br>
+      <small>Valid from: {{ formatDate(coupon.valid_from) }}</small><br />
       <small>Expires: {{ formatDate(coupon.expires_at) }}</small>
     </div>
-    
+
     <button
       class="action-btn"
       :class="{ locked: isLocked && !hasPurchasedCouponBook }"
-      :disabled="coupon.redeemed_by_user"
+      :disabled="isDisabled"
       @click="handleClick"
     >
       <template v-if="coupon.redeemed_by_user">
@@ -30,6 +29,9 @@
       </template>
       <template v-else-if="isLocked && !hasPurchasedCouponBook">
         🔒 Join {{ coupon.foodie_group_name }} Coupon Book
+      </template>
+      <template v-else-if="!isAuthenticated">
+        Sign in to redeem
       </template>
       <template v-else>
         Redeem
@@ -39,14 +41,21 @@
 </template>
 
 <script>
+import { signIn } from '@/services/authService';
+
 export default {
-  name: "CouponCard",
+  name: 'CouponCard',
   props: {
     coupon: {
       type: Object,
       required: true
     },
     hasPurchasedCouponBook: {
+      type: Boolean,
+      default: false
+    },
+    // 🔐 whether current user is logged in
+    isAuthenticated: {
       type: Boolean,
       default: false
     }
@@ -58,19 +67,39 @@ export default {
         this.coupon.foodie_group_name !== 'Vivaspot Community' &&
         this.coupon.locked
       );
+    },
+
+    // Only disable if already redeemed
+    isDisabled() {
+      return !!this.coupon.redeemed_by_user;
     }
   },
   methods: {
     formatDate(dateStr) {
       return new Date(dateStr).toLocaleDateString();
     },
+
     handleClick() {
+      // 🔒 Locked & not purchased: send them to the group page
       if (this.isLocked && !this.hasPurchasedCouponBook) {
         this.redirectToGroup();
-      } else {
-        this.$emit('redeem', this.coupon);
+        return;
       }
+
+      // 🔐 Not logged in, unlocked coupon → go to Cognito Hosted UI
+      if (!this.isAuthenticated && !this.isLocked) {
+        try {
+          signIn(); // from authService.js → UserManager.signinRedirect()
+        } catch (e) {
+          console.error('Sign-in redirect failed', e);
+        }
+        return;
+      }
+
+      // ✅ Logged-in + has access → emit redeem
+      this.$emit('redeem', this.coupon);
     },
+
     redirectToGroup() {
       const groupId = this.coupon.foodie_group_id;
       if (groupId) {
@@ -85,6 +114,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .coupon-card {
@@ -137,7 +167,7 @@ export default {
   font-size: 1rem;
   cursor: pointer;
   min-height: 48px;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, opacity 0.2s ease;
 }
 
 /* unlocked state */
@@ -145,7 +175,7 @@ export default {
   background: #28a745;
   color: #fff;
 }
-.action-btn:not(.locked):hover {
+.action-btn:not(.locked):hover:not(:disabled) {
   background: #218838;
 }
 
@@ -154,7 +184,22 @@ export default {
   background: #007bff;
   color: #fff;
 }
-.action-btn.locked:hover {
+.action-btn.locked:hover:not(:disabled) {
   background: #0056b3;
+}
+
+/* disabled visual */
+.action-btn:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+/* 📱 mobile tweak: let cards grow full-width on narrow screens */
+@media (max-width: 480px) {
+  .coupon-card {
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+  }
 }
 </style>

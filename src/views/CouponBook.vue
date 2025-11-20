@@ -64,11 +64,12 @@
         <p v-else-if="error" class="error">⚠️ {{ error }}</p>
 
         <!-- Coupon List -->
-        <CouponList 
+        <CouponList
           v-else
-          :coupons="filteredCoupons" 
+          :coupons="filteredCoupons"
           :hasPurchasedCouponBook="hasPurchasedCouponBook"
-          @redeem="handleRedeem" 
+          :isAuthenticated="isAuthenticated"
+          @redeem="handleRedeem"
         />
       </div>
     </div>
@@ -78,7 +79,7 @@
 <script>
 import CouponList from '@/components/Coupons/CouponList.vue';
 import SidebarFilters from '@/components/Coupons/SidebarFilters.vue';
-//import samplecoupons from '@/data/samplecoupons.js';
+import { mapGetters } from 'vuex';
 
 export default {
   name: "CouponBookView",
@@ -119,8 +120,12 @@ export default {
     },
 
     handleRedeem(coupon) {
+      if (!this.isAuthenticated) {
+        alert('Please sign in to redeem coupons.');
+        return;
+      }
       console.log("Redeeming coupon:", coupon);
-      // Redemption logic here.
+      // You can route to FoodieGroup or open a popup here if you want
     },
 
     updateFilters(newFilters) {
@@ -135,7 +140,10 @@ export default {
       }
     }
   },
+
   computed: {
+    ...mapGetters('auth', ['isAuthenticated']),
+
     filteredCoupons() {
       let filtered = this.coupons;
 
@@ -164,7 +172,6 @@ export default {
       }
       if (this.filters.foodieGroup) {
         filtered = filtered.filter(c =>
-          // match the selected group ID
           c.foodie_group_id === this.filters.foodieGroup
         );
       }

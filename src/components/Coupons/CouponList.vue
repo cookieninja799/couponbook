@@ -7,6 +7,7 @@
         :key="coupon.id" 
         :coupon="coupon" 
         :hasPurchasedCouponBook="hasPurchasedCouponBook"
+        :isAuthenticated="isAuthenticated"
         @redeem="handleRedeem"
         @purchase-coupon-book="$emit('purchase-coupon-book', $event)"
       />
@@ -26,6 +27,11 @@ export default {
       default: () => []
     },
     hasPurchasedCouponBook: {
+      type: Boolean,
+      default: false
+    },
+    // 🔐 new prop
+    isAuthenticated: {
       type: Boolean,
       default: false
     }
