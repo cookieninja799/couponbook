@@ -4,10 +4,20 @@ import jwt from 'jsonwebtoken';
 import jwkToPem from 'jwk-to-pem';
 import axios from 'axios';
 
-const region = process.env.AWS_REGION;
-const userPoolId = process.env.COGNITO_USER_POOL_ID;
+
 const clientId = process.env.COGNITO_CLIENT_ID; // ✅ add this
-const issuer = `https://cognito-idp.${region}.amazonaws.com/${userPoolId}`;
+// Normalize region to avoid hidden Unicode or whitespace issues
+const rawRegion  = process.env.AWS_REGION || 'us-east-1';
+// remove leading/trailing spaces and normalize common unicode dashes to '-'
+const region     = rawRegion
+  .trim()
+  .replace(/[\u2010-\u2015]/g, '-'); // hyphen-like unicode chars
+
+const userPoolId = (process.env.COGNITO_USER_POOL_ID || '').trim();
+const issuer     = `https://cognito-idp.${region}.amazonaws.com/${userPoolId}`;
+
+console.log('🔧 auth config', { region, userPoolId, issuer });
+
 
 let pems = null; // cached after first call
 async function getPems() {
