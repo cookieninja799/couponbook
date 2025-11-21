@@ -139,49 +139,44 @@ router.post('/login', async (req, res) => {
   }
 });
 
-/**
- * POST /api/v1/users/sync
- * Use after hosted-UI callback: verifies the Cognito ID token (Bearer)
- * and UPSERTS the user into Postgres by cognitoSub.
- *
- * Headers:
- *   Authorization: Bearer <Cognito ID token>
- */
+// POST /api/v1/users/sync
+// Verifies the Cognito token and UPSERTS the user into Postgres.
 router.post('/sync', async (req, res) => {
   console.log('📦  POST /api/v1/users/sync hit');
   try {
-    const auth = req.headers.authorization || '';
-    const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
     if (!token) {
       console.log('📦  sync missing Bearer token (401)');
       return res.status(401).json({ error: 'Missing token' });
     }
 
-    // 1) Decode unverified to learn issuer (iss) and kid
+    // ---- 1) Decode (unverified) to extract ISS + kid ----
     const decodedUnverified = jwt.decode(token, { complete: true });
     const iss = decodedUnverified?.payload?.iss;
     const kid = decodedUnverified?.header?.kid;
+
     if (!iss || !kid) {
       console.log('📦  invalid token structure (no iss/kid)');
       return res.status(400).json({ error: 'Malformed token' });
     }
-    // Guard: ensure the issuer matches our pool (prevents cross-pool tokens)
+
     if (iss !== EXPECTED_ISSUER) {
       console.warn(`📦  issuer mismatch. expected=${EXPECTED_ISSUER} got=${iss}`);
       return res.status(401).json({ error: 'Invalid token issuer' });
     }
+
     console.log(`📦  token issuer: ${iss} (kid=${kid})`);
 
-    // 2) Build a JWKS client for this issuer dynamically
+    // ---- 2) Verify signature via JWKS ----
     const jwksClient = makeJwksClient(iss);
-    const getKey = (header, cb) => {
+    const getKey = (header, cb) =>
       jwksClient.getSigningKey(header.kid, (err, key) => {
         if (err) return cb(err);
         cb(null, key.getPublicKey());
       });
-    };
 
-    // 3) Verify signature + issuer + audience
     const decoded = await new Promise((resolve, reject) =>
       jwt.verify(
         token,
@@ -189,46 +184,102 @@ router.post('/sync', async (req, res) => {
         {
           algorithms: ['RS256'],
           issuer: iss,
-          audience: process.env.COGNITO_CLIENT_ID, // must match your App Client ID
+          audience: process.env.COGNITO_CLIENT_ID,
         },
-        (e, d) => (e ? reject(e) : resolve(d))
+        (err, payload) => (err ? reject(err) : resolve(payload))
       )
-    )
+    );
+
     const sub = decoded.sub;
     const email = decoded.email || decoded['cognito:username'] || '';
-    const preferred = decoded.name
-    || [decoded.given_name, decoded.family_name].filter(Boolean).join(' ').trim()
-    || decoded.preferred_username
-    || '';
-    const name = preferred || (email ? email.split('@')[0] : 'user');
+    const preferredName =
+      decoded.name ||
+      [decoded.given_name, decoded.family_name].filter(Boolean).join(' ').trim() ||
+      decoded.preferred_username ||
+      '';
+    const name = preferredName || (email ? email.split('@')[0] : 'user');
 
     console.log(`📦  token ok → sub=${sub} email=${email} aud=${decoded.aud}`);
 
-    const existing = await db.select().from(user).where(eq(user.cognitoSub, sub)).limit(1);
-    let row = existing[0];
+    // ---- 3) Try lookup by cognitoSub (canonical) ----
+    const existingBySub = await db
+      .select()
+      .from(user)
+      .where(eq(user.cognitoSub, sub))
+      .limit(1);
+
+    let row = existingBySub[0];
 
     if (!row) {
-      console.log('📦  no user row found; inserting…');
-      [row] = await db
-        .insert(user)
-        .values({ cognitoSub: sub, email, name, role: 'customer' })
-        .returning();
-      console.log(`📦  inserted user id=${row.id}`);
+      console.log('📦  no user row found by cognitoSub; checking by email…');
+
+      // ---- 3b) Try lookup by email (fallback) ----
+      let existingByEmail = [];
+      if (email) {
+        existingByEmail = await db
+          .select()
+          .from(user)
+          .where(eq(user.email, email))
+          .limit(1);
+      }
+
+      if (existingByEmail[0]) {
+        // Reuse existing user row and update its cognitoSub
+        row = existingByEmail[0];
+
+        if (row.cognitoSub !== sub) {
+          console.log(
+            `📦  found existing user by email with different sub → updating cognitoSub (id=${row.id})`
+          );
+          [row] = await db
+            .update(user)
+            .set({ cognitoSub: sub })
+            .where(eq(user.id, row.id))
+            .returning();
+        } else {
+          console.log(`📦  found existing user by email (same sub) id=${row.id}`);
+        }
+      } else {
+        // ---- 3c) Truly new user → safe to insert ----
+        console.log('📦  no user row for this sub or email; inserting new user…');
+        [row] = await db
+          .insert(user)
+          .values({
+            cognitoSub: sub,
+            email,
+            name,
+            role: 'customer',
+          })
+          .returning();
+        console.log(`📦  inserted new user id=${row.id}`);
+      }
     } else {
+      // ---- 4) User exists by sub → patch missing fields ----
       const patch = {};
       if (!row.email && email) patch.email = email;
       if (!row.name && name) patch.name = name;
 
-      if (Object.keys(patch).length) {
-        console.log(`📦  updating user id=${row.id} with patch=${JSON.stringify(patch)}`);
-        [row] = await db.update(user).set(patch).where(eq(user.id, row.id)).returning();
+      if (Object.keys(patch).length > 0) {
+        console.log(
+          `📦  updating user id=${row.id} with patch=${JSON.stringify(patch)}`
+        );
+        [row] = await db
+          .update(user)
+          .set(patch)
+          .where(eq(user.id, row.id))
+          .returning();
       } else {
         console.log(`📦  user id=${row.id} already up-to-date`);
       }
     }
 
+    // ---- 5) Return payload to frontend ----
     console.log('📦  returning sync payload');
-    return res.json({ id: row.id, email: row.email, cognito_sub: sub });
+    return res.json({
+      id: row.id,
+      email: row.email,
+      cognito_sub: sub,
+    });
   } catch (err) {
     console.error('📦  users/sync error', err);
     return res.status(400).json({ error: 'Invalid or expired token' });

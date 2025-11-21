@@ -1,8 +1,9 @@
 // server/src/routes/foodieGroup.js
 import express from 'express';
 import { db } from '../db.js';
-import { foodieGroup } from '../schema.js';
-import { eq } from 'drizzle-orm';
+import { foodieGroup, purchase, user } from '../schema.js';
+import { eq, and } from 'drizzle-orm';
+import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -104,6 +105,147 @@ router.delete('/:id', async (req, res, next) => {
     res.json({ message: 'Group deleted' });
   } catch (err) {
     console.error('📦  error in DELETE /groups/:id', err);
+    next(err);
+  }
+});
+
+// GET /api/v1/groups/:id/access
+// Returns { hasAccess: boolean } based on DB-backed purchases
+router.get('/:id/access', auth(), async (req, res, next) => {
+  const groupId = req.params.id;
+  console.log('📦  GET /api/v1/groups/:id/access', { groupId });
+
+  try {
+    const sub = req.user && req.user.sub;
+    if (!sub) {
+      console.warn('📦  /groups/:id/access called without Cognito sub');
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // 1) Look up local user row by Cognito sub
+    const [dbUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.cognitoSub, sub));
+
+    if (!dbUser) {
+      console.warn('📦  No local user row for sub', sub);
+      // For gating, we just say "no access" rather than 404
+      return res.json({ hasAccess: false });
+    }
+
+    // 2) Find purchases for this user + group with status 'paid'
+    const nowIso = new Date().toISOString();
+
+    const rows = await db
+      .select()
+      .from(purchase)
+      .where(
+        and(
+          eq(purchase.userId, dbUser.id),
+          eq(purchase.groupId, groupId),
+          eq(purchase.status, 'paid')
+        )
+      );
+
+    // 3) Enforce optional expiry: expiresAt must be null or > now
+    const hasAccess = rows.some((p) => {
+      if (!p.expiresAt) return true;
+      try {
+        return p.expiresAt > nowIso;
+      } catch {
+        return false;
+      }
+    });
+
+    console.log('📦  /groups/:id/access result', { groupId, userId: dbUser.id, hasAccess });
+
+    return res.json({ hasAccess });
+  } catch (err) {
+    console.error('📦  error in GET /groups/:id/access', err);
+    next(err);
+  }
+});
+
+// ─── POST /api/v1/groups/:id/test-purchase ────────────────────────────────
+// Dev-only endpoint: uses TESTCODE to mark the current user as having
+// "purchased" the coupon book for this Foodie Group.
+// Returns { hasAccess: boolean }
+router.post('/:id/test-purchase', auth(), async (req, res, next) => {
+  const groupId = req.params.id;
+  const rawCode = (req.body && req.body.code) || '';
+  const code = String(rawCode).trim().toUpperCase();
+
+  console.log('📦  POST /api/v1/groups/:id/test-purchase', { groupId, code });
+
+  try {
+    const sub = req.user && req.user.sub;
+    if (!sub) {
+      console.warn('📦  /groups/:id/test-purchase called without Cognito sub');
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // 0) Validate test code (you can move this to env later)
+    const VALID_CODE = 'TESTCODE';
+    if (code !== VALID_CODE) {
+      console.warn('📦  invalid test code used for /test-purchase', { code });
+      return res.status(400).json({ error: 'Invalid unlock code.' });
+    }
+
+    // 1) Look up local user row by Cognito sub
+    const [dbUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.cognitoSub, sub));
+
+    if (!dbUser) {
+      console.warn('📦  No local user row for sub', sub);
+      return res.status(403).json({ error: 'User not registered.' });
+    }
+
+    // 2) Check if they already have a paid purchase for this group
+    const existing = await db
+      .select()
+      .from(purchase)
+      .where(
+        and(
+          eq(purchase.userId, dbUser.id),
+          eq(purchase.groupId, groupId),
+          eq(purchase.status, 'paid')
+        )
+      );
+
+    const nowIso = new Date().toISOString();
+
+    if (existing.length === 0) {
+      // 3) Insert a dev/test purchase row
+      await db.insert(purchase).values({
+        userId: dbUser.id,
+        groupId,
+        stripeCheckoutId: `test-${groupId}-${dbUser.id}`, // unique-ish dev id
+        stripeSubscriptionId: null,
+        amountCents: 0,
+        currency: 'usd',
+        status: 'paid',
+        purchasedAt: nowIso,
+        expiresAt: null,
+        refundedAt: null
+      });
+      console.log('📦  created test purchase for user/group', {
+        userId: dbUser.id,
+        groupId
+      });
+    } else {
+      console.log('📦  test purchase already exists, skipping insert', {
+        userId: dbUser.id,
+        groupId
+      });
+    }
+
+    // 4) Respond with hasAccess = true
+    return res.json({ hasAccess: true });
+  } catch (err) {
+    console.error('📦  error in POST /groups/:id/test-purchase', err);
     next(err);
   }
 });

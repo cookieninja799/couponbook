@@ -3,11 +3,7 @@
     <h3 class="coupon-title">{{ coupon.title }}</h3>
 
     <div class="merchant-info" v-if="coupon.merchant_name">
-      <img
-        :src="coupon.merchant_logo || '/logo.png'"
-        :alt="`Logo for ${coupon.merchant_name}`"
-        class="merchant-logo"
-      />
+      <img :src="coupon.merchant_logo || '/logo.png'" :alt="`Logo for ${coupon.merchant_name}`" class="merchant-logo" />
       <span class="merchant-name">{{ coupon.merchant_name }}</span>
     </div>
 
@@ -18,25 +14,29 @@
       <small>Expires: {{ formatDate(coupon.expires_at) }}</small>
     </div>
 
-    <button
-      class="action-btn"
-      :class="{ locked: isLocked && !hasPurchasedCouponBook }"
-      :disabled="isDisabled"
-      @click="handleClick"
-    >
+    <button class="action-btn" :class="buttonClass" :disabled="isDisabled" @click="handleClick">
+      <!-- 1) Already redeemed -->
       <template v-if="coupon.redeemed_by_user">
         ✅ Redeemed
       </template>
-      <template v-else-if="isLocked && !hasPurchasedCouponBook">
-        🔒 Join {{ coupon.foodie_group_name }} Coupon Book
-      </template>
+
+      <!-- 2) Not authenticated -->
       <template v-else-if="!isAuthenticated">
         Sign in to redeem
       </template>
+
+      <!-- 3) Locked + not purchased -->
+      <template v-else-if="isLocked && !hasPurchasedCouponBook">
+        🔒 Join {{ coupon.foodie_group_name }} Coupon Book
+      </template>
+
+      <!-- 4) Default: redeem -->
       <template v-else>
         Redeem
       </template>
     </button>
+
+
   </div>
 </template>
 
@@ -72,31 +72,46 @@ export default {
     // Only disable if already redeemed
     isDisabled() {
       return !!this.coupon.redeemed_by_user;
+    },
+
+    // 🔵🟢🧡 decide button color based on semantic state
+    buttonClass() {
+      if (this.coupon.redeemed_by_user) {
+        return 'btn-gray';
+      }
+      if (!this.isAuthenticated) {
+        return 'btn-tertiary'; // sign in = orange-ish
+      }
+      if (this.isLocked && !this.hasPurchasedCouponBook) {
+        return 'btn-primary'; // join = blue
+      }
+      return 'btn-secondary'; // redeem = green
     }
+
   },
+
   methods: {
     formatDate(dateStr) {
       return new Date(dateStr).toLocaleDateString();
     },
 
     handleClick() {
-      // 🔒 Locked & not purchased: send them to the group page
+      // Already redeemed (disabled anyway)
+      if (this.coupon.redeemed_by_user) return;
+
+      // 1️⃣ Not logged in → go to Cognito
+      if (!this.isAuthenticated) {
+        try { signIn(); } catch (e) { console.error(e); }
+        return;
+      }
+
+      // 2️⃣ Locked + no purchase → redirect to group
       if (this.isLocked && !this.hasPurchasedCouponBook) {
         this.redirectToGroup();
         return;
       }
 
-      // 🔐 Not logged in, unlocked coupon → go to Cognito Hosted UI
-      if (!this.isAuthenticated && !this.isLocked) {
-        try {
-          signIn(); // from authService.js → UserManager.signinRedirect()
-        } catch (e) {
-          console.error('Sign-in redirect failed', e);
-        }
-        return;
-      }
-
-      // ✅ Logged-in + has access → emit redeem
+      // 3️⃣ Otherwise → redeem
       this.$emit('redeem', this.coupon);
     },
 
@@ -130,7 +145,10 @@ export default {
   text-align: center;
 }
 
-.coupon-title { font-size: 1.3rem; color: #333; }
+.coupon-title {
+  font-size: 1.3rem;
+  color: #333;
+}
 
 .merchant-info {
   display: flex;
@@ -145,13 +163,18 @@ export default {
   object-fit: contain;
   border-radius: 50%;
   border: 2px solid #ddd;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   margin-bottom: 0.5rem;
 }
 
-.merchant-name { font-weight: bold; font-size: 0.9rem; }
+.merchant-name {
+  font-weight: bold;
+  font-size: 0.9rem;
+}
 
-.coupon-description { font-size: 1.1rem; }
+.coupon-description {
+  font-size: 1.1rem;
+}
 
 .validity {
   font-size: 0.8rem;
@@ -159,7 +182,6 @@ export default {
   margin: .5rem 0;
 }
 
-/* unified button style */
 .action-btn {
   border: none;
   padding: 0.6rem 1rem;
@@ -168,24 +190,45 @@ export default {
   cursor: pointer;
   min-height: 48px;
   transition: background 0.2s ease, opacity 0.2s ease;
-}
-
-/* unlocked state */
-.action-btn:not(.locked) {
-  background: #28a745;
+  width: 100%;
   color: #fff;
 }
-.action-btn:not(.locked):hover:not(:disabled) {
-  background: #218838;
+
+/* map semantic button classes → your global button palette */
+.btn-primary {
+  background-color: #007bff;
 }
 
-/* locked state */
-.action-btn.locked {
-  background: #007bff;
-  color: #fff;
+.btn-primary:hover:not(:disabled) {
+  background-color: #0056b3;
 }
-.action-btn.locked:hover:not(:disabled) {
-  background: #0056b3;
+
+.btn-secondary {
+  background-color: #28a745;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.btn-tertiary {
+  background-color: #dd6146;
+}
+
+.btn-tertiary:hover:not(:disabled) {
+  background-color: #be3f22;
+}
+
+/* redeemed = neutral gray */
+.btn-gray {
+  background-color: #6c757d;
+  cursor: default;
+}
+
+/* disabled visual */
+.action-btn:disabled {
+  opacity: 0.65;
+  cursor: default;
 }
 
 /* disabled visual */

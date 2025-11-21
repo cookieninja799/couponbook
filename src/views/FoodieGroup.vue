@@ -5,30 +5,15 @@
   </div>
   <div v-else>
     <!-- Dynamic Banner -->
-    <header
-      class="group-banner"
-      :style="{ backgroundImage: `url(${group.bannerImageUrl || '/default-banner.jpg'})` }"
-    >
+    <header class="group-banner" :style="{ backgroundImage: `url(${group.bannerImageUrl || '/default-banner.jpg'})` }">
       <div class="banner-overlay">
         <div class="banner-content">
           <h1>{{ group.name }}</h1>
           <p>{{ group.description }}</p>
           <div class="social-links" v-if="group.socialLinks">
-            <a
-              v-if="group.socialLinks.facebook"
-              :href="group.socialLinks.facebook"
-              target="_blank"
-            >Facebook</a>
-            <a
-              v-if="group.socialLinks.instagram"
-              :href="group.socialLinks.instagram"
-              target="_blank"
-            >Instagram</a>
-            <a
-              v-if="group.socialLinks.twitter"
-              :href="group.socialLinks.twitter"
-              target="_blank"
-            >Twitter</a>
+            <a v-if="group.socialLinks.facebook" :href="group.socialLinks.facebook" target="_blank">Facebook</a>
+            <a v-if="group.socialLinks.instagram" :href="group.socialLinks.instagram" target="_blank">Instagram</a>
+            <a v-if="group.socialLinks.twitter" :href="group.socialLinks.twitter" target="_blank">Twitter</a>
           </div>
         </div>
       </div>
@@ -38,40 +23,69 @@
       <!-- Purchase Coupon Book Banner -->
       <div v-if="!hasPurchasedCouponBook" class="purchase-banner">
         <p>Purchase the coupon book to unlock all group coupons and RSVP for events.</p>
-        <button @click="purchaseCouponBook" class="purchase-btn">Purchase Coupon Book</button>
+        <button @click="onPurchaseClick" class="purchase-btn">Purchase Coupon Book</button>
       </div>
+
 
       <!-- Coupons Section -->
       <section class="coupons-section section-card">
         <h2>Group Coupons</h2>
-        <p v-if="loadingCoupons">Loading coupons…</p>
-        <p v-else-if="couponError" class="error">⚠️ {{ couponError }}</p>
-        <CouponList
-          v-else
-          :coupons="groupCoupons"
-          :hasPurchasedCouponBook="hasPurchasedCouponBook"
-          :isAuthenticated="isAuthenticated"
-          @redeem="handleRedeemCoupon"
-        />
+
+        <div class="coupons-layout">
+          <!-- 🧱 LEFT: sidebar filters -->
+          <aside class="coupons-sidebar">
+            <SidebarFilters @filter-changed="updateFilters" />
+
+            <!-- Active filter chips -->
+            <div class="active-filter-tags">
+              <span v-if="filters.merchant" class="filter-tag" @click="removeFilter('merchant')">
+                Merchant: {{ filters.merchant }} &times;
+              </span>
+
+              <span v-if="filters.title" class="filter-tag" @click="removeFilter('title')">
+                Title: {{ filters.title }} &times;
+              </span>
+
+              <span v-if="filters.activeOnly" class="filter-tag" @click="removeFilter('activeOnly')">
+                Active Only &times;
+              </span>
+
+              <span v-if="filters.couponType" class="filter-tag" @click="removeFilter('couponType')">
+                Type: {{ filters.couponType }} &times;
+              </span>
+
+              <span v-if="filters.locked" class="filter-tag" @click="removeFilter('locked')">
+                {{ filters.locked === 'locked' ? 'Locked only' : 'Unlocked only' }} &times;
+              </span>
+
+              <span v-if="filters.cuisineType" class="filter-tag" @click="removeFilter('cuisineType')">
+                Cuisine: {{ filters.cuisineType }} &times;
+              </span>
+            </div>
+          </aside>
+
+          <!-- 📄 RIGHT: coupons list -->
+          <div class="coupons-main">
+            <h3 class="coupons-main-title">Available Coupons</h3>
+
+            <p v-if="loadingCoupons">Loading coupons…</p>
+            <p v-else-if="couponError" class="error">⚠️ {{ couponError }}</p>
+
+            <CouponList v-else :coupons="filteredCoupons" :hasPurchasedCouponBook="hasPurchasedCouponBook"
+              :isAuthenticated="isAuthenticated" @redeem="handleRedeemCoupon" />
+          </div>
+        </div>
       </section>
 
       <!-- Confirm Redeem Modal (currently unused, but kept) -->
-      <CouponRedemption
-        v-if="showRedeemDialog"
-        :coupon="selectedCoupon"
-        @confirm="confirmRedeem"
-        @cancel="closeRedeem"
-      />
+      <CouponRedemption v-if="showRedeemDialog" :coupon="selectedCoupon" @confirm="confirmRedeem"
+        @cancel="closeRedeem" />
 
       <!-- Events Section Wrapped with OverlayBlock -->
       <section class="events-section section-card">
-        <OverlayBlock
-          :is-dimmed="true"
-          title="Events are coming soon!"
-          message="Our events feature is in preview and will be unlocked soon for Foodie Groups."
-          cta-text="Notify Me"
-          @cta="alert('You’ll be notified when events are live!')"
-        >
+        <OverlayBlock :is-dimmed="true" title="Events are coming soon!"
+          message="Our events feature is in preview and will be unlocked soon for Foodie Groups." cta-text="Notify Me"
+          @cta="alert('You’ll be notified when events are live!')">
           <h2>Group Events</h2>
           <EventList :events="events" :hasAccess="hasPurchasedCouponBook" />
         </OverlayBlock>
@@ -80,15 +94,8 @@
       <!-- Map Section -->
       <section class="map-section section-card">
         <h2>Location</h2>
-        <iframe
-          v-if="mapUrl"
-          width="100%"
-          height="300"
-          frameborder="0"
-          style="border:0"
-          :src="mapUrl"
-          allowfullscreen
-        />
+        <iframe v-if="mapUrl" width="100%" height="300" frameborder="0" style="border:0" :src="mapUrl"
+          allowfullscreen />
       </section>
     </div>
   </div>
@@ -98,15 +105,14 @@
 import CouponList from '@/components/Coupons/CouponList.vue';
 import CouponRedemption from '@/components/Coupons/CouponRedemption.vue';
 import EventList from '@/components/Events/EventList.vue';
+import SidebarFilters from '@/components/Coupons/SidebarFilters.vue';
 import OverlayBlock from '@/components/Common/OverlayBlock.vue';
 import { mapGetters } from 'vuex';
-import { signIn } from '@/services/authService';
-
-const PURCHASE_KEY_PREFIX = 'vs_couponbook_group_';
+import { signIn, getAccessToken } from '@/services/authService';
 
 export default {
   name: 'FoodieGroupView',
-  components: { CouponList, CouponRedemption, EventList, OverlayBlock },
+  components: { CouponList, CouponRedemption, EventList, OverlayBlock, SidebarFilters },
 
   data() {
     return {
@@ -148,7 +154,16 @@ export default {
           location: 'Midtown',
           showRSVP: false
         }
-      ]
+      ],
+      filters: {
+        merchant: '',
+        title: '',
+        activeOnly: false,
+        couponType: '',
+        foodieGroup: '',   // will be ignored on this page but kept for consistency
+        locked: '',
+        cuisineType: ''
+      }
     };
   },
 
@@ -156,14 +171,77 @@ export default {
     const id = this.$route.params.id;
     this.fetchGroup(id);
     this.fetchCoupons(id);
-    this.restorePurchaseState(id);
+
+    // If already authenticated on load, immediately check DB-backed access
+    if (this.isAuthenticated) {
+      this.fetchAccess(id);
+    }
   },
 
   computed: {
     ...mapGetters('auth', ['isAuthenticated']),
 
-    groupCoupons() {
-      return this.coupons;
+    filteredCoupons() {
+      let filtered = this.coupons;
+
+      // Merchant name filter
+      if (this.filters.merchant) {
+        filtered = filtered.filter(c =>
+          (c.merchant_name || '')
+            .toLowerCase()
+            .includes(this.filters.merchant.toLowerCase())
+        );
+      }
+
+      // Title filter
+      if (this.filters.title) {
+        filtered = filtered.filter(c =>
+          (c.title || '')
+            .toLowerCase()
+            .includes(this.filters.title.toLowerCase())
+        );
+      }
+
+      // Active only (valid_from <= now <= expires_at)
+      if (this.filters.activeOnly) {
+        const now = new Date();
+        filtered = filtered.filter(c => {
+          const start = c.valid_from ? new Date(c.valid_from) : null;
+          const end = c.expires_at ? new Date(c.expires_at) : null;
+
+          if (start && start > now) return false;
+          if (end && end < now) return false;
+          return true;
+        });
+      }
+
+      // Coupon type
+      if (this.filters.couponType) {
+        filtered = filtered.filter(c =>
+          (c.coupon_type || '').toLowerCase() ===
+          this.filters.couponType.toLowerCase()
+        );
+      }
+
+      // Locked / unlocked
+      if (this.filters.locked) {
+        if (this.filters.locked === 'locked') {
+          filtered = filtered.filter(c => c.locked === true);
+        } else if (this.filters.locked === 'unlocked') {
+          filtered = filtered.filter(c => c.locked === false);
+        }
+      }
+
+      // Cuisine type
+      if (this.filters.cuisineType) {
+        filtered = filtered.filter(c =>
+          c.cuisine_type &&
+          c.cuisine_type.toLowerCase() ===
+          this.filters.cuisineType.toLowerCase()
+        );
+      }
+
+      return filtered;
     },
 
     mapUrl() {
@@ -171,6 +249,19 @@ export default {
       const { lat, lng } = this.group.mapCoordinates;
       const key = process.env.VUE_APP_GOOGLE_MAPS_API_KEY;
       return `https://www.google.com/maps/embed/v1/view?key=${key}&center=${lat},${lng}&zoom=12`;
+    }
+  },
+
+  watch: {
+    isAuthenticated(newVal) {
+      const id = this.$route.params.id;
+      if (newVal && id) {
+        // logged in → refresh access from server
+        this.fetchAccess(id);
+      } else if (!newVal) {
+        // logged out → clear access flag
+        this.hasPurchasedCouponBook = false;
+      }
     }
   },
 
@@ -203,54 +294,45 @@ export default {
       }
     },
 
-    // 🔁 Restore purchase state from localStorage
-    restorePurchaseState(groupId) {
+    // DB-backed access check using Cognito access token
+    async fetchAccess(groupId) {
+      this.hasPurchasedCouponBook = false;
+
       try {
-        const key = `${PURCHASE_KEY_PREFIX}${groupId}`;
-        const flag = localStorage.getItem(key);
-        if (flag === 'purchased') {
-          this.hasPurchasedCouponBook = true;
+        const token = await getAccessToken();
+        if (!token) {
+          console.log('[FoodieGroup] No access token available, treating as no purchase');
+          return;
         }
-      } catch (e) {
-        console.warn('[FoodieGroup] failed to read purchase state', e);
-      }
-    },
 
-    // 🔐 Code-based "purchase" that persists across refreshes
-    purchaseCouponBook() {
-      const code = window.prompt('Enter unlock code to purchase:');
-      if (!code) return;
-
-      const normalized = code.trim().toUpperCase();
-      const VALID_CODE = 'TESTCODE'; // use whatever code you want, just keep it uppercase here
-
-      if (normalized === VALID_CODE) {
-        this.hasPurchasedCouponBook = true;
-
-        try {
-          const groupId = this.group?.id || this.$route.params.id;
-          if (groupId) {
-            const key = `${PURCHASE_KEY_PREFIX}${groupId}`;
-            localStorage.setItem(key, 'purchased');
+        console.log('📦  GET /api/v1/groups/:id/access from FoodieGroup.vue', groupId);
+        const res = await fetch(`/api/v1/groups/${groupId}/access`, {
+          headers: {
+            Authorization: `Bearer ${token}`
           }
-        } catch (e) {
-          console.warn('[FoodieGroup] failed to persist purchase state', e);
+        });
+
+        if (!res.ok) {
+          console.warn('[FoodieGroup] access check failed', res.status);
+          return;
         }
 
-        alert(`✅ "${this.group?.name || 'Coupon Book'}" unlocked!`);
-      } else {
-        alert('❌ Invalid code. Please try again.');
+        const payload = await res.json();
+        this.hasPurchasedCouponBook = !!payload.hasAccess;
+        console.log('[FoodieGroup] hasPurchasedCouponBook =', this.hasPurchasedCouponBook);
+      } catch (e) {
+        console.error('[FoodieGroup] failed to fetch access state', e);
       }
     },
 
-    // Redeem handler – keep your existing route behavior, but gate by auth
+    // Redeem handler – gated by auth + DB-backed purchase
     handleRedeemCoupon(coupon) {
       if (!coupon || coupon.redeemed_by_user) return;
 
-      // 🔐 Not signed in → go straight to Cognito Hosted UI
+      // Not signed in → go to Cognito Hosted UI
       if (!this.isAuthenticated) {
         try {
-          signIn(); // this triggers the Cognito hosted UI redirect
+          signIn();
         } catch (e) {
           console.error('Sign-in redirect failed', e);
           alert('Something went wrong while redirecting to sign-in.');
@@ -258,7 +340,13 @@ export default {
         return;
       }
 
-      // ✅ Already signed in → go to redeem flow
+      // Signed in but no purchase → block redemption
+      if (!this.hasPurchasedCouponBook) {
+        alert('Please purchase this coupon book to redeem offers.');
+        return;
+      }
+
+      // Signed in + purchased → proceed to redeem flow
       this.$router.push({ name: 'CouponRedeemPopup', params: { id: coupon.id } });
     },
 
@@ -290,7 +378,9 @@ export default {
 
         try {
           window.open(`/coupon-details/${coupon.id}`, '_blank');
-        } catch (_) { alert("")}
+        } catch (_) {
+          alert('');
+        }
       } catch (e) {
         alert(e.message || 'Failed to redeem. Please try again.');
       } finally {
@@ -301,11 +391,100 @@ export default {
     _markRedeemed(couponId, isRedeemed = true, redeemedAt = new Date().toISOString()) {
       const idx = this.coupons.findIndex(c => String(c.id) === String(couponId));
       if (idx !== -1) {
-        // Vue 2-friendly mutation
         this.$set(this.coupons[idx], 'redeemed_by_user', isRedeemed);
         this.$set(this.coupons[idx], 'redeemed_at', redeemedAt);
       }
-    }
+    },
+
+    // Click handler for "Purchase Coupon Book" banner
+    onPurchaseClick() {
+      const groupId = this.$route.params.id;
+
+      // If not authenticated, send to sign-in first
+      if (!this.isAuthenticated) {
+        try {
+          signIn();
+        } catch (e) {
+          console.error('[FoodieGroup] sign-in redirect failed', e);
+          alert('Something went wrong while redirecting to sign-in.');
+        }
+        return;
+      }
+
+      const raw = window.prompt('Enter unlock code to purchase:');
+      if (!raw) return;
+
+      const code = raw.trim().toUpperCase();
+      this.unlockWithTestCode(groupId, code);
+    },
+
+    // Call dev-only /test-purchase endpoint with TESTCODE
+    async unlockWithTestCode(groupId, code) {
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          console.warn('[FoodieGroup] no access token while unlocking with code');
+          alert('Please sign in again to unlock this coupon book.');
+          return;
+        }
+
+        console.log('📦  POST /api/v1/groups/:id/test-purchase from FoodieGroup.vue', {
+          groupId,
+          code
+        });
+
+        const res = await fetch(`/api/v1/groups/${groupId}/test-purchase`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ code })
+        });
+
+        if (!res.ok) {
+          let problem = {};
+          try {
+            problem = await res.json();
+          } catch (_) { alert("") }
+          const msg = problem.error || `Unlock failed (status ${res.status}).`;
+          alert(msg);
+          return;
+        }
+
+        const payload = await res.json().catch(() => ({}));
+        const hasAccess = !!payload.hasAccess;
+
+        this.hasPurchasedCouponBook = hasAccess;
+
+        if (hasAccess) {
+          alert('Coupon book unlocked for your account!');
+        } else {
+          alert('Unlock did not succeed. Please check the code and try again.');
+        }
+
+        // Re-check access from server for consistency
+        if (this.isAuthenticated) {
+          await this.fetchAccess(groupId);
+        }
+      } catch (e) {
+        console.error('[FoodieGroup] failed to unlock with test code', e);
+        alert('Failed to unlock. Please try again.');
+      }
+    },
+
+    updateFilters(newFilters) {
+      this.filters = newFilters;
+    },
+
+    removeFilter(key) {
+      if (typeof this.filters[key] === 'boolean') {
+        this.filters[key] = false;
+      } else {
+        this.filters[key] = '';
+      }
+    },
+
   }
 };
 </script>
@@ -406,5 +585,67 @@ export default {
 .map-section iframe {
   border: none;
   border-radius: 8px;
+}
+
+.coupons-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+/* left column: filters */
+.coupons-sidebar {
+  flex: 0 0 260px;
+  max-width: 260px;
+}
+
+/* right column: coupons */
+.coupons-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.coupons-main-title {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+/* filter chips */
+.active-filter-tags {
+  margin-top: 1rem;
+}
+
+.filter-tag {
+  display: inline-block;
+  background-color: #3498db;
+  color: #fff;
+  padding: 0.4rem 0.8rem;
+  margin: 0.2rem 0.2rem 0 0;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s ease;
+}
+
+.filter-tag:hover {
+  background-color: #217dbb;
+}
+
+/* 📱 Mobile: stack sidebar above coupons */
+@media (max-width: 768px) {
+  .coupons-layout {
+    flex-direction: column;
+  }
+
+  .coupons-sidebar {
+    flex: 1 1 auto;
+    max-width: 100%;
+  }
+
+  .coupons-main-title {
+    margin-top: 1rem;
+    text-align: left;
+  }
 }
 </style>
