@@ -1,95 +1,98 @@
 <!-- src/components/Coupons/CouponRedeemPopup.vue -->
 <template>
-  <div class="popup-wrap">
-    <header class="popup-header">
-      <h2>{{ couponTitle || 'Redeem Coupon' }}</h2>
-    </header>
+  <div class="page">
+    <div class="dialog">
+      <div class="popup-wrap">
+        <header class="popup-header">
+          <h2>{{ couponTitle || 'Redeem Coupon' }}</h2>
+        </header>
 
-    <section v-if="loading" class="state">Loading…</section>
-    <section v-else-if="error" class="state error">⚠️ {{ error }}</section>
+        <section v-if="loading" class="state">Loading…</section>
+        <section v-else-if="error" class="state error">⚠️ {{ error }}</section>
 
-    <section v-else>
-      <!-- NOT REDEEMED YET -->
-      <div v-if="!redeemed" class="confirm">
-        <p>
-          <strong>Are you sure?</strong>
-          This coupon can be redeemed only once with your account. After confirming,
-          you won’t be able to redeem it again.
-        </p>
+        <section v-else>
+          <!-- NOT REDEEMED YET -->
+          <div v-if="!redeemed" class="confirm">
+            <p class="lead">
+              <strong>Are you sure?</strong>
+              This coupon can be redeemed only once with your account. After confirming,
+              you won’t be able to redeem it again.
+            </p>
 
-        <div class="actions">
-          <button class="btn primary" @click="confirmRedeem" :disabled="submitting">
-            Confirm Redeem
-          </button>
-          <button class="btn ghost" @click="windowClose">Cancel</button>
-        </div>
+            <p class="note">
+              Printing or downloading the coupon and viewing full coupon details is disabled
+              until you confirm redemption.
+            </p>
 
-        <p class="note">
-          Printing or downloading the coupon and viewing full coupon details is disabled
-          until you confirm redemption.
-        </p>
-
-        <div v-if="submitting" class="state">Redeeming…</div>
-        <div v-if="error" class="state error">⚠️ {{ error }}</div>
-      </div>
-
-      <!-- ALREADY REDEEMED -->
-      <div v-else class="redeemed">
-        <p class="success">✅ Redeemed on {{ fmtDate(redeemedAt) }}</p>
-
-        <div class="details-card">
-          <h3>Coupon Details</h3>
-          <dl class="details-list">
-            <div>
-              <dt>Title</dt>
-              <dd>{{ couponTitle }}</dd>
+            <div class="actions">
+              <button class="btn primary" @click="confirmRedeem" :disabled="submitting">
+                {{ submitting ? 'Redeeming…' : 'Confirm Redeem' }}
+              </button>
+              <button class="btn ghost" @click="windowClose">Cancel</button>
             </div>
-            <div>
-              <dt>Description</dt>
-              <dd>{{ couponDescription || '—' }}</dd>
-            </div>
-            <div>
-              <dt>Type</dt>
-              <dd>{{ couponType || '—' }}</dd>
-            </div>
-            <div>
-              <dt>Value</dt>
-              <dd>{{ couponValueDisplay }}</dd>
-            </div>
-            <div>
-              <dt>Valid From</dt>
-              <dd>{{ couponValidFromDisplay }}</dd>
-            </div>
-            <div>
-              <dt>Expires At</dt>
-              <dd>{{ couponExpiresAtDisplay }}</dd>
-            </div>
-            <div>
-              <dt>Merchant</dt>
-              <dd>{{ couponMerchantDisplay }}</dd>
-            </div>
-          </dl>
 
-          <div class="qr-wrapper" v-if="qrCodeUrl">
-            <img :src="qrCodeUrl" alt="Coupon QR" class="qr" />
+            <div v-if="error" class="state error">⚠️ {{ error }}</div>
           </div>
-        </div>
 
-        <div class="actions">
-          <button class="btn" @click="printCoupon">Print</button>
-          <a
-            v-if="pdfUrl"
-            class="btn"
-            :href="downloadUrlSecured"
-            target="_self"
-            download
-          >
-            Download PDF
-          </a>
-          <button class="btn ghost" @click="windowClose">Close</button>
-        </div>
+          <!-- ALREADY / NOW REDEEMED -->
+          <div v-else class="redeemed">
+            <p class="success">✅ Redeemed on {{ fmtDate(redeemedAt) }}</p>
+
+            <div class="details-card">
+              <h3>Coupon Details</h3>
+              <dl class="details-list">
+                <div>
+                  <dt>Title</dt>
+                  <dd>{{ couponTitle }}</dd>
+                </div>
+                <div>
+                  <dt>Description</dt>
+                  <dd>{{ couponDescription || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>Type</dt>
+                  <dd>{{ couponType || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>Value</dt>
+                  <dd>{{ couponValueDisplay }}</dd>
+                </div>
+                <div>
+                  <dt>Valid From</dt>
+                  <dd>{{ couponValidFromDisplay }}</dd>
+                </div>
+                <div>
+                  <dt>Expires At</dt>
+                  <dd>{{ couponExpiresAtDisplay }}</dd>
+                </div>
+                <div>
+                  <dt>Merchant</dt>
+                  <dd>{{ couponMerchantDisplay }}</dd>
+                </div>
+              </dl>
+
+              <div class="qr-wrapper" v-if="qrCodeUrl">
+                <img :src="qrCodeUrl" alt="Coupon QR" class="qr" />
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="btn" @click="printCoupon">Print</button>
+              <a
+                v-if="pdfUrl"
+                class="btn"
+                :href="downloadUrlSecured"
+                target="_self"
+                download
+              >
+                Download PDF
+              </a>
+              <button class="btn ghost" @click="windowClose">Close</button>
+            </div>
+          </div>
+        </section>
       </div>
-    </section>
+    </div>
   </div>
 </template>
 
@@ -132,7 +135,6 @@ export default {
       return this.pdfUrl || "#";
     },
     couponType() {
-      // snake_case from API list OR camelCase from /:id
       return this.coupon?.coupon_type ?? this.coupon?.couponType ?? "";
     },
     couponValueRaw() {
@@ -163,7 +165,6 @@ export default {
       return this.coupon?.merchant_id ?? this.coupon?.merchantId ?? null;
     },
     couponMerchantDisplay() {
-      // If you later join merchant name into this endpoint, swap to name first
       return this.coupon?.merchant_name ?? this.couponMerchantId ?? "—";
     },
   },
@@ -491,35 +492,82 @@ export default {
 </script>
 
 <style scoped>
+/* Outer layout */
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background: #f3f4f6;
+}
+
+.dialog {
+  width: 100%;
+  max-width: 520px;
+  margin: 24px auto;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  display: flex;
+}
+
+/* Inner content */
 .popup-wrap {
-  padding: 16px;
+  padding: 16px 18px 20px;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  width: 100%;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
 }
 
 .popup-header {
   margin-bottom: 12px;
 }
 
+.popup-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+/* States */
 .state {
-  padding: 12px;
+  padding: 12px 0;
+  font-size: 0.95rem;
 }
 
 .state.error {
   color: #b00020;
 }
 
+/* Content blocks */
+.lead {
+  margin: 8px 0 12px;
+  line-height: 1.4;
+}
+
+.note {
+  color: #555;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+/* Buttons / actions */
 .confirm .actions,
 .redeemed .actions {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
 }
 
 .btn {
-  padding: 8px 14px;
-  border-radius: 6px;
+  padding: 10px 16px;
+  border-radius: 999px;
   border: none;
   cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  flex: 0 0 auto;
 }
 
 .btn.primary {
@@ -527,34 +575,23 @@ export default {
   color: #fff;
 }
 
+.btn.primary:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
 .btn.ghost {
   background: transparent;
   border: 1px solid #ccc;
+  color: #111827;
 }
 
 .success {
   margin: 8px 0 12px;
+  font-weight: 600;
 }
 
-.qr-wrapper {
-  margin-top: 8px;
-  text-align: center;
-}
-
-.qr {
-  display: inline-block;
-  width: 180px;
-  height: 180px;
-  object-fit: contain;
-  margin: 8px 0;
-}
-
-.note {
-  color: #555;
-  font-size: 0.9rem;
-  margin-top: 8px;
-}
-
+/* Details card */
 .details-card {
   margin-top: 12px;
   padding: 12px;
@@ -573,9 +610,9 @@ export default {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: 180px 1fr;
+  grid-template-columns: 150px 1fr;
   row-gap: 8px;
-  column-gap: 16px;
+  column-gap: 12px;
   align-items: start;
 }
 
@@ -587,15 +624,17 @@ export default {
   font-weight: 600;
   color: #374151;
   text-align: left;
+  font-size: 0.9rem;
 }
 
 .details-list dd {
   margin: 0;
   color: #111827;
   text-align: left;
+  font-size: 0.9rem;
 }
 
-.details-list > div:nth-child(n+2)::before {
+.details-list > div:nth-child(n + 2)::before {
   content: "";
   grid-column: 1 / span 2;
   height: 1px;
@@ -603,30 +642,60 @@ export default {
   margin: 6px 0;
 }
 
-.page {
-  min-height: 100vh;
-  display: grid;
-  align-content: start;
-  padding: 16px;
+/* QR image */
+.qr-wrapper {
+  margin-top: 12px;
+  text-align: center;
 }
 
-.dialog {
-  width: 100%;
-  max-width: 520px;
-  margin: 24px auto;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-  padding: 16px;
+.qr {
+  display: inline-block;
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
+  margin: 8px 0;
 }
 
+/* Mobile tweaks */
 @media (max-width: 768px) {
+  .page {
+    background: #ffffff;
+  }
+
   .dialog {
     max-width: none;
     margin: 0;
     border-radius: 0;
     min-height: 100vh;
     box-shadow: none;
+  }
+
+  .popup-wrap {
+    max-height: 100vh;
+    padding: 16px;
+  }
+
+  .popup-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .details-list {
+    grid-template-columns: 1fr;
+  }
+
+  .details-list > div:nth-child(n + 2)::before {
+    grid-column: 1 / span 1;
+  }
+
+  .confirm .actions,
+  .redeemed .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn {
+    width: 100%;
+    text-align: center;
   }
 }
 </style>
