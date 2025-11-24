@@ -26,7 +26,6 @@
         <button @click="onPurchaseClick" class="purchase-btn">Purchase Coupon Book</button>
       </div>
 
-
       <!-- Coupons Section -->
       <section class="coupons-section section-card">
         <h2>Group Coupons</h2>
@@ -77,10 +76,6 @@
         </div>
       </section>
 
-      <!-- Confirm Redeem Modal (currently unused, but kept) -->
-      <CouponRedemption v-if="showRedeemDialog" :coupon="selectedCoupon" @confirm="confirmRedeem"
-        @cancel="closeRedeem" />
-
       <!-- Events Section Wrapped with OverlayBlock -->
       <section class="events-section section-card">
         <OverlayBlock :is-dimmed="true" title="Events are coming soon!"
@@ -103,7 +98,6 @@
 
 <script>
 import CouponList from '@/components/Coupons/CouponList.vue';
-import CouponRedemption from '@/components/Coupons/CouponRedemption.vue';
 import EventList from '@/components/Events/EventList.vue';
 import SidebarFilters from '@/components/Coupons/SidebarFilters.vue';
 import OverlayBlock from '@/components/Common/OverlayBlock.vue';
@@ -112,7 +106,7 @@ import { signIn, getAccessToken } from '@/services/authService';
 
 export default {
   name: 'FoodieGroupView',
-  components: { CouponList, CouponRedemption, EventList, OverlayBlock, SidebarFilters },
+  components: { CouponList, EventList, OverlayBlock, SidebarFilters },
 
   data() {
     return {
@@ -121,8 +115,6 @@ export default {
       coupons: [],
       loadingCoupons: true,
       couponError: null,
-      showRedeemDialog: false,
-      selectedCoupon: null,
       events: [
         {
           id: 1,
@@ -176,6 +168,13 @@ export default {
     if (this.isAuthenticated) {
       this.fetchAccess(id);
     }
+
+    // 📨 Listen for redemption messages from popup
+    window.addEventListener('message', this.onCouponRedeemedMessage);
+  },
+
+  beforeUnmount() {
+    window.removeEventListener('message', this.onCouponRedeemedMessage);
   },
 
   computed: {
@@ -256,8 +255,9 @@ export default {
     isAuthenticated(newVal) {
       const id = this.$route.params.id;
       if (newVal && id) {
-        // logged in → refresh access from server
+        // logged in → refresh access from server + hydrate redemptions
         this.fetchAccess(id);
+        this.fetchRedemptionsMe();
       } else if (!newVal) {
         // logged out → clear access flag
         this.hasPurchasedCouponBook = false;
@@ -291,6 +291,39 @@ export default {
         this.couponError = err.message;
       } finally {
         this.loadingCoupons = false;
+
+        // After coupons load, hydrate redeemed state if logged in
+        if (this.isAuthenticated) {
+          this.fetchRedemptionsMe();
+        }
+      }
+    },
+
+    // Hydrate redeemed coupons from DB (/api/v1/coupons/redemptions/me)
+    async fetchRedemptionsMe() {
+      try {
+        const token = await getAccessToken();
+        if (!token) return;
+
+        console.log('📦  GET /api/v1/coupons/redemptions/me from FoodieGroup.vue');
+        const res = await fetch('/api/v1/coupons/redemptions/me', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (!res.ok) {
+          console.warn('[FoodieGroup] redemptions/me failed', res.status);
+          return;
+        }
+
+        const rows = await res.json();
+        // rows: [{ couponId, redeemedAt }, …]
+        rows.forEach(r => {
+          this._markRedeemed(r.couponId, true, r.redeemedAt || new Date().toISOString());
+        });
+      } catch (e) {
+        console.error('[FoodieGroup] failed to hydrate redemptions', e);
       }
     },
 
@@ -325,7 +358,7 @@ export default {
       }
     },
 
-    // Redeem handler – gated by auth + DB-backed purchase
+    // Redeem handler – gated by auth + DB-backed purchase, opens popup
     handleRedeemCoupon(coupon) {
       if (!coupon || coupon.redeemed_by_user) return;
 
@@ -346,54 +379,52 @@ export default {
         return;
       }
 
-      // Signed in + purchased → proceed to redeem flow
-      this.$router.push({ name: 'CouponRedeemPopup', params: { id: coupon.id } });
+      // Signed in + purchased → open popup window to CouponRedeemPopup route
+      const route = this.$router.resolve({
+        name: 'CouponRedeemPopup',
+        params: { id: coupon.id }
+      });
+
+      const url = route && route.href ? route.href : `/coupon-redeem/${coupon.id}`;
+
+      window.open(
+        url,
+        'coupon-redeem',
+        'width=520,height=720,noopener,noreferrer'
+      );
     },
 
-    closeRedeem() {
-      this.selectedCoupon = null;
-      this.showRedeemDialog = false;
+    // Handle postMessage from CouponRedeemPopup
+    onCouponRedeemedMessage(event) {
+      const data = event && event.data;
+      if (!data || data.type !== 'coupon-redeemed') return;
+
+      const couponId = data.couponId;
+      if (!couponId) return;
+
+      console.log('[FoodieGroup] received coupon-redeemed message for', couponId);
+      this._markRedeemed(couponId, true, new Date().toISOString());
     },
 
-    async confirmRedeem(coupon) {
-      try {
-        const res = await fetch(`/api/v1/coupons/${coupon.id}/redeem`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({})
-        });
+    _markRedeemed(
+      couponId,
+      isRedeemed = true,
+      redeemedAt = new Date().toISOString()
+    ) {
+      const idx = this.coupons.findIndex(
+        c => String(c.id) === String(couponId)
+      );
+      if (idx === -1) return;
 
-        if (!res.ok) {
-          const text = await res.text().catch(() => '');
-          if (res.status === 409) {
-            alert('You have already redeemed this coupon.');
-            this._markRedeemed(coupon.id, true);
-            return this.closeRedeem();
-          }
-          throw new Error(text || `Redeem failed (status ${res.status})`);
-        }
+      // Create an updated copy of the coupon
+      const updated = {
+        ...this.coupons[idx],
+        redeemed_by_user: isRedeemed,
+        redeemed_at: redeemedAt,
+      };
 
-        const payload = await res.json().catch(() => ({}));
-        this._markRedeemed(coupon.id, true, payload.redeemed_at);
-
-        try {
-          window.open(`/coupon-details/${coupon.id}`, '_blank');
-        } catch (_) {
-          alert('');
-        }
-      } catch (e) {
-        alert(e.message || 'Failed to redeem. Please try again.');
-      } finally {
-        this.closeRedeem();
-      }
-    },
-
-    _markRedeemed(couponId, isRedeemed = true, redeemedAt = new Date().toISOString()) {
-      const idx = this.coupons.findIndex(c => String(c.id) === String(couponId));
-      if (idx !== -1) {
-        this.$set(this.coupons[idx], 'redeemed_by_user', isRedeemed);
-        this.$set(this.coupons[idx], 'redeemed_at', redeemedAt);
-      }
+      // Use splice so Vue 3 tracks the change reactively
+      this.coupons.splice(idx, 1, updated);
     },
 
     // Click handler for "Purchase Coupon Book" banner
@@ -446,7 +477,7 @@ export default {
           let problem = {};
           try {
             problem = await res.json();
-          } catch (_) { alert("") }
+          } catch (_) { /* ignore */ }
           const msg = problem.error || `Unlock failed (status ${res.status}).`;
           alert(msg);
           return;
@@ -483,8 +514,7 @@ export default {
       } else {
         this.filters[key] = '';
       }
-    },
-
+    }
   }
 };
 </script>

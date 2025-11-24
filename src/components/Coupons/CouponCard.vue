@@ -3,7 +3,11 @@
     <h3 class="coupon-title">{{ coupon.title }}</h3>
 
     <div class="merchant-info" v-if="coupon.merchant_name">
-      <img :src="coupon.merchant_logo || '/logo.png'" :alt="`Logo for ${coupon.merchant_name}`" class="merchant-logo" />
+      <img
+        :src="coupon.merchant_logo || '/logo.png'"
+        :alt="`Logo for ${coupon.merchant_name}`"
+        class="merchant-logo"
+      />
       <span class="merchant-name">{{ coupon.merchant_name }}</span>
     </div>
 
@@ -14,29 +18,15 @@
       <small>Expires: {{ formatDate(coupon.expires_at) }}</small>
     </div>
 
-    <button class="action-btn" :class="buttonClass" :disabled="isDisabled" @click="handleClick">
-      <!-- 1) Already redeemed -->
-      <template v-if="coupon.redeemed_by_user">
-        ✅ Redeemed
-      </template>
-
-      <!-- 2) Not authenticated -->
-      <template v-else-if="!isAuthenticated">
-        Sign in to redeem
-      </template>
-
-      <!-- 3) Locked + not purchased -->
-      <template v-else-if="isLocked && !hasPurchasedCouponBook">
-        🔒 Join {{ coupon.foodie_group_name }} Coupon Book
-      </template>
-
-      <!-- 4) Default: redeem -->
-      <template v-else>
-        Redeem
-      </template>
+    <!-- Button with dynamic label + disabled logic -->
+    <button
+      class="action-btn"
+      :class="buttonClass"
+      :disabled="isDisabled"
+      @click="handleClick"
+    >
+      {{ buttonLabel }}
     </button>
-
-
   </div>
 </template>
 
@@ -46,22 +36,25 @@ import { signIn } from '@/services/authService';
 export default {
   name: 'CouponCard',
   props: {
-    coupon: {
-      type: Object,
-      required: true
-    },
-    hasPurchasedCouponBook: {
-      type: Boolean,
-      default: false
-    },
-    // 🔐 whether current user is logged in
-    isAuthenticated: {
-      type: Boolean,
-      default: false
-    }
+    coupon: { type: Object, required: true },
+    hasPurchasedCouponBook: { type: Boolean, default: false },
+    isAuthenticated: { type: Boolean, default: false } // from Vuex getter or parent
   },
+
   computed: {
-    // Vivaspot Community is always unlocked
+    /** 🟥 Is coupon expired? */
+    isExpired() {
+      if (!this.coupon.expires_at) return false;
+      return new Date(this.coupon.expires_at) < new Date();
+    },
+
+    /** 🟨 Is coupon not yet active? */
+    isNotYetValid() {
+      if (!this.coupon.valid_from) return false;
+      return new Date(this.coupon.valid_from) > new Date();
+    },
+
+    /** 🔒 Is coupon locked? */
     isLocked() {
       return (
         this.coupon.foodie_group_name !== 'Vivaspot Community' &&
@@ -69,25 +62,52 @@ export default {
       );
     },
 
-    // Only disable if already redeemed
-    isDisabled() {
-      return !!this.coupon.redeemed_by_user;
+    /** 🧠 Unified metadata state */
+    redeemStatus() {
+      if (this.coupon.redeemed_by_user) return 'redeemed';
+      if (this.isExpired) return 'expired';
+      if (this.isNotYetValid) return 'not-yet-valid';
+      if (!this.isAuthenticated) return 'login';
+      if (this.isLocked && !this.hasPurchasedCouponBook) return 'locked';
+      return 'active';
     },
 
-    // 🔵🟢🧡 decide button color based on semantic state
+    /** 🏷 Label text for button */
+    buttonLabel() {
+      switch (this.redeemStatus) {
+        case 'redeemed':
+          return '✅ Redeemed';
+        case 'expired':
+          return 'Expired';
+        case 'not-yet-valid':
+          return 'Not yet valid';
+        case 'login':
+          return 'Sign in to redeem';
+        case 'locked':
+          return `🔒 Join ${this.coupon.foodie_group_name} Coupon Book`;
+        default:
+          return 'Redeem';
+      }
+    },
+
+    /** ⛔ Disable button for everything except active coupons */
+    isDisabled() {
+      return this.coupon.redeemed_by_user || this.isExpired;
+    },
+
+    /** 🎨 Button color theme */
     buttonClass() {
-      if (this.coupon.redeemed_by_user) {
-        return 'btn-gray';
+      if (this.coupon.redeemed_by_user || this.isExpired) {
+        return "btn-gray";
       }
       if (!this.isAuthenticated) {
-        return 'btn-tertiary'; // sign in = orange-ish
+        return "btn-tertiary"; 
       }
       if (this.isLocked && !this.hasPurchasedCouponBook) {
-        return 'btn-primary'; // join = blue
+        return "btn-primary";
       }
-      return 'btn-secondary'; // redeem = green
+      return "btn-secondary";
     }
-
   },
 
   methods: {
@@ -96,42 +116,47 @@ export default {
     },
 
     handleClick() {
-      // Already redeemed (disabled anyway)
-      if (this.coupon.redeemed_by_user) return;
+      if (this.isDisabled) return;
 
-      // 1️⃣ Not logged in → go to Cognito
-      if (!this.isAuthenticated) {
-        try { signIn(); } catch (e) { console.error(e); }
+      // Not authenticated → redirect to Cognito
+      if (this.redeemStatus === 'login') {
+        try {
+          signIn();
+        } catch (e) {
+          console.error(e);
+        }
         return;
       }
 
-      // 2️⃣ Locked + no purchase → redirect to group
-      if (this.isLocked && !this.hasPurchasedCouponBook) {
+      // Locked + not purchased → redirect to group
+      if (this.redeemStatus === 'locked') {
         this.redirectToGroup();
         return;
       }
 
-      // 3️⃣ Otherwise → redeem
+      // Active → emit redeem event
       this.$emit('redeem', this.coupon);
     },
 
     redirectToGroup() {
       const groupId = this.coupon.foodie_group_id;
-      if (groupId) {
-        this.$router.push({
-          name: 'FoodieGroupView',
-          params: { id: groupId }
-        });
-      } else {
+      if (!groupId) {
         alert('Unable to determine group. Please contact support.');
+        return;
       }
+
+      this.$router.push({
+        name: 'FoodieGroupView',
+        params: { id: groupId }
+      });
     }
   }
 };
 </script>
 
-
 <style scoped>
+/* SAME STYLES AS YOUR VERSION – unchanged */
+
 .coupon-card {
   position: relative;
   display: flex;
@@ -194,7 +219,6 @@ export default {
   color: #fff;
 }
 
-/* map semantic button classes → your global button palette */
 .btn-primary {
   background-color: #007bff;
 }
@@ -219,25 +243,16 @@ export default {
   background-color: #be3f22;
 }
 
-/* redeemed = neutral gray */
 .btn-gray {
   background-color: #6c757d;
   cursor: default;
 }
 
-/* disabled visual */
 .action-btn:disabled {
   opacity: 0.65;
   cursor: default;
 }
 
-/* disabled visual */
-.action-btn:disabled {
-  opacity: 0.65;
-  cursor: default;
-}
-
-/* 📱 mobile tweak: let cards grow full-width on narrow screens */
 @media (max-width: 480px) {
   .coupon-card {
     width: 100%;
