@@ -1,4 +1,4 @@
-<!--src/components/Coupons/SidebarFilters.vue-->
+<!-- src/components/Coupons/SidebarFilters.vue -->
 <template>
   <aside class="sidebar-filters" :class="{ collapsed: isCollapsed }">
     <div class="filter-header">
@@ -10,17 +10,18 @@
     </div>
     <transition name="collapse">
       <div v-if="!isCollapsed" class="filter-content">
-        <!-- Primary search by Merchant Name -->
+        <!-- 🔎 Primary keyword search -->
         <div class="filter-group">
-          <label for="merchant">Merchant Name:</label>
+          <label for="keyword">Search:</label>
           <input
-            id="merchant"
+            id="keyword"
             type="text"
-            v-model="merchantFilter"
+            v-model="keyword"
             @input="applyFilter"
-            placeholder="Search by merchant name"
+            placeholder="Search by merchant, title, or description"
           />
         </div>
+
         <!-- Filter by Cuisine Type -->
         <div class="filter-group">
           <label for="cuisineType">Cuisine Type:</label>
@@ -45,6 +46,7 @@
             <option value="Family">Family</option>
           </select>
         </div>
+
         <!-- Checkbox for active coupons -->
         <div class="filter-group">
           <label>
@@ -52,6 +54,7 @@
             Show Active Coupons Only
           </label>
         </div>
+
         <!-- Filter by Coupon Type -->
         <div class="filter-group">
           <label for="couponType">Coupon Type:</label>
@@ -60,29 +63,6 @@
             <option value="percentage">Percentage</option>
             <option value="bogo">BOGO</option>
             <option value="free">Free</option>
-          </select>
-        </div>
-        <!-- Filter by Foodie Group (dynamic) -->
-        <div class="filter-group">
-          <label for="foodieGroup">Foodie Group:</label>
-          <select id="foodieGroup" v-model="foodieGroup" @change="applyFilter">
-            <option value="">All</option>
-            <option
-              v-for="group in groups"
-              :key="group.id"
-              :value="group.id"
-            >
-              {{ group.name }}
-            </option>
-          </select>
-        </div>
-        <!-- Filter by Coupon Access -->
-        <div class="filter-group">
-          <label for="locked">Coupon Access:</label>
-          <select id="locked" v-model="locked" @change="applyFilter">
-            <option value="">All</option>
-            <option value="locked">Locked Only</option>
-            <option value="unlocked">Unlocked Only</option>
           </select>
         </div>
       </div>
@@ -95,25 +75,12 @@ export default {
   name: "SidebarFilters",
   data() {
     return {
-      merchantFilter: "",
+      keyword: "",
       activeOnly: false,
       couponType: "",
       cuisineType: "",
-      foodieGroup: "",
-      locked: "",
-      isCollapsed: false,
-      groups: []
+      isCollapsed: false
     };
-  },
-  async mounted() {
-    try {
-      const resp = await fetch("/api/v1/groups");
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      this.groups = await resp.json();
-    } catch (err) {
-      console.error("Could not load foodie groups:", err);
-      // optionally: show user feedback
-    }
   },
   methods: {
     toggleCollapse() {
@@ -122,12 +89,10 @@ export default {
     applyFilter() {
       // Emit current filter criteria upward
       this.$emit("filter-changed", {
-        merchant: this.merchantFilter,
+        keyword: this.keyword,
         activeOnly: this.activeOnly,
         couponType: this.couponType,
-        cuisineType: this.cuisineType,
-        foodieGroup: this.foodieGroup,
-        locked: this.locked
+        cuisineType: this.cuisineType
       });
     }
   }

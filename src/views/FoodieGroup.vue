@@ -37,12 +37,8 @@
 
             <!-- Active filter chips -->
             <div class="active-filter-tags">
-              <span v-if="filters.merchant" class="filter-tag" @click="removeFilter('merchant')">
-                Merchant: {{ filters.merchant }} &times;
-              </span>
-
-              <span v-if="filters.title" class="filter-tag" @click="removeFilter('title')">
-                Title: {{ filters.title }} &times;
+              <span v-if="filters.keyword" class="filter-tag" @click="removeFilter('keyword')">
+                Keyword: {{ filters.keyword }} &times;
               </span>
 
               <span v-if="filters.activeOnly" class="filter-tag" @click="removeFilter('activeOnly')">
@@ -53,14 +49,11 @@
                 Type: {{ filters.couponType }} &times;
               </span>
 
-              <span v-if="filters.locked" class="filter-tag" @click="removeFilter('locked')">
-                {{ filters.locked === 'locked' ? 'Locked only' : 'Unlocked only' }} &times;
-              </span>
-
               <span v-if="filters.cuisineType" class="filter-tag" @click="removeFilter('cuisineType')">
                 Cuisine: {{ filters.cuisineType }} &times;
               </span>
             </div>
+
           </aside>
 
           <!-- 📄 RIGHT: coupons list -->
@@ -148,14 +141,12 @@ export default {
         }
       ],
       filters: {
-        merchant: '',
-        title: '',
+        keyword: '',
         activeOnly: false,
         couponType: '',
-        foodieGroup: '',   // will be ignored on this page but kept for consistency
-        locked: '',
         cuisineType: ''
       }
+
     };
   },
 
@@ -183,22 +174,20 @@ export default {
     filteredCoupons() {
       let filtered = this.coupons;
 
-      // Merchant name filter
-      if (this.filters.merchant) {
-        filtered = filtered.filter(c =>
-          (c.merchant_name || '')
-            .toLowerCase()
-            .includes(this.filters.merchant.toLowerCase())
-        );
-      }
-
-      // Title filter
-      if (this.filters.title) {
-        filtered = filtered.filter(c =>
-          (c.title || '')
-            .toLowerCase()
-            .includes(this.filters.title.toLowerCase())
-        );
+      // 🔎 Keyword search (merchant, title, description, cuisine)
+      if (this.filters.keyword) {
+        const kw = this.filters.keyword.toLowerCase();
+        filtered = filtered.filter(c => {
+          const fields = [
+            c.merchant_name,
+            c.title,
+            c.description,
+            c.cuisine_type
+          ];
+          return fields.some(f =>
+            (f || '').toLowerCase().includes(kw)
+          );
+        });
       }
 
       // Active only (valid_from <= now <= expires_at)
@@ -222,15 +211,6 @@ export default {
         );
       }
 
-      // Locked / unlocked
-      if (this.filters.locked) {
-        if (this.filters.locked === 'locked') {
-          filtered = filtered.filter(c => c.locked === true);
-        } else if (this.filters.locked === 'unlocked') {
-          filtered = filtered.filter(c => c.locked === false);
-        }
-      }
-
       // Cuisine type
       if (this.filters.cuisineType) {
         filtered = filtered.filter(c =>
@@ -242,6 +222,7 @@ export default {
 
       return filtered;
     },
+
 
     mapUrl() {
       if (!this.group?.mapCoordinates) return '';
@@ -515,6 +496,7 @@ export default {
         this.filters[key] = '';
       }
     }
+
   }
 };
 </script>
