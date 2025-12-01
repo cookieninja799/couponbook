@@ -58,7 +58,6 @@
 
           <!-- 📄 RIGHT: coupons list -->
           <div class="coupons-main">
-            <h3 class="coupons-main-title">Available Coupons</h3>
 
             <p v-if="loadingCoupons">Loading coupons…</p>
             <p v-else-if="couponError" class="error">⚠️ {{ couponError }}</p>
