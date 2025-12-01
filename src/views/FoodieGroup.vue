@@ -173,6 +173,18 @@ export default {
     filteredCoupons() {
       let filtered = this.coupons;
 
+      // 🔒 Global rule: hide coupons expired ≥ 30 days ago
+      const now = new Date();
+      const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+      filtered = filtered.filter(c => {
+        if (!c.expires_at) return true; // safety if null
+        const expiresAt = new Date(c.expires_at);
+        const diffMs = now.getTime() - expiresAt.getTime();
+        // keep coupons that are not expired yet OR expired less than 30 days ago
+        return diffMs < THIRTY_DAYS_MS;
+      });
+
       // 🔎 Keyword search (merchant, title, description, cuisine)
       if (this.filters.keyword) {
         const kw = this.filters.keyword.toLowerCase();
@@ -191,7 +203,6 @@ export default {
 
       // Active only (valid_from <= now <= expires_at)
       if (this.filters.activeOnly) {
-        const now = new Date();
         filtered = filtered.filter(c => {
           const start = c.valid_from ? new Date(c.valid_from) : null;
           const end = c.expires_at ? new Date(c.expires_at) : null;
@@ -221,7 +232,6 @@ export default {
 
       return filtered;
     },
-
 
     mapUrl() {
       if (!this.group?.mapCoordinates) return '';

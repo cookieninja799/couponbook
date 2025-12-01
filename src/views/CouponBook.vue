@@ -147,6 +147,21 @@ export default {
     filteredCoupons() {
       let filtered = this.coupons;
 
+      // 🔒 Global rule: hide coupons expired ≥ 30 days ago
+      const now = new Date();
+      const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+      filtered = filtered.filter(c => {
+        // if expires_at is missing, keep it (safety)
+        if (!c.expires_at) return true;
+
+        const expiresAt = new Date(c.expires_at);
+        const diffMs = now.getTime() - expiresAt.getTime();
+
+        // keep coupons that are not yet expired OR expired less than 30 days ago
+        return diffMs < THIRTY_DAYS_MS;
+      });
+
       if (this.filters.merchant) {
         filtered = filtered.filter(c =>
           (c.merchantName || "")
@@ -154,32 +169,41 @@ export default {
             .includes(this.filters.merchant.toLowerCase())
         );
       }
+
       if (this.filters.title) {
         filtered = filtered.filter(c =>
-          c.title.toLowerCase().includes(this.filters.title.toLowerCase())
+          (c.title || "").toLowerCase().includes(this.filters.title.toLowerCase())
         );
       }
+
       if (this.filters.activeOnly) {
-        const now = new Date();
+        const nowInner = new Date();
         filtered = filtered.filter(c => {
-          const validFrom = new Date(c.valid_from);
-          const expiresAt = new Date(c.expires_at);
-          return validFrom <= now && expiresAt > now;
+          const validFrom = c.valid_from ? new Date(c.valid_from) : null;
+          const expiresAt = c.expires_at ? new Date(c.expires_at) : null;
+
+          if (validFrom && validFrom > nowInner) return false;
+          if (expiresAt && expiresAt <= nowInner) return false;
+          return true;
         });
       }
+
       if (this.filters.couponType) {
         filtered = filtered.filter(c => c.coupon_type === this.filters.couponType);
       }
+
       if (this.filters.foodieGroup) {
         filtered = filtered.filter(c =>
           c.foodie_group_id === this.filters.foodieGroup
         );
       }
+
       if (this.filters.locked) {
         filtered = filtered.filter(c =>
           this.filters.locked === "locked" ? c.locked === true : c.locked === false
         );
       }
+
       if (this.filters.cuisineType) {
         filtered = filtered.filter(c =>
           c.cuisine_type &&
