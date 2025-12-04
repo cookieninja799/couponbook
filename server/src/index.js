@@ -10,7 +10,6 @@ import eventsRouter from './routes/events.js';
 import groupsRouter from './routes/foodieGroups.js';
 import merchantsRouter from './routes/merchants.js';
 import couponSubmissionsRouter from './routes/couponSubmissions.js';
-import usersRouter from './routes/users.js';
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
