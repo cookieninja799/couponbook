@@ -1,14 +1,59 @@
-// server/src/routes/merchant.js
+// server/src/routes/merchants.js
 import express from 'express';
 import { db } from '../db.js';
-import { merchant } from '../schema.js';
+import { merchant, user } from '../schema.js';
 import { eq } from 'drizzle-orm';
+
+// 🔐 Auth middleware (default export is verifyJwt → auth())
+import auth from '../middleware/auth.js';
+
+// 📦 File upload & S3
+import multer from 'multer';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 const router = express.Router();
 
 console.log('📦  merchant router loaded');
 
-// ─── GET all merchant ───────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────
+// Multer setup: in-memory storage (we pipe buffer into S3)
+// ────────────────────────────────────────────────────────────────
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5 MB
+  },
+});
+
+// ────────────────────────────────────────────────────────────────
+// S3 client setup
+// ────────────────────────────────────────────────────────────────
+const REGION = process.env.AWS_REGION || 'us-east-1';
+const LOGO_BUCKET = process.env.AWS_S3_MERCHANT_LOGO_BUCKET;
+
+// Optional: custom base URL (CloudFront, etc.)
+const LOGO_BASE_URL =
+  process.env.AWS_S3_MERCHANT_LOGO_BASE_URL ||
+  (LOGO_BUCKET
+    ? `https://${LOGO_BUCKET}.s3.${REGION}.amazonaws.com`
+    : null);
+
+const s3 = new S3Client({ region: REGION });
+
+// helper to map mimetype → extension
+function getExtensionFromMime(mime) {
+  if (!mime) return 'bin';
+  if (mime === 'image/png') return 'png';
+  if (mime === 'image/jpeg') return 'jpg';
+  if (mime === 'image/jpg') return 'jpg';
+  if (mime === 'image/webp') return 'webp';
+  if (mime === 'image/svg+xml') return 'svg';
+  return 'bin';
+}
+
+// ────────────────────────────────────────────────────────────────
+// GET all merchants
+// ────────────────────────────────────────────────────────────────
 router.get('/', async (req, res, next) => {
   console.log('📦  GET /api/merchant hit');
   try {
@@ -21,7 +66,9 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// ─── GET a single merchant by ID ─────────────────────────────────────
+// ────────────────────────────────────────────────────────────────
+// GET a single merchant by ID
+// ────────────────────────────────────────────────────────────────
 router.get('/:id', async (req, res, next) => {
   console.log('📦  GET /api/merchant/' + req.params.id);
   try {
@@ -41,7 +88,9 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// ─── POST create a new merchant ───────────────────────────────────────
+// ────────────────────────────────────────────────────────────────
+// POST create a new merchant
+// ────────────────────────────────────────────────────────────────
 router.post('/', async (req, res, next) => {
   console.log('📦  POST /api/merchant', req.body);
   try {
@@ -51,8 +100,8 @@ router.post('/', async (req, res, next) => {
       .insert(merchant)
       .values({
         name,
-        logoUrl: logo_url,    // maps incoming snake_case to Drizzle field
-        ownerId: owner_id
+        logoUrl: logo_url, // maps incoming snake_case to Drizzle field
+        ownerId: owner_id,
       })
       .returning();
 
@@ -63,14 +112,16 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// ─── PUT update an existing merchant ──────────────────────────────────
+// ────────────────────────────────────────────────────────────────
+// PUT update an existing merchant
+// ────────────────────────────────────────────────────────────────
 router.put('/:id', async (req, res, next) => {
   console.log('📦  PUT /api/merchant/' + req.params.id, req.body);
   try {
     const updates = {};
-    if (req.body.name       !== undefined) updates.name    = req.body.name;
-    if (req.body.logo_url   !== undefined) updates.logoUrl = req.body.logo_url;
-    if (req.body.owner_id   !== undefined) updates.ownerId = req.body.owner_id;
+    if (req.body.name !== undefined) updates.name = req.body.name;
+    if (req.body.logo_url !== undefined) updates.logoUrl = req.body.logo_url;
+    if (req.body.owner_id !== undefined) updates.ownerId = req.body.owner_id;
 
     const [updated] = await db
       .update(merchant)
@@ -90,7 +141,9 @@ router.put('/:id', async (req, res, next) => {
   }
 });
 
-// ─── DELETE a merchant ────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────
+// DELETE a merchant
+// ────────────────────────────────────────────────────────────────
 router.delete('/:id', async (req, res, next) => {
   console.log('📦  DELETE /api/merchant/' + req.params.id);
   try {
@@ -109,5 +162,144 @@ router.delete('/:id', async (req, res, next) => {
     next(err);
   }
 });
+
+// ────────────────────────────────────────────────────────────────
+// POST /api/v1/merchants/:id/logo
+// Upload/update logo for a merchant (owner only)
+// Field name: "file" in multipart/form-data
+// ────────────────────────────────────────────────────────────────
+router.post(
+  '/:id/logo',
+  auth(),               // ⬅️ verify Cognito JWT → sets req.user
+  upload.single('file'),
+  async (req, res, next) => {
+    const merchantId = req.params.id;
+    console.log('📦  POST /api/v1/merchants/' + merchantId + '/logo');
+
+    try {
+      console.log(
+        '📦  req.file?', !!req.file,
+        'bucket=', LOGO_BUCKET,
+        'baseUrl=', LOGO_BASE_URL
+      );
+
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      const authedSub = req.user && req.user.sub;
+      console.log('📦  logo route req.user =', {
+        sub: authedSub,
+        username: req.user?.username,
+      });
+
+      if (!authedSub) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      // 1) Find local user row by Cognito sub
+      console.time('db:findUser');
+      const [dbUser] = await db
+        .select()
+        .from(user)
+        .where(eq(user.cognitoSub, authedSub));
+      console.timeEnd('db:findUser');
+
+      if (!dbUser) {
+        console.warn('📦  No local user row for sub', authedSub);
+        return res.status(403).json({ error: 'User not registered' });
+      }
+
+      // 2) Verify merchant exists
+      console.time('db:findMerchant');
+      const [dbMerchant] = await db
+        .select()
+        .from(merchant)
+        .where(eq(merchant.id, merchantId));
+      console.timeEnd('db:findMerchant');
+
+      if (!dbMerchant) {
+        console.log('📦  merchant not found for logo upload');
+        return res.status(404).json({ error: 'Merchant not found' });
+      }
+
+      // 3) Ownership check (merchant.owner_id → user.id)
+      if (dbMerchant.ownerId && dbMerchant.ownerId !== dbUser.id) {
+        console.warn(
+          '📦  user tried to modify merchant they do not own',
+          { userId: dbUser.id, merchantOwnerId: dbMerchant.ownerId }
+        );
+        return res.status(403).json({ error: 'You do not own this merchant' });
+      }
+
+      // 4) If S3 is not configured in dev, just fake a URL so the UI works
+      if (!LOGO_BUCKET || !LOGO_BASE_URL) {
+        console.warn('📦  Logo bucket/base URL not configured – skipping S3, dev fake URL only');
+        const fakeUrl = `/dev-merchant-logo/${merchantId}.png`;
+
+        const [updatedDev] = await db
+          .update(merchant)
+          .set({ logoUrl: fakeUrl })
+          .where(eq(merchant.id, merchantId))
+          .returning();
+
+        console.log('📦  updated merchant logo (dev fake) id:', updatedDev.id);
+        return res.json({
+          id: updatedDev.id,
+          name: updatedDev.name,
+          logo_url: updatedDev.logoUrl,
+          owner_id: updatedDev.ownerId,
+        });
+      }
+
+      // 5) Real S3 upload path
+      const { mimetype, buffer, originalname } = req.file;
+      const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
+      if (!allowed.includes(mimetype)) {
+        return res.status(400).json({ error: 'Unsupported file type' });
+      }
+
+      const ext = getExtensionFromMime(mimetype);
+      const safeName = originalname
+        .replace(/\s+/g, '-')
+        .replace(/[^a-zA-Z0-9.\-]/g, '');
+      const randomSuffix = Math.random().toString(36).slice(2);
+      const key = `logos/merchants/${merchantId}/logo-${randomSuffix}.${ext}`;
+
+      const putParams = {
+        Bucket: LOGO_BUCKET,
+        Key: key,
+        Body: buffer,
+        ContentType: mimetype,
+      };      
+
+      console.time('s3:putObject');
+      await s3.send(new PutObjectCommand(putParams));
+      console.timeEnd('s3:putObject');
+
+      const logoUrl = `${LOGO_BASE_URL}/${key}`;
+
+      console.time('db:updateMerchantLogo');
+      const [updated] = await db
+        .update(merchant)
+        .set({ logoUrl })
+        .where(eq(merchant.id, merchantId))
+        .returning();
+      console.timeEnd('db:updateMerchantLogo');
+
+      console.log('📦  updated merchant logo id:', updated.id);
+
+      return res.json({
+        id: updated.id,
+        name: updated.name,
+        logo_url: updated.logoUrl,
+        owner_id: updated.ownerId,
+      });
+    } catch (err) {
+      console.error('📦  error in POST /merchant/:id/logo', err);
+      return next(err);
+    }
+  },
+);
 
 export default router;

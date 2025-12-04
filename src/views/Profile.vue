@@ -102,7 +102,6 @@
           </section>
         </template>
 
-
         <!-- MERCHANT VIEW -->
         <template v-else-if="role === 'merchant'">
           <!-- Merchant Profile / Restaurants -->
@@ -114,7 +113,11 @@
             </p>
 
             <!-- No restaurants yet -->
-            <div v-if="merchants.length === 0" class="muted small" style="margin-top: 0.75rem;">
+            <div
+              v-if="merchants.length === 0"
+              class="muted small"
+              style="margin-top: 0.75rem;"
+            >
               You don’t have any restaurants linked to your account yet.
             </div>
 
@@ -123,7 +126,14 @@
               <article v-for="m in merchants" :key="m.id" class="merchant-card">
                 <div class="merchant-card-header">
                   <div class="merchant-logo-placeholder">
-                    <span class="initials">
+                    <!-- If logo exists, show image, else initials -->
+                    <img
+                      v-if="m.logo_url"
+                      :src="m.logo_url"
+                      :alt="m.name || 'Merchant logo'"
+                      class="merchant-logo-img"
+                    />
+                    <span v-else class="initials">
                       {{ (m.name || 'VS').trim().charAt(0).toUpperCase() }}
                     </span>
                   </div>
@@ -142,8 +152,40 @@
                       {{ m.website_url || 'https://example.com' }}
                     </span>
                   </p>
-                  <p class="muted tiny">
-                    Logo upload and profile editing controls will appear here for this restaurant.
+
+                  <!-- Logo upload controls -->
+                  <div class="logo-upload-row">
+                    <label class="file-label">
+                      <span class="file-label-text">
+                        {{ m.logo_url ? 'Change Logo' : 'Upload Logo' }}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        @change="onLogoFileChange(m, $event)"
+                      />
+                    </label>
+
+                    <span
+                      v-if="uploadingLogoId === m.id"
+                      class="muted tiny"
+                      style="margin-left: 0.5rem;"
+                    >
+                      Uploading…
+                    </span>
+                  </div>
+
+                  <p
+                    v-if="logoUploadError && uploadErrorMerchantId === m.id"
+                    class="muted tiny"
+                    style="color: #b00020; margin-top: 0.25rem;"
+                  >
+                    {{ logoUploadError }}
+                  </p>
+
+                  <p class="muted tiny" style="margin-top: 0.5rem;">
+                    Recommended: square PNG or JPG, up to 5 MB. This logo will be used on
+                    all coupons for this restaurant.
                   </p>
                 </div>
               </article>
@@ -173,7 +215,6 @@
             </ul>
           </section>
         </template>
-
 
         <!-- FOODIE GROUP ADMIN VIEW -->
         <template v-else-if="role === 'foodie_group_admin'">
@@ -226,8 +267,13 @@ export default {
   data() {
     return {
       user: null,        // { id, email, name, role }
-      merchants: [],     // 👈 new: list of restaurants if role === 'merchant'
+      merchants: [],     // list of restaurants if role === 'merchant'
       loadingUser: true,
+
+      // logo upload state
+      uploadingLogoId: null,
+      logoUploadError: null,
+      uploadErrorMerchantId: null,
     };
   },
 
@@ -303,13 +349,71 @@ export default {
           name: data.name,
           role: data.role,
         };
-        this.merchants = data.merchants || [];   // 👈 fill merchants list
+        this.merchants = data.merchants || [];
       } catch (err) {
         console.error("Error fetching /api/v1/users/me", err);
         this.user = null;
         this.merchants = [];
       } finally {
         this.loadingUser = false;
+      }
+    },
+
+    async onLogoFileChange(merchant, event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      this.logoUploadError = null;
+      this.uploadErrorMerchantId = null;
+      this.uploadingLogoId = merchant.id;
+
+      try {
+        const token = await getAccessToken();
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await fetch(`/api/v1/merchants/${merchant.id}/logo`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        console.log('logo upload response status', res.status);
+
+        if (!res.ok) {
+          let message = "Upload failed";
+          try {
+            const errJson = await res.json();
+            console.log('logo upload error payload', errJson);
+            if (errJson && errJson.error) {
+              message = errJson.error;
+            }
+          } catch (_) {
+            // ignore json parse error
+          }
+          this.logoUploadError = message;
+          this.uploadErrorMerchantId = merchant.id;
+          return;
+        }
+
+        const updated = await res.json(); // { id, name, logo_url, owner_id }
+
+        // Update merchants array in-place
+        this.merchants = this.merchants.map((m) =>
+          m.id === updated.id
+            ? { ...m, logo_url: updated.logo_url || updated.logoUrl }
+            : m
+        );
+      } catch (err) {
+        console.error("Error uploading merchant logo", err);
+        this.logoUploadError = "Unexpected error during upload";
+        this.uploadErrorMerchantId = merchant.id;
+      } finally {
+        this.uploadingLogoId = null;
+        // Reset the input so selecting the same file again still triggers change
+        event.target.value = "";
       }
     },
 
@@ -450,38 +554,7 @@ export default {
   margin-bottom: 0.7rem;
 }
 
-/* Merchant layout */
-.merchant-layout {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  margin-top: 1rem;
-}
-
-.merchant-logo-wrapper {
-  max-width: 220px;
-}
-
-.merchant-logo-placeholder {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: #f7f7f7;
-  border: 1px dashed #ccc;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.merchant-logo-placeholder .initials {
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: #555;
-}
-
-.merchant-info-placeholder p {
-  margin: 0.3rem 0;
-}
+/* Merchant list + cards */
 .merchant-list {
   display: flex;
   flex-direction: column;
@@ -509,6 +582,62 @@ export default {
 
 .merchant-card-body p {
   margin: 0.25rem 0;
+}
+
+/* Logo placeholder / image */
+.merchant-logo-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #f7f7f7;
+  border: 1px dashed #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.merchant-logo-placeholder .initials {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.merchant-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* File upload UI */
+.logo-upload-row {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.file-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid #ddd;
+  background: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.file-label input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-label-text {
+  pointer-events: none;
 }
 
 .placeholder-text {
@@ -573,6 +702,11 @@ export default {
 .loading {
   color: #555;
   font-style: italic;
+}
+
+.signin-card {
+  text-align: center;
+  margin-top: 2rem;
 }
 
 @media (max-width: 600px) {

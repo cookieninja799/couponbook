@@ -3,7 +3,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { connectDB, pool } from './db.js';
-import * as auth from './middleware/auth.js';
+import auth from './middleware/auth.js';    
 import usersRouter from './routes/users.js';
 import couponsRouter from './routes/coupons.js';
 import eventsRouter from './routes/events.js';
@@ -40,12 +40,29 @@ connectDB()
     .catch((e) => console.error('DB connect failed (continuing to boot):', e));
 // public routes
 app.use('/api/v1/users', usersRouter);
-app.use('/api/v1/merchants', merchantsRouter);
+
+app.use(
+  '/api/v1/merchants',
+  (req, _res, next) => {
+    console.log(
+      '📦 incoming /api/v1/merchants request',
+      req.method,
+      req.url,
+      'content-type=',
+      req.headers['content-type']
+    );
+    next();
+  },
+  merchantsRouter
+);
+
 app.use('/api/v1/coupons', couponsRouter);
 app.use('/api/v1/groups', groupsRouter);
 app.use('/api/v1/coupon-submissions', couponSubmissionsRouter);
-// protect everything else
-app.use('/api/v1', auth.required);
+
+// 🔐 protect everything else
+app.use('/api/v1', auth());               // ⬅️ CALL the factory
+
 app.use('/api/v1/events', eventsRouter);
 // global error handler (get JSON instead of opaque 500)
 app.use((err, req, res, _next) => {
