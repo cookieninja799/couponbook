@@ -9,7 +9,8 @@ import jwt from 'jsonwebtoken';
 import jwksRsa from 'jwks-rsa';
 import { eq } from 'drizzle-orm';
 import { db } from '../db.js';
-import { user } from '../schema.js';
+import { user, merchant } from '../schema.js';
+import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -286,4 +287,56 @@ router.post('/sync', async (req, res) => {
   }
 });
 
+// GET /api/v1/users/me
+router.get('/me', auth(), async (req, res, next) => {
+  try {
+    const sub = req.user && req.user.sub;
+    if (!sub) {
+      console.warn('📦  /users/me called without Cognito sub on req.user');
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // 1) Load the local user row by Cognito sub
+    const [dbUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.cognitoSub, sub)); // adjust if your column is named differently
+
+    if (!dbUser) {
+      console.warn('📦  No local user row for sub in /users/me', sub);
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // 2) Base payload
+    const payload = {
+      id: dbUser.id,
+      email: dbUser.email,
+      name: dbUser.name,
+      role: dbUser.role, // 'customer' | 'merchant' | 'foodie_group_admin' | etc.
+    };
+
+    // 3) If they are a merchant, attach ALL restaurants they own
+    if (dbUser.role === 'merchant') {
+      const merchantRows = await db
+        .select()                 // 👈 let Drizzle return the full row
+        .from(merchant)
+        .where(eq(merchant.ownerId, dbUser.id));
+
+      payload.merchants = merchantRows.map((m) => ({
+        id: m.id,
+        name: m.name,
+        logo_url: m.logoUrl,
+        foodie_group_id: m.foodieGroupId,
+        website_url: m.websiteUrl,
+      }));
+    }
+
+    return res.json(payload);
+  } catch (err) {
+    console.error('📦  Error in GET /api/v1/users/me:', err);
+    next(err);
+  }
+});
+
 export default router;
+
