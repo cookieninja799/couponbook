@@ -51,6 +51,7 @@ export default {
   }
 };
 </script>
+
 <style scoped>
 .auth-btn {
   background: none;
@@ -64,6 +65,7 @@ export default {
   background: #007bff;
   color: white;
 }
+
 .app-header {
   background-color: #fff;
   border-bottom: 1px solid #ddd;
@@ -104,7 +106,7 @@ export default {
   font-size: 1rem;
 }
 
-/* New styling for menu links */
+/* Menu link styles */
 .navigation a {
   text-decoration: none;
   color: #38424c;
@@ -145,23 +147,35 @@ export default {
 
 /* Responsive Styles for Mobile */
 @media (max-width: 768px) {
+  /* show burger, hide desktop layout */
   .hamburger {
     display: flex;
   }
+
+  /* base closed state: completely hidden off-canvas */
   .navigation {
     position: absolute;
     top: 70px;
     right: 0;
     background-color: #fff;
-    width: 200px;
+    width: 220px;
+    display: none;             /* hide from layout */
+    opacity: 0;                /* invisible */
+    pointer-events: none;      /* not clickable when closed */
     transform: translateX(100%);
-    transition: transform 0.3s ease-in-out;
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
     box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
     z-index: 1000;
   }
+
+  /* open state: slide in + visible + interactive */
   .navigation.open {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
     transform: translateX(0);
   }
+
   .navigation ul {
     flex-direction: column;
     gap: 1rem;
