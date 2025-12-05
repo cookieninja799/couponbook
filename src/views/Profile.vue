@@ -71,17 +71,31 @@
           <section class="section-card">
             <h2>Coupon Activity</h2>
             <p class="muted">
-              Here we’ll show your total redemptions, recent activity, and other
-              stats once this is wired up.
+              Your personal stats for VivaSpot Coupon Book.
             </p>
+
+            <div v-if="customerStats.error" class="muted tiny" style="color:#b00020;margin-bottom:0.5rem;">
+              {{ customerStats.error }}
+            </div>
 
             <div class="stat-row">
               <div class="stat-card">
-                <span class="stat-number">—</span>
+                <span class="stat-number">
+                  <span v-if="customerStats.loading">…</span>
+                  <span v-else>
+                    {{ customerStats.couponsRedeemed != null ? customerStats.couponsRedeemed : '—' }}
+                  </span>
+                </span>
                 <span class="stat-label">Coupons Redeemed</span>
               </div>
+
               <div class="stat-card">
-                <span class="stat-number">—</span>
+                <span class="stat-number">
+                  <span v-if="customerStats.loading">…</span>
+                  <span v-else>
+                    {{ customerStats.activeCouponBooks != null ? customerStats.activeCouponBooks : '—' }}
+                  </span>
+                </span>
                 <span class="stat-label">Active Coupon Books</span>
               </div>
             </div>
@@ -90,17 +104,38 @@
           <!-- Purchased Coupon Books -->
           <section class="section-card">
             <h2>Purchased Coupon Books</h2>
-            <p class="muted">
-              Soon this section will list all the foodie groups you’ve unlocked
-              and when you purchased them.
+
+            <p class="muted" v-if="!customerStats.loading && !customerStats.purchases.length">
+              Once you unlock a foodie group, it will show up here with purchase and expiry info.
             </p>
-            <ul class="skeleton-list">
+
+            <!-- Skeleton while loading -->
+            <ul v-if="customerStats.loading" class="skeleton-list">
               <li class="skeleton-item"></li>
               <li class="skeleton-item"></li>
               <li class="skeleton-item"></li>
             </ul>
+
+            <!-- Actual list -->
+            <ul v-else-if="customerStats.purchases.length" class="purchases-list">
+              <li v-for="p in customerStats.purchases" :key="p.id" class="purchase-item">
+                <div class="purchase-main">
+                  <strong>{{ p.groupName }}</strong>
+                  <span class="muted tiny">
+                    · Purchased {{ formatDateMedium(p.purchasedAt) }}
+                  </span>
+                </div>
+                <div class="muted tiny">
+                  Status: {{ p.status }}
+                  <span v-if="p.expiresAt">
+                    · Expires {{ formatDateMedium(p.expiresAt) }}
+                  </span>
+                </div>
+              </li>
+            </ul>
           </section>
         </template>
+
 
         <!-- MERCHANT VIEW -->
         <template v-else-if="role === 'merchant'">
@@ -342,6 +377,13 @@ export default {
       user: null,
       merchants: [],
       loadingUser: true,
+      customerStats: {
+        loading: false,
+        error: null,
+        couponsRedeemed: null,
+        activeCouponBooks: null,
+        purchases: [],
+      },
 
       // logo upload state
       uploadingLogoId: null,
@@ -431,6 +473,10 @@ export default {
           role: data.role,
         };
         this.merchants = data.merchants || [];
+
+        if (this.role === 'customer') {
+          this.loadCustomerStats();
+        }
       } catch (err) {
         console.error("Error fetching /api/v1/users/me", err);
         this.user = null;
@@ -682,6 +728,69 @@ export default {
       }
     },
 
+    formatDateMedium(value) {
+      if (!value) return '—';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    },
+
+    async loadCustomerStats() {
+      if (this.role !== 'customer') return;
+
+      this.customerStats.loading = true;
+      this.customerStats.error = null;
+
+      try {
+        const token = await getAccessToken();
+
+        // 1) Redemptions count
+        const redRes = await fetch('/api/v1/coupons/redemptions/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!redRes.ok) {
+          throw new Error(`Failed to load redemptions (status ${redRes.status})`);
+        }
+        const redRows = await redRes.json();
+        this.customerStats.couponsRedeemed = Array.isArray(redRows)
+          ? redRows.length
+          : 0;
+
+        // 2) Purchases
+        const pRes = await fetch('/api/v1/groups/my/purchases', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!pRes.ok) {
+          throw new Error(`Failed to load purchases (status ${pRes.status})`);
+        }
+        const purchases = await pRes.json();
+        this.customerStats.purchases = Array.isArray(purchases) ? purchases : [];
+
+        // 3) Derive active coupon books: paid + not expired (or no expiry)
+        const now = new Date();
+        const active = this.customerStats.purchases.filter((p) => {
+          if (p.status !== 'paid') return false;
+          if (!p.expiresAt) return true;
+          const exp = new Date(p.expiresAt);
+          if (Number.isNaN(exp.getTime())) return true;
+          return exp >= now;
+        });
+
+        this.customerStats.activeCouponBooks = active.length;
+      } catch (err) {
+        console.error('Error loading customer stats', err);
+        this.customerStats.error = 'Could not load your coupon activity.';
+        this.customerStats.couponsRedeemed = null;
+        this.customerStats.activeCouponBooks = null;
+        this.customerStats.purchases = [];
+      } finally {
+        this.customerStats.loading = false;
+      }
+    },
 
   },
 };
@@ -1008,5 +1117,27 @@ export default {
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+.purchases-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+}
+
+.purchase-item {
+  padding: 0.6rem 0;
+  border-top: 1px solid #eee;
+}
+
+.purchase-item:first-child {
+  border-top: none;
+}
+
+.purchase-main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: baseline;
 }
 </style>

@@ -250,4 +250,51 @@ router.post('/:id/test-purchase', auth(), async (req, res, next) => {
   }
 });
 
+// ─── GET /api/v1/groups/my-purchases ─────────────────────────────
+// Return all coupon-book purchases for the currently logged-in user
+router.get('/my/purchases', auth(), async (req, res, next) => {
+  console.log('📦  GET /api/v1/groups/my-purchases');
+
+  try {
+    const sub = req.user && req.user.sub;
+    if (!sub) {
+      console.warn('📦  /groups/my-purchases called without Cognito sub');
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // 1) Look up local user row by Cognito sub
+    const [dbUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.cognitoSub, sub));
+
+    if (!dbUser) {
+      console.warn('📦  No local user row for sub', sub);
+      return res.status(403).json({ error: 'User not registered.' });
+    }
+
+    // 2) Join purchases → foodieGroup for this user
+    const rows = await db
+      .select({
+        id:          purchase.id,
+        groupId:     purchase.groupId,
+        status:      purchase.status,
+        purchasedAt: purchase.purchasedAt,
+        expiresAt:   purchase.expiresAt,
+        amountCents: purchase.amountCents,
+        currency:    purchase.currency,
+        groupName:   foodieGroup.name,
+      })
+      .from(purchase)
+      .innerJoin(foodieGroup, eq(foodieGroup.id, purchase.groupId))
+      .where(eq(purchase.userId, dbUser.id));
+
+    res.json(rows);
+  } catch (err) {
+    console.error('📦  error in GET /groups/my-purchases', err);
+    next(err);
+  }
+});
+
+
 export default router;
