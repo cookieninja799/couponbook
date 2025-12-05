@@ -2,7 +2,7 @@
 import express from 'express';
 import { db } from '../db.js';
 import { coupon, merchant, foodieGroup, couponRedemption, user } from '../schema.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import auth from '../middleware/auth.js'; // auth() verifies Cognito token and sets req.user
 
 const router = express.Router();
@@ -14,19 +14,19 @@ router.get('/', async (req, res, next) => {
   try {
     const allCoupons = await db
       .select({
-        id:               coupon.id,
-        title:            coupon.title,
-        description:      coupon.description,
-        coupon_type:      coupon.couponType,
-        discount_value:   coupon.discountValue,
-        valid_from:       coupon.validFrom,
-        expires_at:       coupon.expiresAt,
-        qr_code_url:      coupon.qrCodeUrl,
-        locked:           coupon.locked,
-        merchant_id:      coupon.merchantId,
-        merchant_name:    merchant.name,
-        merchant_logo:    merchant.logoUrl,
-        foodie_group_id:  coupon.groupId,
+        id:                coupon.id,
+        title:             coupon.title,
+        description:       coupon.description,
+        coupon_type:       coupon.couponType,
+        discount_value:    coupon.discountValue,
+        valid_from:        coupon.validFrom,
+        expires_at:        coupon.expiresAt,
+        qr_code_url:       coupon.qrCodeUrl,
+        locked:            coupon.locked,
+        merchant_id:       coupon.merchantId,
+        merchant_name:     merchant.name,
+        merchant_logo:     merchant.logoUrl,
+        foodie_group_id:   coupon.groupId,
         foodie_group_name: foodieGroup.name,
       })
       .from(coupon)
@@ -94,12 +94,12 @@ router.post('/', async (req, res, next) => {
       .values({
         title,
         description,
-        couponType: coupon_type,
+        couponType:    coupon_type,
         discountValue: discount_value,
-        validFrom: valid_from ? new Date(valid_from) : null,
-        expiresAt: expires_at ? new Date(expires_at) : null,
-        merchantId: merchant_id,
-        groupId: group_id,
+        validFrom:     valid_from ? new Date(valid_from) : null,
+        expiresAt:     expires_at ? new Date(expires_at) : null,
+        merchantId:    merchant_id,
+        groupId:       group_id,
       })
       .returning();
 
@@ -160,8 +160,8 @@ router.post('/:id/redeem', auth(), async (req, res, next) => {
         .insert(user)
         .values({
           cognitoSub: req.user.sub,
-          email: safeEmail,
-          name: safeName,
+          email:      safeEmail,
+          name:       safeName,
         })
         .returning();
       u = inserted[0];
@@ -181,10 +181,10 @@ router.post('/:id/redeem', auth(), async (req, res, next) => {
     if (existing) {
       console.log('♻️  Already redeemed; returning 200', {
         couponId: c.id,
-        userId: u.id,
+        userId:   u.id,
       });
       return res.status(200).json({
-        ok: true,
+        ok:              true,
         alreadyRedeemed: true,
         redeemed_at:
           existing.redeemedAt?.toISOString?.() || existing.redeemedAt || null,
@@ -196,22 +196,22 @@ router.post('/:id/redeem', auth(), async (req, res, next) => {
     const [created] = await db
       .insert(couponRedemption)
       .values({
-        couponId: c.id,
-        userId: u.id,
+        couponId:  c.id,
+        userId:    u.id,
         redeemedAt: nowIso,
       })
       .returning();
 
     console.log('✅ Redemption recorded', {
       redemptionId: created.id,
-      couponId: c.id,
-      userId: u.id,
+      couponId:     c.id,
+      userId:       u.id,
     });
 
     return res.status(201).json({
-      ok: true,
-      redemptionId: created.id,
-      redeemed_at: nowIso.toISOString(),
+      ok:            true,
+      redemptionId:  created.id,
+      redeemed_at:   nowIso.toISOString(),
     });
   } catch (err) {
     console.error('🎟️  error in POST /api/v1/coupons/:id/redeem', err);
@@ -219,23 +219,53 @@ router.post('/:id/redeem', auth(), async (req, res, next) => {
   }
 });
 
-// DELETE /api/v1/coupons/:id
-router.delete('/:id', async (req, res, next) => {
-  console.log('📦  DELETE /api/v1/coupons/' + req.params.id);
+// GET /api/v1/coupons/redemptions/merchant-insights
+// Summary of redemptions for all coupons at restaurants owned by the authed user
+router.get('/redemptions/merchant-insights', auth(), async (req, res, next) => {
   try {
-    const result = await db
-      .delete(coupon)
-      .where(eq(coupon.id, req.params.id));
-
-    if (!result.count) {
-      console.log('📦  coupon not found for delete');
-      return res.status(404).json({ message: 'Coupon not found' });
+    if (!req.user?.sub) {
+      return res.status(401).json({ error: 'Sign in required' });
     }
 
-    console.log('📦  deleted coupon count:', result.count);
-    res.json({ message: 'Coupon deleted' });
+    // Ensure we have a local user row for this Cognito subject
+    let [u] = await db.select().from(user).where(eq(user.cognitoSub, req.user.sub));
+    if (!u) {
+      const safeName =
+        req.user?.name ||
+        (req.user?.email ? req.user.email.split('@')[0] : 'user-' + req.user.sub.slice(0, 6));
+
+      const safeEmail = req.user?.email || `${req.user.sub}@unknown.local`;
+
+      const inserted = await db
+        .insert(user)
+        .values({
+          cognitoSub: req.user.sub,
+          email:      safeEmail,
+          name:       safeName,
+        })
+        .returning();
+      u = inserted[0];
+    }
+
+    // Aggregate redemptions per coupon for merchants this user owns
+    const rows = await db
+      .select({
+        merchantId:     merchant.id,
+        merchantName:   merchant.name,
+        couponId:       coupon.id,
+        couponTitle:    coupon.title,
+        redemptions:    sql`count(${couponRedemption.id})`.as('redemptions'),
+        lastRedeemedAt: sql`max(${couponRedemption.redeemedAt})`.as('last_redeemed_at'),
+      })
+      .from(couponRedemption)
+      .innerJoin(coupon,   eq(coupon.id, couponRedemption.couponId))
+      .innerJoin(merchant, eq(merchant.id, coupon.merchantId))
+      .where(eq(merchant.ownerId, u.id))
+      .groupBy(merchant.id, merchant.name, coupon.id, coupon.title);
+
+    res.json(rows);
   } catch (err) {
-    console.error('📦  error in DELETE /api/v1/coupons/:id', err);
+    console.error('🎟️  error in GET /api/v1/coupons/redemptions/merchant-insights', err);
     next(err);
   }
 });
@@ -260,8 +290,8 @@ router.get('/redemptions/me', auth(), async (req, res, next) => {
         .insert(user)
         .values({
           cognitoSub: req.user.sub,
-          email: safeEmail,
-          name: safeName,
+          email:      safeEmail,
+          name:       safeName,
         })
         .returning();
       u = inserted[0];
@@ -269,7 +299,7 @@ router.get('/redemptions/me', auth(), async (req, res, next) => {
 
     const rows = await db
       .select({
-        couponId: couponRedemption.couponId,
+        couponId:   couponRedemption.couponId,
         redeemedAt: couponRedemption.redeemedAt,
       })
       .from(couponRedemption)
@@ -278,6 +308,27 @@ router.get('/redemptions/me', auth(), async (req, res, next) => {
     res.json(rows);
   } catch (err) {
     console.error('🎟️  error in GET /api/v1/coupons/redemptions/me', err);
+    next(err);
+  }
+});
+
+// DELETE /api/v1/coupons/:id
+router.delete('/:id', async (req, res, next) => {
+  console.log('📦  DELETE /api/v1/coupons/' + req.params.id);
+  try {
+    const result = await db
+      .delete(coupon)
+      .where(eq(coupon.id, req.params.id));
+
+    if (!result.count) {
+      console.log('📦  coupon not found for delete');
+      return res.status(404).json({ message: 'Coupon not found' });
+    }
+
+    console.log('📦  deleted coupon count:', result.count);
+    res.json({ message: 'Coupon deleted' });
+  } catch (err) {
+    console.error('📦  error in DELETE /api/v1/coupons/:id', err);
     next(err);
   }
 });

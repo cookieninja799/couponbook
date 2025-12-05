@@ -113,11 +113,7 @@
             </p>
 
             <!-- No restaurants yet -->
-            <div
-              v-if="merchants.length === 0"
-              class="muted small"
-              style="margin-top: 0.75rem;"
-            >
+            <div v-if="merchants.length === 0" class="muted small" style="margin-top: 0.75rem;">
               You don’t have any restaurants linked to your account yet.
             </div>
 
@@ -127,12 +123,8 @@
                 <div class="merchant-card-header">
                   <div class="merchant-logo-placeholder">
                     <!-- If logo exists, show image, else initials -->
-                    <img
-                      v-if="m.logo_url"
-                      :src="m.logo_url"
-                      :alt="m.name || 'Merchant logo'"
-                      class="merchant-logo-img"
-                    />
+                    <img v-if="m.logo_url" :src="m.logo_url" :alt="m.name || 'Merchant logo'"
+                      class="merchant-logo-img" />
                     <span v-else class="initials">
                       {{ (m.name || 'VS').trim().charAt(0).toUpperCase() }}
                     </span>
@@ -159,27 +151,16 @@
                       <span class="file-label-text">
                         {{ m.logo_url ? 'Change Logo' : 'Upload Logo' }}
                       </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        @change="onLogoFileChange(m, $event)"
-                      />
+                      <input type="file" accept="image/*" @change="onLogoFileChange(m, $event)" />
                     </label>
 
-                    <span
-                      v-if="uploadingLogoId === m.id"
-                      class="muted tiny"
-                      style="margin-left: 0.5rem;"
-                    >
+                    <span v-if="uploadingLogoId === m.id" class="muted tiny" style="margin-left: 0.5rem;">
                       Uploading…
                     </span>
                   </div>
 
-                  <p
-                    v-if="logoUploadError && uploadErrorMerchantId === m.id"
-                    class="muted tiny"
-                    style="color: #b00020; margin-top: 0.25rem;"
-                  >
+                  <p v-if="logoUploadError && uploadErrorMerchantId === m.id" class="muted tiny"
+                    style="color: #b00020; margin-top: 0.25rem;">
                     {{ logoUploadError }}
                   </p>
 
@@ -196,24 +177,116 @@
           <section class="section-card">
             <h2>Merchant Tools</h2>
             <p class="muted">
-              Quick links for managing your coupons will live here.
+              These tools apply to all restaurants linked to your account. Later we’ll
+              add filters so you can focus on a single location at a time.
             </p>
 
             <ul class="link-list">
-              <li>
+              <!-- Create / Submit -->
+              <li class="link-row clickable" @click="goToCouponSubmissions">
                 <span class="link-label">Create / Submit a Coupon</span>
-                <span class="link-helper">Will route to Coupon Submissions.</span>
+                <span class="link-helper">
+                  Open the submission form and choose which restaurant the coupon belongs to.
+                </span>
               </li>
-              <li>
+
+              <!-- Approved -->
+              <li class="link-row clickable" @click="loadApprovedCoupons">
                 <span class="link-label">View Approved Coupons</span>
-                <span class="link-helper">Link to your public coupon list.</span>
+                <span class="link-helper">
+                  See all live, approved coupons across your restaurants.
+                </span>
               </li>
-              <li>
+
+              <!-- Rejected -->
+              <li class="link-row clickable" @click="loadRejectedCoupons">
+                <span class="link-label">View Rejected Coupons</span>
+                <span class="link-helper">
+                  Review coupons that were not approved and see the reason.
+                </span>
+              </li>
+
+              <!-- Insights -->
+              <li class="link-row clickable" @click="loadRedemptionInsights">
                 <span class="link-label">Redemption Insights</span>
-                <span class="link-helper">Analytics card coming later.</span>
+                <span class="link-helper">
+                  See how many times coupons from your restaurants have been redeemed.
+                </span>
               </li>
             </ul>
+
+            <!-- Status / errors -->
+            <p v-if="merchantToolsLoading" class="muted tiny" style="margin-top: 0.75rem;">
+              Loading…
+            </p>
+            <p v-if="merchantToolsError" class="tiny" style="margin-top: 0.5rem; color: #b00020;">
+              {{ merchantToolsError }}
+            </p>
+
+            <!-- Approved coupons list -->
+            <div v-if="activeToolsView === 'approved' && approvedCoupons.length" class="tools-results-block">
+              <h3 class="tiny-heading">Approved Coupons</h3>
+              <ul class="tiny-list">
+                <li v-for="c in approvedCoupons" :key="c.id">
+                  <strong>{{ c.title }}</strong>
+                  <span class="muted tiny">
+                    · {{ merchantNameById(c.merchant_id) }}
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Rejected coupon submissions -->
+            <div v-if="activeToolsView === 'rejected' && rejectedCoupons.length" class="tools-results-block">
+              <h3 class="tiny-heading">Rejected Coupons</h3>
+              <ul class="tiny-list">
+                <li v-for="sub in rejectedCoupons" :key="sub.id">
+                  <strong>{{ sub.submissionData?.title || 'Untitled coupon' }}</strong>
+                  <span class="muted tiny">
+                    · {{ merchantNameById(sub.merchantId) }}
+                  </span>
+                  <br />
+                  <span class="muted tiny">
+                    Rejected on
+                    {{ formatDateTiny(sub.submittedAt) }}
+                    <span v-if="sub.rejectionMessage">
+                      — Reason: {{ sub.rejectionMessage }}
+                    </span>
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Redemption insights summary -->
+            <div v-if="activeToolsView === 'insights' && redemptionInsights.length" class="tools-results-block">
+              <h3 class="tiny-heading">Redemption Insights</h3>
+              <ul class="tiny-list">
+                <li v-for="row in redemptionInsights" :key="row.merchantId">
+                  <strong>{{ row.merchantName }}</strong>
+                  <span class="muted tiny">
+                    · {{ row.totalRedemptions }} total redemptions
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Empty states per view -->
+            <div v-if="activeToolsView === 'approved' && !merchantToolsLoading && !approvedCoupons.length"
+              class="muted tiny" style="margin-top: 0.5rem;">
+              No approved coupons found for your restaurants yet.
+            </div>
+
+            <div v-if="activeToolsView === 'rejected' && !merchantToolsLoading && !rejectedCoupons.length"
+              class="muted tiny" style="margin-top: 0.5rem;">
+              No rejected coupon submissions found for your restaurants.
+            </div>
+
+            <div v-if="activeToolsView === 'insights' && !merchantToolsLoading && !redemptionInsights.length"
+              class="muted tiny" style="margin-top: 0.5rem;">
+              No redemptions recorded yet for coupons from your restaurants.
+            </div>
           </section>
+
         </template>
 
         <!-- FOODIE GROUP ADMIN VIEW -->
@@ -266,14 +339,22 @@ export default {
 
   data() {
     return {
-      user: null,        // { id, email, name, role }
-      merchants: [],     // list of restaurants if role === 'merchant'
+      user: null,
+      merchants: [],
       loadingUser: true,
 
       // logo upload state
       uploadingLogoId: null,
       logoUploadError: null,
       uploadErrorMerchantId: null,
+
+      // merchant tools state
+      approvedCoupons: [],
+      rejectedCoupons: [],
+      redemptionInsights: [],
+      merchantToolsLoading: false,
+      merchantToolsError: null,
+      activeToolsView: null, // 'approved' | 'rejected' | 'insights'
     };
   },
 
@@ -424,6 +505,184 @@ export default {
     signInNow() {
       signIn();
     },
+
+    merchantNameById(id) {
+      const m = this.merchants.find((mm) => mm.id === id);
+      return m && m.name ? m.name : 'Unknown merchant';
+    },
+
+    formatDateTiny(value) {
+      if (!value) return '—';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString();
+    },
+
+    resetMerchantToolsState(view) {
+      this.activeToolsView = view || null;
+      this.merchantToolsError = null;
+      if (view === 'approved') {
+        // keep approved list between clicks if you want; for now we just reload each time
+        this.rejectedCoupons = [];
+        this.redemptionInsights = [];
+      } else if (view === 'rejected') {
+        this.approvedCoupons = [];
+        this.redemptionInsights = [];
+      } else if (view === 'insights') {
+        this.approvedCoupons = [];
+        this.rejectedCoupons = [];
+      } else {
+        this.approvedCoupons = [];
+        this.rejectedCoupons = [];
+        this.redemptionInsights = [];
+      }
+    },
+
+    // Navigate to SurveyJS coupon submission page
+    goToCouponSubmissions() {
+      // adjust path/name if your route is different
+      this.$router.push('/coupon-submissions');
+    },
+
+    async loadApprovedCoupons() {
+      if (!this.merchants.length) {
+        this.activeToolsView = 'approved';
+        this.merchantToolsError = 'You do not have any restaurants linked to this account yet.';
+        this.approvedCoupons = [];
+        return;
+      }
+
+      this.resetMerchantToolsState('approved');
+      this.merchantToolsLoading = true;
+
+      try {
+        const token = await getAccessToken();
+        const res = await fetch('/api/v1/coupons', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed to load coupons, status ${res.status}`);
+        }
+
+        const allCoupons = await res.json();
+        const merchantIds = new Set(this.merchants.map((m) => m.id));
+
+        // Every coupon row has merchant_id from the coupons router
+        this.approvedCoupons = allCoupons.filter((c) =>
+          merchantIds.has(c.merchant_id)
+        );
+      } catch (err) {
+        console.error('Error loading approved coupons', err);
+        this.merchantToolsError = 'Could not load approved coupons.';
+      } finally {
+        this.merchantToolsLoading = false;
+      }
+    },
+
+    async loadRejectedCoupons() {
+      if (!this.merchants.length) {
+        this.activeToolsView = 'rejected';
+        this.merchantToolsError = 'You do not have any restaurants linked to this account yet.';
+        this.rejectedCoupons = [];
+        return;
+      }
+
+      this.resetMerchantToolsState('rejected');
+      this.merchantToolsLoading = true;
+
+      try {
+        const token = await getAccessToken();
+        const merchantIds = this.merchants.map((m) => m.id).join(',');
+
+        // Assumes backend lets you filter by state + merchantIds query
+        const url = `/api/v1/coupon-submissions?state=rejected&merchantIds=${encodeURIComponent(
+          merchantIds
+        )}`;
+
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed to load rejected submissions, status ${res.status}`);
+        }
+
+        const subs = await res.json();
+        this.rejectedCoupons = subs || [];
+      } catch (err) {
+        console.error('Error loading rejected coupons', err);
+        this.merchantToolsError = 'Could not load rejected coupon submissions.';
+      } finally {
+        this.merchantToolsLoading = false;
+      }
+    },
+
+    async loadRedemptionInsights() {
+      if (!this.merchants.length) {
+        this.activeToolsView = 'insights';
+        this.merchantToolsError =
+          'You do not have any restaurants linked to this account yet.';
+        this.redemptionInsights = [];
+        return;
+      }
+
+      this.resetMerchantToolsState('insights');
+      this.merchantToolsLoading = true;
+
+      try {
+        const token = await getAccessToken();
+
+        // Backend route: returns rows per coupon the merchant-owner has
+        // [{ merchantId, merchantName, couponId, couponTitle, redemptions, lastRedeemedAt }]
+        const res = await fetch(
+          '/api/v1/coupons/redemptions/merchant-insights',
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error(
+            `Failed to load redemption insights, status ${res.status}`
+          );
+        }
+
+        const rows = await res.json();
+
+        // Collapse rows into per-merchant totals to match the template:
+        // <li v-for="row in redemptionInsights" :key="row.merchantId">
+        //   {{ row.merchantName }} · {{ row.totalRedemptions }}
+        const byMerchant = {};
+
+        for (const r of rows) {
+          if (!byMerchant[r.merchantId]) {
+            byMerchant[r.merchantId] = {
+              merchantId: r.merchantId,
+              merchantName: r.merchantName,
+              totalRedemptions: 0,
+            };
+          }
+          byMerchant[r.merchantId].totalRedemptions += Number(r.redemptions || 0);
+        }
+
+        this.redemptionInsights = Object.values(byMerchant);
+      } catch (err) {
+        console.error('Error loading redemption insights', err);
+        this.merchantToolsError = 'Could not load redemption insights.';
+        this.redemptionInsights = [];
+      } finally {
+        this.merchantToolsLoading = false;
+      }
+    },
+
+
   },
 };
 </script>
@@ -708,6 +967,37 @@ export default {
   text-align: center;
   margin-top: 2rem;
 }
+
+.link-row.clickable {
+  cursor: pointer;
+}
+
+.link-row.clickable:hover .link-label {
+  text-decoration: underline;
+}
+
+.tools-results-block {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #eee;
+}
+
+.tiny-heading {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.tiny-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tiny-list li {
+  margin-bottom: 0.35rem;
+}
+
 
 @media (max-width: 600px) {
   .profile-page {
