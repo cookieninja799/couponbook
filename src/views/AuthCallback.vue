@@ -18,17 +18,35 @@ const router = useRouter();
 
 onMounted(async () => {
   try {
+    // 1) Handle OIDC callback (Cognito → SPA)
     await store.dispatch('auth/handleCallback');
-    // 1) Sync Cognito → DB (upsert user) using the ID token
-    const idToken = store.state.auth.user?.id_token; // set by oidc-client-ts
+
+    // 2) Sync Cognito user → DB using ID token
+    const idToken = store.state.auth.user?.id_token;
     if (idToken) {
       await api.post('/users/sync', {}, {
         headers: { Authorization: `Bearer ${idToken}` }
       });
     }
-    // 2) Go home
-    router.replace({ name: 'Home' });
+
+    // 3) Read the redirect we saved before the user logged in
+    let redirectPath = localStorage.getItem("postLoginRedirect");
+
+    // Remove so it never loops or reuses
+    localStorage.removeItem("postLoginRedirect");
+
+    // ⚠️ Security: Only allow internal redirects
+    if (!redirectPath || !redirectPath.startsWith("/")) {
+      redirectPath = "/";
+    }
+
+    console.log("🔁 Redirecting user back to:", redirectPath);
+
+    // 4) Send user back to original page
+    router.replace(redirectPath);
+
   } catch (e) {
+    console.error("Callback error:", e);
     error.value = e.message || 'Authentication failed';
   }
 });
@@ -39,7 +57,6 @@ onMounted(async () => {
   padding: 2rem;
   text-align: center;
 }
-
 .error {
   color: red;
 }

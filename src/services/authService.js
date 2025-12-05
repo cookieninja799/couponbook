@@ -1,3 +1,4 @@
+// authService.js
 import { UserManager, WebStorageStateStore } from "oidc-client-ts";
 
 const origin = window.location.origin;
@@ -23,6 +24,19 @@ if (typeof window !== "undefined") {
 
 export async function signIn() {
   try {
+    // 🔙 Remember where the user was before redirecting to Cognito
+    if (typeof window !== "undefined") {
+      const currentPath =
+        window.location.pathname +
+        window.location.search +
+        window.location.hash;
+
+      // Only store internal paths to avoid any weird open-redirect stuff
+      if (currentPath.startsWith("/")) {
+        localStorage.setItem("postLoginRedirect", currentPath);
+      }
+    }
+
     console.log("🔑 Redirecting to Cognito Hosted UI…");
     await userManager.signinRedirect();
   } catch (e) {
@@ -89,7 +103,8 @@ export async function handleSignInCallback() {
   try {
     const user = await userManager.signinRedirectCallback();
     if (user?.id_token) localStorage.setItem("idToken", user.id_token);
-    if (user?.access_token) localStorage.setItem("accessToken", user.access_token);
+    if (user?.access_token)
+      localStorage.setItem("accessToken", user.access_token);
     return user;
   } catch (e) {
     console.error("Callback handling failed", e);
