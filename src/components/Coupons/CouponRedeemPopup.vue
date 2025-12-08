@@ -38,6 +38,12 @@
           <div v-else class="redeemed">
             <p class="success">✅ Redeemed on {{ fmtDate(redeemedAt) }}</p>
 
+            <!-- NEW: usage instructions -->
+            <p class="instructions">
+              Show this coupon receipt to your server or cashier at the restaurant so they can
+              verify it and apply your discount to your bill.
+            </p>
+
             <div class="details-card">
               <h3>Coupon Details</h3>
               <dl class="details-list">
@@ -78,13 +84,7 @@
 
             <div class="actions">
               <button class="btn" @click="printCoupon">Print</button>
-              <a
-                v-if="pdfUrl"
-                class="btn"
-                :href="downloadUrlSecured"
-                target="_self"
-                download
-              >
+              <a v-if="pdfUrl" class="btn" :href="downloadUrlSecured" target="_self" download>
                 Download PDF
               </a>
               <button class="btn ghost" @click="windowClose">Close</button>
@@ -616,7 +616,7 @@ export default {
   align-items: start;
 }
 
-.details-list > div {
+.details-list>div {
   display: contents;
 }
 
@@ -634,7 +634,7 @@ export default {
   font-size: 0.9rem;
 }
 
-.details-list > div:nth-child(n + 2)::before {
+.details-list>div:nth-child(n + 2)::before {
   content: "";
   grid-column: 1 / span 2;
   height: 1px;
@@ -683,7 +683,7 @@ export default {
     grid-template-columns: 1fr;
   }
 
-  .details-list > div:nth-child(n + 2)::before {
+  .details-list>div:nth-child(n + 2)::before {
     grid-column: 1 / span 1;
   }
 

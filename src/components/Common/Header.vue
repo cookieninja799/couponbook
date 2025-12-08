@@ -14,7 +14,7 @@
       <nav class="navigation" :class="{ open: isMenuOpen }">
         <ul>
           <li><router-link to="/">Home</router-link></li>
-          <li><router-link to="/coupon-book">Browse Local Coupons</router-link></li>
+          <li><router-link to="/coupon-book">Local Coupons</router-link></li>
           <li><router-link to="/foodie-groups">Foodie Groups</router-link></li>
           <li><router-link to="/event-page">Events</router-link></li>
           <li v-if="!isAuthenticated">

@@ -69,7 +69,7 @@
       </section>
 
       <!-- Events Section Wrapped with OverlayBlock -->
-      <section class="events-section section-card">
+      <section v-if="false" class="events-section section-card">
         <OverlayBlock :is-dimmed="true" title="Events are coming soon!"
           message="Our events feature is in preview and will be unlocked soon for Foodie Groups." cta-text="Notify Me"
           @cta="alert('You’ll be notified when events are live!')">
@@ -79,7 +79,7 @@
       </section>
 
       <!-- Map Section -->
-      <section class="map-section section-card">
+      <section v-if="false" class="map-section section-card">
         <h2>Location</h2>
         <iframe v-if="mapUrl" width="100%" height="300" frameborder="0" style="border:0" :src="mapUrl"
           allowfullscreen />

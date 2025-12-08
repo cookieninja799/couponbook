@@ -1,6 +1,6 @@
 // src/store/index.js
 import { createStore } from 'vuex';
-import { userManager, signOut } from '@/services/authService';
+import { userManager, signOut, signIn } from '@/services/authService';
 
 export default createStore({
   modules: {
@@ -33,7 +33,7 @@ export default createStore({
         },
 
         async login() {
-          await userManager.signinRedirect();
+          await signIn();
         },
 
         async handleCallback({ commit }) {

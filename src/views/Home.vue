@@ -34,17 +34,13 @@
     </section>
 
     <!-- Featured Events Section -->
-    <section class="featured-events">
+    <section v-if="false" class="featured-events">
       <h2>Upcoming Events</h2>
 
       <!-- Overlay toggled here -->
-      <OverlayBlock
-        :is-dimmed="!eventsEnabled"
-        title="Events are coming soon!"
-        message="We’re rolling this feature out. Want early access or a heads-up when it’s live?"
-        cta-text="Notify Me"
-        @cta="goNotify"
-      >
+      <OverlayBlock :is-dimmed="!eventsEnabled" title="Events are coming soon!"
+        message="We’re rolling this feature out. Want early access or a heads-up when it’s live?" cta-text="Notify Me"
+        @cta="goNotify">
         <EventList :events="featuredEvents" />
       </OverlayBlock>
     </section>
