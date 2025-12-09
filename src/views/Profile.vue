@@ -505,6 +505,16 @@ export default {
       }
     },
 
+    // 🔹 Foodie Group Admin → dashboard
+    goToFoodieGroupDashboard() {
+      this.$router.push({ name: 'FoodieGroupDashboard' });
+    },
+
+    // 🔹 Super Admin → dashboard
+    goToAdminDashboard() {
+      this.$router.push({ name: 'SuperAdminDashboard' });
+    },
+    
     async onLogoFileChange(merchant, event) {
       const file = event.target.files[0];
       if (!file) return;

@@ -2,7 +2,7 @@
 import express from 'express';
 import { db } from '../db.js';
 import { foodieGroup, purchase, user, foodieGroupMembership } from '../schema.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, count, isNull } from 'drizzle-orm';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
@@ -24,20 +24,40 @@ router.get('/', async (req, res, next) => {
 
 // ─── GET /api/v1/groups/:id ───────────────────────────────────────────
 router.get('/:id', async (req, res, next) => {
-  console.log('📦  GET /api/v1/groups/' + req.params.id);
   try {
-    const [group] = await db
+    const groupId = req.params.id;
+
+    const [groupRow] = await db
       .select()
       .from(foodieGroup)
-      .where(eq(foodieGroup.id, req.params.id));
+      .where(eq(foodieGroup.id, groupId));
 
-    if (!group) {
-      console.log('📦  group not found');
-      return res.status(404).json({ message: 'Group not found' });
-    }
-    res.json(group);
+      if (!groupRow) {
+        return res.status(404).json({ error: 'Foodie group not found' });
+      }
+  
+      // ⬇ ADD THIS BLOCK
+      const [membershipAgg] = await db
+        .select({
+          memberCount: count(),
+        })
+        .from(foodieGroupMembership)
+        .where(
+          and(
+            eq(foodieGroupMembership.groupId, groupId),
+            isNull(foodieGroupMembership.deletedAt),
+            // OPTIONAL: if you only want customer-type members for the count:
+            // eq(foodieGroupMembership.role, 'customer'),
+          ),
+        );
+  
+      const totalMembers = membershipAgg?.memberCount ?? 0;  
+      
+      return res.json({
+        ...groupRow,
+        totalMembers,
+      });
   } catch (err) {
-    console.error('📦  error in GET /groups/:id', err);
     next(err);
   }
 });

@@ -28,11 +28,25 @@
 
     <!-- AUTHENTICATED + AUTHORIZED DASHBOARD -->
     <div v-else>
-      <h1>Foodie Group Dashboard</h1>
-      <p>
-        Manage your Foodie Group here. Approve or reject coupon submissions,
-        view group statistics, update your group's details, and monitor activity.
-      </p>
+      <!-- Header in the same spirit as Profile.vue -->
+      <header class="profile-header">
+        <h1>Foodie Group Dashboard</h1>
+        <p class="subtitle">
+          Manage coupon submissions, track statistics, and update group details.
+        </p>
+
+        <div class="user-context" v-if="user && isAuthenticated">
+          <h2 class="user-name">{{ user.name || user.email }}</h2>
+
+          <p class="muted">
+            Managing: <strong>{{ group && group.name ? group.name : '—' }}</strong>
+          </p>
+
+          <span class="role-pill">
+            {{ role || 'foodie_group_admin' }}
+          </span>
+        </div>
+      </header>
 
       <!-- Edit Group Section -->
       <section class="dashboard-section edit-group" v-if="groupLoaded">
@@ -118,7 +132,7 @@
               <ul v-if="!pendingLoading && !pendingError">
                 <li v-for="c in pendingCoupons" :key="c.id">
                   <strong>{{ c.description }}</strong><br />
-                  Submitted by: {{ c.merchantName }} ({{ "Id: " + c.merchantId }})<br/>
+                  Submitted by: {{ c.merchantName }} ({{ "Id: " + c.merchantId }})<br />
                   Expires: {{ formatDate(c.expires_at) }}
                   <div class="action-buttons">
                     <button @click="approveCoupon(c)">Approve</button>
@@ -167,6 +181,7 @@
         <ul>
           <li>Total Members: {{ stats.totalMembers }}</li>
           <li>Total Coupons: {{ stats.totalCoupons }}</li>
+          <li>Pending Submissions: {{ stats.pendingSubmissions }}</li>
         </ul>
       </section>
     </div>
@@ -174,23 +189,29 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
-import { getAccessToken, signIn } from '@/services/authService';
+import { mapGetters } from "vuex";
+import { getAccessToken, signIn } from "@/services/authService";
 
-const API_BASE = '/api/v1';
+const API_BASE = "/api/v1";
 
 export default {
-  name: 'FoodieGroupDashboard',
+  name: "FoodieGroupDashboard",
+
   data() {
     return {
+      // current user (same idea as Profile.vue)
+      user: null,
+      userLoading: false,
+      userError: null,
+
       group: {
         // Hard-coded for now; later you’ll infer this from membership / API
-        id:           '28e7dccf-4a8f-4894-b50a-0f439958e9d8',
-        name:         '',
-        description:  '',
-        location:     '',
-        bannerImage:  '',
-        socialMedia:  { facebook: '', instagram: '', twitter: '' },
+        id: "28e7dccf-4a8f-4894-b50a-0f439958e9d8",
+        name: "",
+        description: "",
+        location: "",
+        bannerImage: "",
+        socialMedia: { facebook: "", instagram: "", twitter: "" },
       },
       groupLoaded: false,
       groupError: null,
@@ -206,24 +227,32 @@ export default {
       stats: {
         totalMembers: 0,
         totalCoupons: 0,
+        pendingSubmissions: 0,
       },
 
       // authorization gate
       notAuthorized: false,
       notAuthorizedMessage:
-        'You do not have permission to manage this Foodie Group.',
+        "You do not have permission to manage this Foodie Group.",
     };
   },
 
   computed: {
-    ...mapGetters('auth', ['isAuthenticated']),
+    ...mapGetters("auth", ["isAuthenticated"]),
+
+    role() {
+      if (this.user && this.user.role) {
+        return this.user.role;
+      }
+      return null;
+    },
   },
 
   async created() {
     // If not logged in, do not attempt API calls – let the gate render.
     if (!this.isAuthenticated) return;
 
-    await this.loadGroupDetails();
+    await Promise.all([this.loadCurrentUser(), this.loadGroupDetails()]);
     if (this.notAuthorized) return;
 
     await Promise.all([this.loadPendingCoupons(), this.loadActiveCoupons()]);
@@ -241,32 +270,68 @@ export default {
       }
     },
 
-    // Fetch group info (secured via token so you can lock this route down later if you want)
+    // 🔹 Load current user (mirrors Profile.vue pattern)
+    async loadCurrentUser() {
+      this.userLoading = true;
+      this.userError = null;
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          this.user = null;
+          return;
+        }
+
+        const res = await fetch("/api/v1/users/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          console.error("Failed to load /api/v1/users/me", res.status);
+          this.user = null;
+          return;
+        }
+
+        const data = await res.json();
+        this.user = {
+          id: data.id,
+          email: data.email,
+          name: data.name,
+          role: data.role,
+        };
+      } catch (err) {
+        console.error("[FoodieGroupDashboard] loadCurrentUser error", err);
+        this.userError =
+          err.message || "Could not load the current signed-in user.";
+        this.user = null;
+      } finally {
+        this.userLoading = false;
+      }
+    },
+
+    // Fetch group info
     async loadGroupDetails() {
       this.groupLoaded = false;
       this.groupError = null;
       try {
         const token = await getAccessToken();
         const res = await fetch(`${API_BASE}/groups/${this.group.id}`, {
-          headers: token
-            ? { Authorization: `Bearer ${token}` }
-            : {},
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
         if (res.status === 403) {
-          // Not authorized to view this group at all
           const body = await res.json().catch(() => ({}));
           this.markNotAuthorized(
             body.error ||
-              'You are signed in, but you are not authorized to manage this Foodie Group.',
+              "You are signed in, but you are not authorized to manage this Foodie Group."
           );
           return;
         }
 
         if (res.status === 401) {
-          // Token invalid/expired – treat as not authorized from dashboard POV
           this.markNotAuthorized(
-            'Your session is not authorized for this Foodie Group. Please sign in again or contact support.',
+            "Your session is not authorized for this Foodie Group. Please sign in again or contact support."
           );
           return;
         }
@@ -274,27 +339,35 @@ export default {
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           throw new Error(
-            `Failed to load group (${res.status}): ${errText || res.statusText}`,
+            `Failed to load group (${res.status}): ${
+              errText || res.statusText
+            }`
           );
         }
 
         const g = await res.json();
 
-        this.group.name        = g.name;
-        this.group.description = g.description;
-        this.group.location    = g.location;
-        this.group.bannerImage = g.bannerImageUrl;
+        this.group.name = g.name || "";
+        this.group.description = g.description || "";
+        this.group.location = g.location || "";
+        this.group.bannerImage = g.bannerImageUrl || "";
         this.group.socialMedia = {
-          facebook:  g.socialLinks?.facebook || '',
-          instagram: g.socialLinks?.instagram || '',
-          twitter:   g.socialLinks?.twitter || '',
+          facebook: g.socialLinks?.facebook || "",
+          instagram: g.socialLinks?.instagram || "",
+          twitter: g.socialLinks?.twitter || "",
         };
 
+        if (typeof g.totalMembers === 'number') {
+          this.stats.totalMembers = g.totalMembers;
+        } else {
+          this.stats.totalMembers = 0;
+        }
+        
         this.groupLoaded = true;
       } catch (err) {
         if (!this.notAuthorized) {
-          console.error('Failed to load group:', err);
-          this.groupError = err.message || 'Could not load group details.';
+          console.error("Failed to load group:", err);
+          this.groupError = err.message || "Could not load group details.";
           this.groupLoaded = false;
         }
       }
@@ -309,26 +382,28 @@ export default {
       try {
         const token = await getAccessToken();
         const res = await fetch(
-          `${API_BASE}/coupon-submissions?groupId=${encodeURIComponent(this.group.id)}`,
+          `${API_BASE}/coupon-submissions?groupId=${encodeURIComponent(
+            this.group.id
+          )}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          },
+          }
         );
 
         if (res.status === 403) {
           const body = await res.json().catch(() => ({}));
           this.markNotAuthorized(
             body.error ||
-              'You are not authorized to view pending submissions for this Foodie Group.',
+              "You are not authorized to view pending submissions for this Foodie Group."
           );
           return;
         }
 
         if (res.status === 401) {
           this.markNotAuthorized(
-            'Your session is not authorized for this Foodie Group. Please sign in again.',
+            "Your session is not authorized for this Foodie Group. Please sign in again."
           );
           return;
         }
@@ -344,25 +419,28 @@ export default {
         const list = await res.json();
 
         if (!Array.isArray(list)) {
-          throw new Error('Unexpected response format from /coupon-submissions');
+          throw new Error("Unexpected response format from /coupon-submissions");
         }
 
-        // Backend already filters state='pending' & groupId; keep this for safety.
         this.pendingCoupons = list
-          .filter((sub) => sub.state === 'pending')
+          .filter((sub) => sub.state === "pending")
           .map((sub) => ({
-            id:           sub.id,
-            description:  sub.submissionData?.description || '',
+            id: sub.id,
+            description: sub.submissionData?.description || "",
             merchantName: sub.merchantName,
-            merchantId:   sub.merchantId,
-            expires_at:   sub.submissionData?.expires_at,
+            merchantId: sub.merchantId,
+            expires_at: sub.submissionData?.expires_at,
           }));
+
+        this.stats.pendingSubmissions = this.pendingCoupons.length;
       } catch (err) {
         if (!this.notAuthorized) {
-          console.error('[FoodieGroupDashboard] loadPendingCoupons failed', err);
+          console.error("[FoodieGroupDashboard] loadPendingCoupons failed", err);
           this.pendingError =
-            err.message || 'Could not load pending submissions for this group.';
+            err.message ||
+            "Could not load pending submissions for this group.";
           this.pendingCoupons = [];
+          this.stats.pendingSubmissions = 0;
         }
       } finally {
         this.pendingLoading = false;
@@ -380,24 +458,22 @@ export default {
         const res = await fetch(
           `${API_BASE}/coupons?groupId=${encodeURIComponent(this.group.id)}`,
           {
-            headers: token
-              ? { Authorization: `Bearer ${token}` }
-              : {},
-          },
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          }
         );
 
         if (res.status === 403) {
           const body = await res.json().catch(() => ({}));
           this.markNotAuthorized(
             body.error ||
-              'You are not authorized to view coupons for this Foodie Group.',
+              "You are not authorized to view coupons for this Foodie Group."
           );
           return;
         }
 
         if (res.status === 401) {
           this.markNotAuthorized(
-            'Your session is not authorized for this Foodie Group. Please sign in again.',
+            "Your session is not authorized for this Foodie Group. Please sign in again."
           );
           return;
         }
@@ -413,21 +489,21 @@ export default {
         const list = await res.json();
 
         if (!Array.isArray(list)) {
-          throw new Error('Unexpected response format from /coupons');
+          throw new Error("Unexpected response format from /coupons");
         }
 
         this.activeCoupons = list.map((c) => ({
-          id:           c.id,
-          description:  c.description,
+          id: c.id,
+          description: c.description,
           merchantName: c.merchant_name,
-          redemptions:  c.redemptions || 0,
+          redemptions: c.redemptions || 0,
         }));
         this.stats.totalCoupons = this.activeCoupons.length;
       } catch (err) {
         if (!this.notAuthorized) {
-          console.error('[FoodieGroupDashboard] loadActiveCoupons failed', err);
+          console.error("[FoodieGroupDashboard] loadActiveCoupons failed", err);
           this.activeError =
-            err.message || 'Could not load active coupons for this group.';
+            err.message || "Could not load active coupons for this group.";
           this.activeCoupons = [];
           this.stats.totalCoupons = 0;
         }
@@ -446,61 +522,64 @@ export default {
         // Optimistically remove from pending
         const before = this.pendingCoupons.slice();
         this.pendingCoupons = this.pendingCoupons.filter(
-          (c) => c.id !== coupon.id,
+          (c) => c.id !== coupon.id
         );
+        this.stats.pendingSubmissions = this.pendingCoupons.length;
 
         const res = await fetch(
           `${API_BASE}/coupon-submissions/${coupon.id}`,
           {
-            method: 'PUT',
+            method: "PUT",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ state: 'approved' }),
-          },
+            body: JSON.stringify({ state: "approved" }),
+          }
         );
 
         if (res.status === 403) {
           const body = await res.json().catch(() => ({}));
           this.markNotAuthorized(
             body.error ||
-              'You are not authorized to approve submissions for this Foodie Group.',
+              "You are not authorized to approve submissions for this Foodie Group."
           );
-          // rollback optimistic update
           this.pendingCoupons = before;
+          this.stats.pendingSubmissions = before.length;
           return;
         }
 
         if (res.status === 401) {
           this.markNotAuthorized(
-            'Your session is not authorized for this Foodie Group. Please sign in again.',
+            "Your session is not authorized for this Foodie Group. Please sign in again."
           );
           this.pendingCoupons = before;
+          this.stats.pendingSubmissions = before.length;
           return;
         }
 
         if (!res.ok) {
-          console.error('Approve failed:', res.status, await res.text());
-          // Roll back pending list
+          console.error("Approve failed:", res.status, await res.text());
           this.pendingCoupons = before;
+          this.stats.pendingSubmissions = before.length;
           return;
         }
 
         const newCoupon = await res.json();
 
         this.activeCoupons.push({
-          id:           newCoupon.id,
-          description:  newCoupon.description,
+          id: newCoupon.id,
+          description: newCoupon.description,
           merchantName: newCoupon.merchant_name,
-          redemptions:  newCoupon.redemptions || 0,
+          redemptions: newCoupon.redemptions || 0,
         });
 
         this.stats.totalCoupons = this.activeCoupons.length;
       } catch (err) {
         if (!this.notAuthorized) {
-          console.error('[FoodieGroupDashboard] approveCoupon error', err);
+          console.error("[FoodieGroupDashboard] approveCoupon error", err);
           await this.loadPendingCoupons();
+          await this.loadActiveCoupons();
         }
       }
     },
@@ -510,8 +589,8 @@ export default {
       if (this.notAuthorized) return;
 
       const reason = window.prompt(
-        'Please enter a brief reason for rejection:',
-        '',
+        "Please enter a brief reason for rejection:",
+        ""
       );
       if (reason === null) {
         return;
@@ -523,67 +602,136 @@ export default {
         const before = this.pendingCoupons.slice();
         // Optimistically remove
         this.pendingCoupons = this.pendingCoupons.filter(
-          (c) => c.id !== coupon.id,
+          (c) => c.id !== coupon.id
         );
+        this.stats.pendingSubmissions = this.pendingCoupons.length;
 
         const res = await fetch(
           `${API_BASE}/coupon-submissions/${coupon.id}`,
           {
-            method: 'PUT',
+            method: "PUT",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-              state: 'rejected',
+              state: "rejected",
               message: reason,
             }),
-          },
+          }
         );
 
         if (res.status === 403) {
           const body = await res.json().catch(() => ({}));
           this.markNotAuthorized(
             body.error ||
-              'You are not authorized to reject submissions for this Foodie Group.',
+              "You are not authorized to reject submissions for this Foodie Group."
           );
           this.pendingCoupons = before;
+          this.stats.pendingSubmissions = before.length;
           return;
         }
 
         if (res.status === 401) {
           this.markNotAuthorized(
-            'Your session is not authorized for this Foodie Group. Please sign in again.',
+            "Your session is not authorized for this Foodie Group. Please sign in again."
           );
           this.pendingCoupons = before;
+          this.stats.pendingSubmissions = before.length;
           return;
         }
 
         if (!res.ok) {
-          console.error('Failed to reject:', res.status, await res.text());
-          // rollback UI
+          console.error("Failed to reject:", res.status, await res.text());
           this.pendingCoupons = before;
+          this.stats.pendingSubmissions = before.length;
         } else {
           await this.loadActiveCoupons();
         }
       } catch (err) {
         if (!this.notAuthorized) {
-          console.error('[FoodieGroupDashboard] rejectCoupon error', err);
+          console.error("[FoodieGroupDashboard] rejectCoupon error", err);
           await this.loadPendingCoupons();
+          await this.loadActiveCoupons();
         }
       }
     },
 
     // Format ISO date to locale string
     formatDate(s) {
-      if (!s) return '—';
+      if (!s) return "—";
       const d = new Date(s);
-      if (Number.isNaN(d.getTime())) return '—';
+      if (Number.isNaN(d.getTime())) return "—";
       return d.toLocaleDateString();
     },
 
-    saveGroupDetails() {
-      alert('Save group details not implemented yet');
+    // Save group details to backend
+    async saveGroupDetails() {
+      if (!this.group || !this.group.id) return;
+
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          this.markNotAuthorized(
+            "You must be signed in to update group details."
+          );
+          return;
+        }
+
+        const payload = {
+          name: this.group.name,
+          description: this.group.description,
+          location: this.group.location || null,
+          bannerImageUrl: this.group.bannerImage || null,
+          socialLinks: {
+            facebook: this.group.socialMedia.facebook || null,
+            instagram: this.group.socialMedia.instagram || null,
+            twitter: this.group.socialMedia.twitter || null,
+          },
+        };
+
+        const res = await fetch(`${API_BASE}/groups/${this.group.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.status === 403) {
+          const body = await res.json().catch(() => ({}));
+          this.markNotAuthorized(
+            body.error || "You are not authorized to update this Foodie Group."
+          );
+          return;
+        }
+
+        if (res.status === 401) {
+          this.markNotAuthorized(
+            "Your session is not authorized for this Foodie Group. Please sign in again."
+          );
+          return;
+        }
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          const msg =
+            body.error ||
+            `Failed to save Foodie Group details (status ${res.status})`;
+          throw new Error(msg);
+        }
+
+        // Re-sync from server in case backend normalized anything
+        await this.loadGroupDetails();
+        alert("Group details saved successfully.");
+      } catch (err) {
+        console.error("[FoodieGroupDashboard] saveGroupDetails error", err);
+        alert(
+          err.message ||
+            "Something went wrong while saving your Foodie Group details."
+        );
+      }
     },
   },
 };
@@ -594,6 +742,31 @@ export default {
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.user-context {
+  padding: 0.6rem 0.9rem;
+  border-radius: 999px;
+  background: #f3f4f6;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.user-name {
+  font-weight: 600;
+}
+
+.role-pill {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #ef5430;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .dashboard-section {
@@ -660,6 +833,7 @@ textarea {
 .action-buttons {
   margin-top: 0.5rem;
 }
+
 .action-buttons button {
   margin-right: 0.5rem;
   padding: 0.5rem 1rem;
