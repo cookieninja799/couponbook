@@ -6,7 +6,7 @@ var pg_core_1 = require("drizzle-orm/pg-core");
 exports.attendanceStatus = (0, pg_core_1.pgEnum)("attendance_status", ['going', 'waitlist', 'cancelled']);
 exports.couponType = (0, pg_core_1.pgEnum)("coupon_type", ['percent', 'amount', 'bogo', 'free_item']);
 exports.purchaseStatus = (0, pg_core_1.pgEnum)("purchase_status", ['created', 'pending', 'paid', 'expired', 'refunded']);
-exports.role = (0, pg_core_1.pgEnum)("role", ['admin', 'merchant', 'customer']);
+exports.role = (0, pg_core_1.pgEnum)("role", ['admin', 'merchant', 'customer', "foodie_group_admin"]);
 exports.submissionState = (0, pg_core_1.pgEnum)("submission_state", ['pending', 'approved', 'rejected']);
 exports.couponSubmission = (0, pg_core_1.pgTable)("coupon_submission", {
     id: (0, pg_core_1.uuid)().defaultRandom().primaryKey().notNull(),

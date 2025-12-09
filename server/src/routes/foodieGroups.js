@@ -1,7 +1,7 @@
 // server/src/routes/foodieGroup.js
 import express from 'express';
 import { db } from '../db.js';
-import { foodieGroup, purchase, user } from '../schema.js';
+import { foodieGroup, purchase, user, foodieGroupMembership } from '../schema.js';
 import { eq, and } from 'drizzle-orm';
 import auth from '../middleware/auth.js';
 
@@ -130,14 +130,11 @@ router.get('/:id/access', auth(), async (req, res, next) => {
 
     if (!dbUser) {
       console.warn('📦  No local user row for sub', sub);
-      // For gating, we just say "no access" rather than 404
       return res.json({ hasAccess: false });
     }
 
-    // 2) Find purchases for this user + group with status 'paid'
-    const nowIso = new Date().toISOString();
-
-    const rows = await db
+    // 2) Check for a paid purchase for this group
+    const purchases = await db
       .select()
       .from(purchase)
       .where(
@@ -145,20 +142,25 @@ router.get('/:id/access', auth(), async (req, res, next) => {
           eq(purchase.userId, dbUser.id),
           eq(purchase.groupId, groupId),
           eq(purchase.status, 'paid')
+          // you may have additional filters: not refunded, not expired, etc.
         )
       );
 
-    // 3) Enforce optional expiry: expiresAt must be null or > now
-    const hasAccess = rows.some((p) => {
-      if (!p.expiresAt) return true;
-      try {
-        return p.expiresAt > nowIso;
-      } catch {
-        return false;
-      }
-    });
+    const hasAccess = purchases.length > 0;
 
-    console.log('📦  /groups/:id/access result', { groupId, userId: dbUser.id, hasAccess });
+    // 3) If they have access, ensure membership row exists
+    if (hasAccess) {
+      try {
+        await ensureFoodieGroupMembership(dbUser.id, groupId);
+      } catch (e) {
+        console.error('📦  Failed to ensure foodie group membership', {
+          userId: dbUser.id,
+          groupId,
+          error: e,
+        });
+        // Do NOT fail the access check because of membership sync
+      }
+    }
 
     return res.json({ hasAccess });
   } catch (err) {
@@ -185,7 +187,7 @@ router.post('/:id/test-purchase', auth(), async (req, res, next) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // 0) Validate test code (you can move this to env later)
+    // 0) Validate test code
     const VALID_CODE = 'TESTCODE';
     if (code !== VALID_CODE) {
       console.warn('📦  invalid test code used for /test-purchase', { code });
@@ -200,10 +202,10 @@ router.post('/:id/test-purchase', auth(), async (req, res, next) => {
 
     if (!dbUser) {
       console.warn('📦  No local user row for sub', sub);
-      return res.status(403).json({ error: 'User not registered.' });
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    // 2) Check if they already have a paid purchase for this group
+    // 2) Check if a purchase already exists
     const existing = await db
       .select()
       .from(purchase)
@@ -215,40 +217,43 @@ router.post('/:id/test-purchase', auth(), async (req, res, next) => {
         )
       );
 
-    const nowIso = new Date().toISOString();
-
     if (existing.length === 0) {
       // 3) Insert a dev/test purchase row
       await db.insert(purchase).values({
         userId: dbUser.id,
         groupId,
-        stripeCheckoutId: `test-${groupId}-${dbUser.id}`, // unique-ish dev id
+        stripeCheckoutId: `test-${groupId}-${dbUser.id}`,
         stripeSubscriptionId: null,
         amountCents: 0,
         currency: 'usd',
         status: 'paid',
-        purchasedAt: nowIso,
+        purchasedAt: new Date().toISOString(),
         expiresAt: null,
-        refundedAt: null
+        refundedAt: null,
       });
+
       console.log('📦  created test purchase for user/group', {
         userId: dbUser.id,
-        groupId
+        groupId,
       });
     } else {
       console.log('📦  test purchase already exists, skipping insert', {
         userId: dbUser.id,
-        groupId
+        groupId,
       });
     }
 
-    // 4) Respond with hasAccess = true
+    // 4) Ensure membership exists as well
+    await ensureFoodieGroupMembership(dbUser.id, groupId);
+
+    // 5) Respond with hasAccess = true
     return res.json({ hasAccess: true });
   } catch (err) {
     console.error('📦  error in POST /groups/:id/test-purchase', err);
     next(err);
   }
 });
+
 
 // ─── GET /api/v1/groups/my-purchases ─────────────────────────────
 // Return all coupon-book purchases for the currently logged-in user
@@ -296,5 +301,38 @@ router.get('/my/purchases', auth(), async (req, res, next) => {
   }
 });
 
+async function ensureFoodieGroupMembership(userId, groupId) {
+  // Check if membership already exists
+  const [existing] = await db
+    .select()
+    .from(foodieGroupMembership)
+    .where(
+      and(
+        eq(foodieGroupMembership.userId, userId),
+        eq(foodieGroupMembership.groupId, groupId)
+      )
+    );
 
+  // If membership exists:
+  // - Do nothing (we don't want to overwrite an admin's role,
+  //   or downgrade foodie_group_admin → customer)
+  if (existing) {
+    // Optional: if you ever use soft delete via deletedAt, you can “restore” it here:
+    // if (existing.deletedAt) {
+    //   await db.update(foodieGroupMembership)
+    //     .set({ deletedAt: null, joinedAt: new Date().toISOString() })
+    //     .where(eq(foodieGroupMembership.id, existing.id));
+    // }
+    return;
+  }
+
+  // Otherwise, insert a new membership as a normal customer
+  await db.insert(foodieGroupMembership).values({
+    userId,
+    groupId,
+    role: 'customer',          // customers become “members” by purchase
+    joinedAt: new Date().toISOString(),
+  });
+
+}
 export default router;
