@@ -339,16 +339,35 @@
                 we’ll show a summary of your groups and key metrics here.
               </p>
 
-              <button class="btn primary" disabled>
+              <button class="btn primary" @click="goToFoodieGroupDashboard">
                 Go to Foodie Group Dashboard
               </button>
-              <p class="muted tiny">
-                (Button is disabled for now – we’ll wire this up once the
-                dashboard route is finalized.)
-              </p>
+              <p class="muted tiny">Access is limited to approved admins.</p>
             </div>
           </section>
         </template>
+
+        <!-- Admin View -->
+        <section v-else-if="role === 'admin'" class="section-card admin-card">
+          <h2>Admin View</h2>
+          <p class="subtitle">
+            View high-level metrics, manage users, and oversee system-wide settings.
+          </p>
+
+          <div class="role-grid">
+            <div class="role-card">
+              <h3>Super Admin Dashboard</h3>
+              <p>Access advanced tools and metrics for the entire platform.</p>
+              <button class="btn primary" @click="goToAdminDashboard">
+                Go to Super Admin Dashboard
+              </button>
+              <p class="muted tiny">
+                This area is restricted to system administrators.
+              </p>
+            </div>
+          </div>
+        </section>
+
 
         <!-- FALLBACK / UNKNOWN ROLE -->
         <template v-else>
@@ -641,14 +660,9 @@ export default {
 
       try {
         const token = await getAccessToken();
-        const merchantIds = this.merchants.map((m) => m.id).join(',');
 
-        // Assumes backend lets you filter by state + merchantIds query
-        const url = `/api/v1/coupon-submissions?state=rejected&merchantIds=${encodeURIComponent(
-          merchantIds
-        )}`;
-
-        const res = await fetch(url, {
+        // NEW: merchant-scoped, auth-protected route
+        const res = await fetch('/api/v1/coupon-submissions/by-merchant?state=rejected', {
           headers: {
             Authorization: `Bearer ${token}`,
           },

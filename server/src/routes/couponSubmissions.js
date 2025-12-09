@@ -1,7 +1,13 @@
 // server/src/routes/couponSubmissions.js
 import express from 'express';
 import { db } from '../db.js';
-import { couponSubmission, coupon, merchant, user } from '../schema.js';
+import {
+  couponSubmission,
+  coupon,
+  merchant,
+  user,
+  foodieGroupMembership,   // ⬅️ add this
+} from '../schema.js';
 import { eq, and, inArray } from 'drizzle-orm';
 import auth from '../middleware/auth.js';
 
@@ -9,21 +15,63 @@ const router = express.Router();
 console.log('📦  couponSubmissions router loaded');
 
 // ────────────────────────────────────────────────────────────────
-// GET all submissions, or only for one group (pending only)
+// GET all pending submissions for a specific group (dashboard)
+// If groupId is not provided, infer it from foodie_group_membership
+// for the current foodie_group_admin / admin.
 // ────────────────────────────────────────────────────────────────
-router.get('/', async (req, res, next) => {
+router.get('/', auth(), async (req, res, next) => {
   console.log('📦  GET /api/v1/coupon-submissions hit', req.query);
   try {
-    const { groupId } = req.query;
+    let { groupId } = req.query;
 
-    // base: only pending
-    let whereExpr = eq(couponSubmission.state, 'pending');
+    // If no groupId passed, infer from membership
+    if (!groupId) {
+      const authedSub = req.user && req.user.sub;
+      if (!authedSub) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
 
-    // optional filter by group
-    if (groupId) {
-      whereExpr = and(whereExpr, eq(couponSubmission.groupId, groupId));
+      // Look up local user
+      const [dbUser] = await db
+        .select()
+        .from(user)
+        .where(eq(user.cognitoSub, authedSub));
+
+      if (!dbUser) {
+        console.warn('📦  No local user for sub in GET /coupon-submissions', authedSub);
+        return res.status(403).json({ error: 'User not registered' });
+      }
+
+      // Super admin shortcut: later you may support multi-group admin;
+      // for now, this is the “default group” behavior.
+      if (dbUser.role === 'admin') {
+        // For now, admins must still pass groupId explicitly if they manage many groups.
+        return res.status(400).json({ error: 'groupId is required for admin users' });
+      }
+
+      // Find memberships for this user
+      const memberships = await db
+        .select()
+        .from(foodieGroupMembership)
+        .where(eq(foodieGroupMembership.userId, dbUser.id));
+
+      if (!memberships.length) {
+        return res.status(403).json({
+          error: 'No foodie group membership found for this user',
+        });
+      }
+
+      // For now, assume single-group admin; pick the first group
+      const membership = memberships[0];
+      groupId = membership.groupId;
+      console.log('📦  inferred groupId from membership', groupId);
     }
 
+    // 🔐 Ensure this user can admin this group
+    const dbUser = await requireGroupAdmin(req, res, groupId);
+    if (!dbUser) return; // response already sent
+
+    // Only pending for that group
     const subs = await db
       .select({
         id:             couponSubmission.id,
@@ -37,7 +85,12 @@ router.get('/', async (req, res, next) => {
       })
       .from(couponSubmission)
       .leftJoin(merchant, eq(merchant.id, couponSubmission.merchantId))
-      .where(whereExpr);
+      .where(
+        and(
+          eq(couponSubmission.state, 'pending'),
+          eq(couponSubmission.groupId, groupId),
+        ),
+      );
 
     console.log(`📦  returning ${subs.length} submissions`);
     res.json(subs);
@@ -173,13 +226,38 @@ router.post('/', async (req, res, next) => {
 
 // ────────────────────────────────────────────────────────────────
 // PUT update submission (approve/reject → may create coupon)
+// Only foodie_group_admin for that group (or admin) can do this.
 // ────────────────────────────────────────────────────────────────
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', auth(), async (req, res, next) => {
   const submissionId = req.params.id;
   const { state, message } = req.body;
-  console.log(`📦  PUT /api/v1/coupon-submissions/${submissionId}`, { state, message });
+  console.log(`📦  PUT /api/v1/coupon-submissions/${submissionId}`, {
+    state,
+    message,
+  });
 
   try {
+    // Load submission first so we know its groupId
+    const [existing] = await db
+      .select()
+      .from(couponSubmission)
+      .where(eq(couponSubmission.id, submissionId));
+
+    if (!existing) {
+      return res.status(404).json({ message: 'Submission not found' });
+    }
+
+    const groupId = existing.groupId;
+    if (!groupId) {
+      console.warn('📦  submission has no groupId', submissionId);
+      return res.status(400).json({ error: 'Submission has no groupId' });
+    }
+
+    // 🔐 Check group admin rights for this group
+    const dbUser = await requireGroupAdmin(req, res, groupId);
+    if (!dbUser) return; // response already sent
+
+    // Proceed with update
     const updateData = { state };
     if (state === 'rejected' && message) {
       updateData.rejectionMessage = message;
@@ -194,10 +272,12 @@ router.put('/:id', async (req, res, next) => {
     if (!updated) {
       return res.status(404).json({ message: 'Submission not found' });
     }
+
     console.log(`📦  submission ${submissionId} updated to "${state}"`);
 
     if (state === 'approved') {
       const { submissionData, groupId, merchantId } = updated;
+
       const couponPayload = {
         groupId,
         merchantId,
@@ -216,13 +296,13 @@ router.put('/:id', async (req, res, next) => {
         .values(couponPayload)
         .returning();
 
-      console.log(`📦  created coupon ${newCoupon.id} from submission ${submissionId}`);
-      // fire-and-forget webhook...
+      console.log(
+        `📦  created coupon ${newCoupon.id} from submission ${submissionId}`,
+      );
       return res.json(newCoupon);
     }
 
     if (state === 'rejected') {
-      // fire-and-forget rejection webhook...
       return res.json(updated);
     }
 
@@ -232,5 +312,59 @@ router.put('/:id', async (req, res, next) => {
     next(err);
   }
 });
+
+
+// Helper: ensure current Cognito user is group admin (or super admin)
+async function requireGroupAdmin(req, res, groupId) {
+  const authedSub = req.user && req.user.sub;
+  if (!authedSub) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return null;
+  }
+
+  // 1) Local user row
+  const [dbUser] = await db
+    .select()
+    .from(user)
+    .where(eq(user.cognitoSub, authedSub));
+
+  if (!dbUser) {
+    console.warn('📦  No local user for sub', authedSub);
+    res.status(403).json({ error: 'User not registered' });
+    return null;
+  }
+
+  // Super admin shortcut
+  if (dbUser.role === 'admin') {
+    return dbUser;
+  }
+
+  // 2) Membership for this group
+  const memberships = await db
+    .select()
+    .from(foodieGroupMembership)
+    .where(
+      and(
+        eq(foodieGroupMembership.userId, dbUser.id),
+        eq(foodieGroupMembership.groupId, groupId),
+      ),
+    );
+
+  const isGroupAdmin = memberships.some((m) =>
+    m.role === 'foodie_group_admin' || m.role === 'admin',
+  );
+
+  if (!isGroupAdmin) {
+    console.warn(
+      '📦  User is not foodie_group_admin / admin for group',
+      dbUser.id,
+      groupId,
+    );
+    res.status(403).json({ error: 'Not authorized for this group' });
+    return null;
+  }
+
+  return dbUser;
+}
 
 export default router;
