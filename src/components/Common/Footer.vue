@@ -25,42 +25,42 @@ export default {
 
 <style scoped>
 .app-footer {
-  background-color: #f8f8f8;
-  border-top: 1px solid #ddd;
-  padding: 1rem 0;
+  background-color: var(--color-bg-muted);
+  border-top: 1px solid var(--color-border-light);
+  padding: var(--spacing-lg) 0;
   text-align: center;
 }
 
 .footer-container {
-  max-width: 1200px;
+  max-width: var(--container-xl);
   margin: 0 auto;
-  padding: 0 1rem;
-  /* make sure nothing inside forces horizontal scroll */
-  max-width: 100%;
+  padding: 0 var(--spacing-lg);
+  width: 100%;
   overflow-x: hidden;
 }
 
 .footer-nav ul {
   list-style: none;
-  display: flex;          /* was inline-flex */
-  flex-wrap: wrap;        /* allow wrapping to new lines */
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 0.75rem;
-  margin: 0.5rem 0 0;
+  gap: var(--spacing-md);
+  margin: var(--spacing-sm) 0 0;
   padding: 0;
 }
 
 .footer-nav li {
-  /* let text wrap naturally within each link */
   max-width: 100%;
 }
 
 .footer-nav a {
-  color: #007bff;
+  color: var(--color-secondary);
   text-decoration: none;
+  transition: color var(--transition-fast);
 }
 
 .footer-nav a:hover {
+  color: var(--color-secondary-hover);
   text-decoration: underline;
 }
 
@@ -69,7 +69,7 @@ export default {
   .footer-nav ul {
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
+    gap: var(--spacing-xs);
   }
 }
 </style>

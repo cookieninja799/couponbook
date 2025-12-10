@@ -219,40 +219,42 @@ export default {
 
 <style scoped>
 .coupon-book-view {
-  padding: 2rem;
+  padding: var(--spacing-2xl);
 }
+
 h1 {
   text-align: center;
-  margin-bottom: 0.5rem;
-  font-size: 2.5rem;
-  color: #2c3e50;
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-5xl);
+  color: var(--color-text-primary);
 }
+
 /* Banner Description */
 .banner-description {
-  font-size: 1.2rem;
-  color: #7f8c8d;
-  margin-bottom: 2rem;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-2xl);
   text-align: center;
   max-width: 800px;
   margin-left: auto;
   margin-right: auto;
-  line-height: 1.5;
+  line-height: var(--line-height-normal);
 }
 
 /* Content Layout */
 .content-wrapper {
   display: flex;
-  gap: 2rem;
+  gap: var(--spacing-2xl);
   margin: 0 auto;
 }
 
 /* Sidebar Filters */
 .sidebar-filters {
   flex: 0 0 250px;
-  background: #fff;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  background: var(--color-bg-primary);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Main Content Area */
@@ -262,23 +264,23 @@ h1 {
 
 /* Active Filter Tags */
 .active-filter-tags {
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-lg);
 }
 
 .filter-tag {
   display: inline-block;
-  background-color: #3498db;
-  color: #fff;
-  padding: 0.4rem 0.8rem;
-  margin: 0.2rem;
-  border-radius: 20px;
+  background-color: var(--color-info);
+  color: var(--color-text-inverse);
+  padding: var(--spacing-xs) var(--spacing-md);
+  margin: var(--spacing-xs);
+  border-radius: var(--radius-full);
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.3s ease;
+  font-size: var(--font-size-sm);
+  transition: background-color var(--transition-slow);
 }
 
 .filter-tag:hover {
-  background-color: #2980b9;
+  background-color: var(--color-info-hover);
 }
 
 /* Fixed sidebar on larger screens */
@@ -286,9 +288,10 @@ h1 {
   .sidebar-filters {
     position: fixed;
     top: 300px;
-    left: 20px;
+    left: var(--spacing-xl);
     width: 250px;
   }
+
   .content-wrapper {
     margin-left: 290px; /* sidebar width + gap */
   }
@@ -296,9 +299,15 @@ h1 {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .coupon-book-view {
+    padding: var(--spacing-lg);
+  }
+
   .content-wrapper {
     flex-direction: column;
+    gap: var(--spacing-lg);
   }
+
   .sidebar-filters {
     position: relative;
     width: 100%;

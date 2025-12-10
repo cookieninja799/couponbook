@@ -74,7 +74,7 @@
               Your personal stats for VivaSpot Coupon Book.
             </p>
 
-            <div v-if="customerStats.error" class="muted tiny" style="color:#b00020;margin-bottom:0.5rem;">
+            <div v-if="customerStats.error" class="muted tiny error-text" style="margin-bottom:0.5rem;">
               {{ customerStats.error }}
             </div>
 
@@ -194,8 +194,8 @@
                     </span>
                   </div>
 
-                  <p v-if="logoUploadError && uploadErrorMerchantId === m.id" class="muted tiny"
-                    style="color: #b00020; margin-top: 0.25rem;">
+                  <p v-if="logoUploadError && uploadErrorMerchantId === m.id" class="muted tiny error-text"
+                    style="margin-top: 0.25rem;">
                     {{ logoUploadError }}
                   </p>
 
@@ -254,7 +254,7 @@
             <p v-if="merchantToolsLoading" class="muted tiny" style="margin-top: 0.75rem;">
               Loading…
             </p>
-            <p v-if="merchantToolsError" class="tiny" style="margin-top: 0.5rem; color: #b00020;">
+            <p v-if="merchantToolsError" class="tiny error-text" style="margin-top: 0.5rem;">
               {{ merchantToolsError }}
             </p>
 
@@ -823,82 +823,82 @@ export default {
 <style scoped>
 .profile-page {
   max-width: 1000px;
-  margin: 2rem auto;
-  padding: 0 1rem;
+  margin: var(--spacing-2xl) auto;
+  padding: 0 var(--spacing-lg);
 }
 
 .profile-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-2xl);
 }
 
 .subtitle {
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .muted {
-  color: #777;
+  color: var(--color-text-muted);
 }
 
 .small {
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
 }
 
 .tiny {
-  font-size: 0.8rem;
+  font-size: var(--font-size-xs);
 }
 
 .section-card {
-  background: #fff;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  margin-bottom: 1.5rem;
+  background: var(--color-bg-primary);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-xl);
 }
 
 /* Account header / role pill */
 .account-card {
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-2xl);
 }
 
 .account-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
 }
 
 .role-pill {
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: #ef5430;
-  color: #fff;
+  letter-spacing: var(--letter-spacing-wide);
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
 }
 
 .user-info {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--spacing-lg);
   flex-wrap: wrap;
 }
 
 .user-meta p {
-  margin: 0.3rem 0;
+  margin: var(--spacing-xs) 0;
 }
 
 /* Grid layout for role-based cards */
 .profile-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.8fr) minmax(0, 1.5fr);
-  gap: 1.5rem;
+  gap: var(--spacing-xl);
 }
 
-@media (max-width: 800px) {
+@media (max-width: 768px) {
   .profile-grid {
     grid-template-columns: 1fr;
   }
@@ -907,65 +907,65 @@ export default {
 /* Customer: stats row */
 .stat-row {
   display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
   flex-wrap: wrap;
 }
 
 .stat-card {
   flex: 1;
   min-width: 140px;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  background: #fafafa;
-  border: 1px solid #eee;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  background: var(--color-neutral-50);
+  border: 1px solid var(--color-border-light);
 }
 
 .stat-number {
   display: block;
-  font-size: 1.4rem;
-  font-weight: 600;
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-semibold);
 }
 
 .stat-label {
-  font-size: 0.85rem;
-  color: #777;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
 }
 
 /* Skeleton list placeholder */
 .skeleton-list {
   list-style: none;
   padding: 0;
-  margin-top: 1rem;
+  margin-top: var(--spacing-lg);
 }
 
 .skeleton-item {
   height: 14px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #f0f0f0 0%, #e5e5e5 50%, #f0f0f0 100%);
-  margin-bottom: 0.7rem;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--color-neutral-100) 0%, var(--color-neutral-200) 50%, var(--color-neutral-100) 100%);
+  margin-bottom: var(--spacing-md);
 }
 
 /* Merchant list + cards */
 .merchant-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-top: 1rem;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
 }
 
 .merchant-card {
-  border-radius: 10px;
-  border: 1px solid #eee;
-  padding: 0.75rem 1rem;
-  background: #fafafa;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-light);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-neutral-50);
 }
 
 .merchant-card-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
 }
 
 .merchant-card-header h3 {
@@ -973,7 +973,7 @@ export default {
 }
 
 .merchant-card-body p {
-  margin: 0.25rem 0;
+  margin: var(--spacing-xs) 0;
 }
 
 /* Logo placeholder / image */
@@ -981,8 +981,8 @@ export default {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: #f7f7f7;
-  border: 1px dashed #ccc;
+  background: var(--color-neutral-100);
+  border: 1px dashed var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -990,9 +990,9 @@ export default {
 }
 
 .merchant-logo-placeholder .initials {
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: #555;
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
 }
 
 .merchant-logo-img {
@@ -1003,7 +1003,7 @@ export default {
 
 /* File upload UI */
 .logo-upload-row {
-  margin-top: 0.5rem;
+  margin-top: var(--spacing-sm);
   display: flex;
   align-items: center;
 }
@@ -1013,12 +1013,17 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.35rem 0.85rem;
-  border-radius: 999px;
-  border: 1px solid #ddd;
-  background: #fff;
-  font-size: 0.85rem;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-primary);
+  font-size: var(--font-size-sm);
   cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.file-label:hover {
+  border-color: var(--color-border);
 }
 
 .file-label input[type="file"] {
@@ -1033,19 +1038,19 @@ export default {
 }
 
 .placeholder-text {
-  color: #aaa;
+  color: var(--color-text-light);
 }
 
 /* Merchant tools */
 .link-list {
   list-style: none;
   padding: 0;
-  margin-top: 1rem;
+  margin-top: var(--spacing-lg);
 }
 
 .link-list li {
-  padding: 0.6rem 0;
-  border-bottom: 1px solid #eee;
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .link-list li:last-child {
@@ -1054,51 +1059,61 @@ export default {
 
 .link-label {
   display: block;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 .link-helper {
-  font-size: 0.8rem;
-  color: #888;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
 }
 
 /* Foodie admin */
 .admin-block {
-  margin-top: 1rem;
+  margin-top: var(--spacing-lg);
 }
 
 .btn {
-  margin-top: 0.75rem;
-  padding: 0.45rem 1rem;
-  border-radius: 999px;
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-full);
   border: none;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: var(--font-size-base);
+  transition: all var(--transition-base);
+  min-height: var(--button-height-md);
 }
 
 .btn.primary {
-  background: #ef5430;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+}
+
+.btn.primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
 }
 
 .btn.tertiary {
-  background: #f5f5f5;
-  color: #333;
+  background: var(--color-neutral-100);
+  color: var(--color-text-primary);
+}
+
+.btn.tertiary:hover:not(:disabled) {
+  background: var(--color-neutral-200);
 }
 
 .btn[disabled] {
-  opacity: 0.6;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
 .loading {
-  color: #555;
+  color: var(--color-text-secondary);
   font-style: italic;
 }
 
 .signin-card {
   text-align: center;
-  margin-top: 2rem;
+  margin-top: var(--spacing-2xl);
 }
 
 .link-row.clickable {
@@ -1110,15 +1125,15 @@ export default {
 }
 
 .tools-results-block {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #eee;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border-light);
 }
 
 .tiny-heading {
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-xs);
 }
 
 .tiny-list {
@@ -1128,13 +1143,12 @@ export default {
 }
 
 .tiny-list li {
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--spacing-xs);
 }
 
-
-@media (max-width: 600px) {
+@media (max-width: 480px) {
   .profile-page {
-    padding: 0 0.5rem;
+    padding: 0 var(--spacing-sm);
   }
 
   .user-info {
@@ -1146,12 +1160,12 @@ export default {
 .purchases-list {
   list-style: none;
   padding: 0;
-  margin: 0.75rem 0 0;
+  margin: var(--spacing-md) 0 0;
 }
 
 .purchase-item {
-  padding: 0.6rem 0;
-  border-top: 1px solid #eee;
+  padding: var(--spacing-md) 0;
+  border-top: 1px solid var(--color-border-light);
 }
 
 .purchase-item:first-child {
@@ -1161,7 +1175,11 @@ export default {
 .purchase-main {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: var(--spacing-xs);
   align-items: baseline;
+}
+
+.error-text {
+  color: var(--color-error);
 }
 </style>

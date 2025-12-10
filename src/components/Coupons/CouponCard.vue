@@ -155,31 +155,36 @@ export default {
 </script>
 
 <style scoped>
-/* SAME STYLES AS YOUR VERSION – unchanged */
-
 .coupon-card {
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   width: 250px;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background-color: #fff;
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-primary);
   text-align: center;
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition-base);
+}
+
+.coupon-card:hover {
+  box-shadow: var(--shadow-sm);
 }
 
 .coupon-title {
-  font-size: 1.3rem;
-  color: #333;
+  font-size: var(--font-size-2xl);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
 }
 
 .merchant-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-lg);
 }
 
 .merchant-logo {
@@ -187,70 +192,78 @@ export default {
   height: 80px;
   object-fit: contain;
   border-radius: 50%;
-  border: 2px solid #ddd;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  margin-bottom: 0.5rem;
+  border: 2px solid var(--color-border-light);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-sm);
 }
 
 .merchant-name {
-  font-weight: bold;
-  font-size: 0.9rem;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
 }
 
 .coupon-description {
-  font-size: 1.1rem;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
 }
 
 .validity {
-  font-size: 0.8rem;
-  color: #555;
-  margin: .5rem 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin: var(--spacing-sm) 0;
 }
 
 .action-btn {
   border: none;
-  padding: 0.6rem 1rem;
-  border-radius: 4px;
-  font-size: 1rem;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
   cursor: pointer;
-  min-height: 48px;
-  transition: background 0.2s ease, opacity 0.2s ease;
+  min-height: var(--button-height-md);
+  transition: all var(--transition-base);
   width: 100%;
-  color: #fff;
+  color: var(--color-text-inverse);
+  font-weight: var(--font-weight-medium);
 }
 
 .btn-primary {
-  background-color: #007bff;
+  background-color: var(--color-secondary);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #0056b3;
+  background-color: var(--color-secondary-hover);
 }
 
 .btn-secondary {
-  background-color: #28a745;
+  background-color: var(--color-success);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #218838;
+  background-color: var(--color-success-hover);
 }
 
 .btn-tertiary {
-  background-color: #dd6146;
+  background-color: var(--color-primary);
 }
 
 .btn-tertiary:hover:not(:disabled) {
-  background-color: #be3f22;
+  background-color: var(--color-primary-hover);
 }
 
 .btn-gray {
-  background-color: #6c757d;
+  background-color: var(--color-neutral-600);
   cursor: default;
 }
 
+.btn-gray:hover:not(:disabled) {
+  background-color: var(--color-neutral-600);
+}
+
 .action-btn:disabled {
-  opacity: 0.65;
-  cursor: default;
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
 }
 
 @media (max-width: 480px) {

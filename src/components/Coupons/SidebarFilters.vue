@@ -152,10 +152,10 @@ export default {
   height: 0;
   overflow: hidden;
 }
-@media (max-width: 600px) {
+@media (max-width: 480px) {
   .sidebar-filters {
     width: 100%;
-    margin-bottom: 1rem;
+    margin-bottom: var(--spacing-lg);
   }
 }
 </style>

@@ -1,0 +1,234 @@
+/* Design System Tokens */
+
+:root {
+  /* ============================================
+     COLOR SYSTEM
+     ============================================ */
+  
+  /* Primary Brand Colors - Coral */
+  --color-primary: #EF5430;
+  --color-primary-hover: #DD6146;
+  --color-primary-light: #FF6B35;
+  --color-primary-dark: #BE3F22;
+  
+  /* Secondary Colors - Blue */
+  --color-secondary: #007BFF;
+  --color-secondary-hover: #0056B3;
+  --color-secondary-light: #4A9EFF;
+  --color-secondary-dark: #0056B3;
+  
+  /* Semantic Colors */
+  --color-success: #28A745;
+  --color-success-hover: #218838;
+  --color-success-light: #5CB85C;
+  --color-success-dark: #1E7E34;
+  
+  --color-error: #B00020;
+  --color-error-hover: #C51162;
+  --color-error-light: #E57373;
+  --color-error-dark: #8B0000;
+  
+  --color-warning: #FFC107;
+  --color-warning-hover: #FFB300;
+  --color-warning-light: #FFD54F;
+  --color-warning-dark: #F57C00;
+  
+  --color-info: #17A2B8;
+  --color-info-hover: #138496;
+  --color-info-light: #5BC0DE;
+  --color-info-dark: #0E6674;
+  
+  /* Neutral Grays */
+  --color-neutral-50: #FAFAFA;
+  --color-neutral-100: #F5F5F5;
+  --color-neutral-200: #EEEEEE;
+  --color-neutral-300: #E0E0E0;
+  --color-neutral-400: #BDBDBD;
+  --color-neutral-500: #9E9E9E;
+  --color-neutral-600: #757575;
+  --color-neutral-700: #616161;
+  --color-neutral-800: #424242;
+  --color-neutral-900: #212121;
+  
+  /* Slate (for dark sections) */
+  --color-slate: #38424C;
+  --color-slate-light: #4A5568;
+  --color-slate-dark: #2D3748;
+  
+  /* Text Colors */
+  --color-text-primary: #212121;
+  --color-text-secondary: #424242;
+  --color-text-muted: #757575;
+  --color-text-light: #9E9E9E;
+  --color-text-inverse: #FFFFFF;
+  --color-text-on-primary: #FFFFFF;
+  --color-text-on-secondary: #FFFFFF;
+  
+  /* Background Colors */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F5F5F5;
+  --color-bg-muted: #FAFAFA;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-overlay: rgba(112, 112, 112, 0.85);
+  
+  /* Border Colors */
+  --color-border-light: #E0E0E0;
+  --color-border: #BDBDBD;
+  --color-border-dark: #757575;
+  
+  /* ============================================
+     TYPOGRAPHY
+     ============================================ */
+  
+  /* Font Families */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family-heading: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;    /* 12px - tiny */
+  --font-size-sm: 0.875rem;   /* 14px - small */
+  --font-size-base: 1rem;     /* 16px - body */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px - h5 */
+  --font-size-2xl: 1.5rem;    /* 24px - h4 */
+  --font-size-3xl: 1.75rem;   /* 28px - h3 */
+  --font-size-4xl: 2rem;      /* 32px - h2 */
+  --font-size-5xl: 2.5rem;    /* 40px - h1 */
+  --font-size-6xl: 3.5rem;    /* 56px - hero */
+  
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* Line Heights */
+  --line-height-tight: 1.2;
+  --line-height-snug: 1.3;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.6;
+  --line-height-loose: 2;
+  
+  /* Letter Spacing */
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.04em;
+  --letter-spacing-wider: 0.06em;
+  
+  /* ============================================
+     SPACING (8px base unit)
+     ============================================ */
+  
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 0.75rem;   /* 12px */
+  --spacing-lg: 1rem;      /* 16px */
+  --spacing-xl: 1.5rem;    /* 24px */
+  --spacing-2xl: 2rem;     /* 32px */
+  --spacing-3xl: 3rem;     /* 48px */
+  --spacing-4xl: 4rem;     /* 64px */
+  --spacing-5xl: 6rem;     /* 96px */
+  
+  /* ============================================
+     BREAKPOINTS
+     ============================================ */
+  
+  --breakpoint-xs: 480px;
+  --breakpoint-sm: 768px;
+  --breakpoint-md: 1024px;
+  --breakpoint-lg: 1280px;
+  --breakpoint-xl: 1536px;
+  
+  /* Container Max Widths */
+  --container-xs: 100%;
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1200px;
+  --container-2xl: 1400px;
+  
+  /* ============================================
+     BORDER RADIUS
+     ============================================ */
+  
+  --radius-none: 0;
+  --radius-sm: 0.25rem;    /* 4px */
+  --radius-md: 0.5rem;     /* 8px */
+  --radius-lg: 0.75rem;    /* 12px */
+  --radius-xl: 1rem;       /* 16px */
+  --radius-2xl: 1.5rem;    /* 24px */
+  --radius-full: 9999px;   /* pill shape */
+  
+  /* ============================================
+     SHADOWS (Elevation System)
+     ============================================ */
+  
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 10px 25px rgba(0, 0, 0, 0.12);
+  --shadow-2xl: 0 20px 40px rgba(0, 0, 0, 0.15);
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+  
+  /* ============================================
+     TRANSITIONS
+     ============================================ */
+  
+  --transition-fast: 0.15s ease-in-out;
+  --transition-base: 0.2s ease-in-out;
+  --transition-slow: 0.3s ease-in-out;
+  --transition-slower: 0.5s ease-in-out;
+  
+  /* ============================================
+     Z-INDEX LAYERS
+     ============================================ */
+  
+  --z-index-base: 0;
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
+  
+  /* ============================================
+     BUTTON HEIGHTS (Touch Target Minimum)
+     ============================================ */
+  
+  --button-height-sm: 2rem;      /* 32px */
+  --button-height-md: 2.75rem;   /* 44px - minimum touch target */
+  --button-height-lg: 3rem;      /* 48px */
+  
+  /* ============================================
+     OPACITY
+     ============================================ */
+  
+  --opacity-disabled: 0.6;
+  --opacity-hover: 0.8;
+  --opacity-focus: 0.9;
+}
+
+/* ============================================
+   RESPONSIVE TYPOGRAPHY (Mobile Adjustments)
+   ============================================ */
+
+@media (max-width: 768px) {
+  :root {
+    --font-size-5xl: 2rem;      /* h1 mobile: 32px */
+    --font-size-4xl: 1.75rem;   /* h2 mobile: 28px */
+    --font-size-3xl: 1.5rem;    /* h3 mobile: 24px */
+    --font-size-6xl: 2.5rem;    /* hero mobile: 40px */
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --font-size-5xl: 1.75rem;   /* h1 mobile: 28px */
+    --font-size-4xl: 1.5rem;    /* h2 mobile: 24px */
+    --font-size-6xl: 2rem;      /* hero mobile: 32px */
+  }
+}
+

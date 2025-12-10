@@ -46,13 +46,24 @@ export default {
 
 <style scoped>
 .coupon-list {
-  padding: 1rem;
+  padding: var(--spacing-lg);
   text-align: center;
 }
+
 .coupons-container {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 1rem;
+  gap: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+  .coupon-list {
+    padding: var(--spacing-md);
+  }
+  
+  .coupons-container {
+    gap: var(--spacing-md);
+  }
 }
 </style>

@@ -55,32 +55,55 @@ export default {
 <style scoped>
 .auth-btn {
   background: none;
-  border: 1px solid #007bff;
-  color: #007bff;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border: 1px solid var(--color-secondary);
+  color: var(--color-secondary);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
   cursor: pointer;
+  transition: all var(--transition-base);
+  min-height: var(--button-height-md);
 }
+
 .auth-btn:hover {
-  background: #007bff;
-  color: white;
+  background: var(--color-secondary);
+  color: var(--color-text-inverse);
 }
 
 .app-header {
-  background-color: #fff;
-  border-bottom: 1px solid #ddd;
-  padding: 1rem 0;
+  background-color: var(--color-bg-primary);
+  border-bottom: 1px solid var(--color-border-light);
+  padding: var(--spacing-lg) 0;
   position: relative;
-  z-index: 1000;
+  z-index: var(--z-index-fixed);
 }
 
 .header-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 100%;
+  max-width: var(--container-xl);
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0 var(--spacing-lg);
+  width: 100%;
+}
+
+.header-container > * {
+  flex-shrink: 0;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .header-container {
+    padding: 0 var(--spacing-2xl);
+  }
+  
+  .navigation ul {
+    gap: var(--spacing-xl);
+  }
 }
 
 .branding {
@@ -97,27 +120,33 @@ export default {
 .navigation ul {
   list-style: none;
   display: flex;
-  gap: 1.7rem;
+  gap: var(--spacing-lg);
   margin: 0;
   padding: 0;
+  align-items: center;
 }
 
 .navigation li {
-  font-size: 1rem;
+  font-size: var(--font-size-base);
+  display: flex;
+  align-items: center;
 }
 
 /* Menu link styles */
 .navigation a {
   text-decoration: none;
-  color: #38424c;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  color: var(--color-slate);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-slow), color var(--transition-slow);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
 }
 
 .navigation a:hover {
-  background-color: #dd6146;
-  color: #fff;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
   text-decoration: none;
 }
 
@@ -126,23 +155,28 @@ export default {
   display: none;
   flex-direction: column;
   justify-content: space-around;
-  width: 25px;
-  height: 25px;
+  width: var(--spacing-2xl);
+  height: var(--spacing-2xl);
   background: transparent;
   border: none;
   cursor: pointer;
   padding: 0;
+  min-height: var(--button-height-md);
+  min-width: var(--button-height-md);
 }
 
 .hamburger:focus {
-  outline: none;
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 .hamburger-line {
-  width: 25px;
+  width: var(--spacing-2xl);
   height: 3px;
-  background-color: #38424c;
-  border-radius: 2px;
+  background-color: var(--color-slate);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-base);
 }
 
 /* Responsive Styles for Mobile */
@@ -157,15 +191,16 @@ export default {
     position: absolute;
     top: 70px;
     right: 0;
-    background-color: #fff;
+    background-color: var(--color-bg-primary);
     width: 220px;
     display: none;             /* hide from layout */
     opacity: 0;                /* invisible */
     pointer-events: none;      /* not clickable when closed */
     transform: translateX(100%);
-    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
+    transition: transform var(--transition-slow), opacity var(--transition-slow);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-index-dropdown);
+    flex-direction: column;
   }
 
   /* open state: slide in + visible + interactive */
@@ -178,8 +213,8 @@ export default {
 
   .navigation ul {
     flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
   }
 }
 </style>

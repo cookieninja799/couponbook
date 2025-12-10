@@ -100,44 +100,72 @@ export default {
 
 <style scoped>
 .coupon-filter {
-  margin-bottom: 1rem;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
   text-align: left;
+  background: var(--color-bg-primary);
 }
+
 .filter-header {
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: color var(--transition-fast);
 }
+
+.filter-header:hover {
+  color: var(--color-primary);
+}
+
 .toggle-indicator {
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
   font-style: italic;
-  color: #555;
+  color: var(--color-text-secondary);
 }
+
 .filter-group {
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--spacing-md);
 }
+
 .filter-group label {
   display: block;
-  font-weight: bold;
-  margin-bottom: 0.25rem;
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-text-primary);
 }
+
 .filter-group input[type="text"],
 .filter-group select {
   width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family-base);
+  transition: border-color var(--transition-fast);
+}
+
+.filter-group input[type="text"]:focus,
+.filter-group select:focus {
+  outline: none;
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.filter-group input[type="checkbox"] {
+  margin-right: var(--spacing-sm);
+  cursor: pointer;
 }
 
 /* Transition for collapse/expand */
 .collapse-enter-active,
 .collapse-leave-active {
-  transition: all 0.3s ease;
+  transition: all var(--transition-slow);
 }
+
 .collapse-enter,
 .collapse-leave-to {
   opacity: 0;

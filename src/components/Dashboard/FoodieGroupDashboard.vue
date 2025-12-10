@@ -125,7 +125,7 @@
               <p v-if="pendingLoading" class="muted tiny">
                 Loading pending submissions…
               </p>
-              <p v-if="pendingError" class="tiny" style="color:#b00020;">
+              <p v-if="pendingError" class="tiny error-text">
                 {{ pendingError }}
               </p>
 
@@ -156,7 +156,7 @@
               <p v-if="activeLoading" class="muted tiny">
                 Loading active coupons…
               </p>
-              <p v-if="activeError" class="tiny" style="color:#b00020;">
+              <p v-if="activeError" class="tiny error-text">
                 {{ activeError }}
               </p>
 
@@ -739,48 +739,54 @@ export default {
 
 <style scoped>
 .foodie-group-dashboard {
-  padding: 2rem;
-  max-width: 1200px;
+  padding: var(--spacing-2xl);
+  max-width: var(--container-xl);
   margin: 0 auto;
 }
 
+@media (max-width: 768px) {
+  .foodie-group-dashboard {
+    padding: var(--spacing-lg);
+  }
+}
+
 .user-context {
-  padding: 0.6rem 0.9rem;
-  border-radius: 999px;
-  background: #f3f4f6;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-full);
+  background: var(--color-neutral-100);
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.25rem;
-  font-size: 0.9rem;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
 }
 
 .user-name {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .role-pill {
-  font-size: 0.75rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  background: #ef5430;
-  color: #fff;
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--letter-spacing-wider);
 }
 
 .dashboard-section {
-  background: #f9f9f9;
-  border: 1px solid #ddd;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
+  background: var(--color-bg-muted);
+  border: 1px solid var(--color-border-light);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-xl);
 }
 
 .edit-group form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-lg);
 }
 
 .form-group {
@@ -789,85 +795,143 @@ export default {
 }
 
 label {
-  font-weight: bold;
-  margin-bottom: 0.5rem;
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text-primary);
 }
 
 input,
 textarea {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family-base);
+  transition: border-color var(--transition-fast);
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 
 .submissions-board {
   display: flex;
-  gap: 2rem;
+  gap: var(--spacing-2xl);
   flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .submissions-board {
+    flex-direction: column;
+    gap: var(--spacing-lg);
+  }
 }
 
 .kanban-column {
   flex: 1;
   min-width: 300px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1rem;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
   max-height: 500px;
   overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .kanban-column {
+    min-width: 100%;
+  }
 }
 
 .column-content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-lg);
 }
 
 .card {
-  background: #fefefe;
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  background: var(--color-bg-primary);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
 .action-buttons {
-  margin-top: 0.5rem;
+  margin-top: var(--spacing-sm);
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
 }
 
 .action-buttons button {
-  margin-right: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: var(--spacing-sm) var(--spacing-lg);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-base);
+  min-height: var(--button-height-md);
+}
+
+.action-buttons button:first-child {
+  background: var(--color-success);
+  color: var(--color-text-inverse);
+}
+
+.action-buttons button:first-child:hover {
+  background: var(--color-success-hover);
+}
+
+.action-buttons button:last-child {
+  background: var(--color-error);
+  color: var(--color-text-inverse);
+}
+
+.action-buttons button:last-child:hover {
+  background: var(--color-error-hover);
 }
 
 .signin-gate,
 .forbidden-gate {
   text-align: center;
   max-width: 500px;
-  margin: 3rem auto;
+  margin: var(--spacing-3xl) auto;
+  padding: var(--spacing-xl);
 }
 
 .btn {
-  margin-top: 0.75rem;
-  padding: 0.45rem 1rem;
-  border-radius: 999px;
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-full);
   border: none;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: var(--font-size-base);
+  transition: all var(--transition-base);
+  min-height: var(--button-height-md);
 }
 
 .btn.primary {
-  background: #ef5430;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+}
+
+.btn.primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
 }
 
 .muted {
-  color: #777;
+  color: var(--color-text-muted);
 }
 
 .tiny {
-  font-size: 0.8rem;
+  font-size: var(--font-size-xs);
+}
+
+.error-text {
+  color: var(--color-error);
 }
 </style>
