@@ -791,6 +791,14 @@ export default {
   letter-spacing: var(--letter-spacing-wider);
 }
 
+.section-card {
+  background: var(--color-bg-primary);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-xl);
+}
+
 .dashboard-section {
   background: var(--color-bg-muted);
   border: 1px solid var(--color-border-light);
