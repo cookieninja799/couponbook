@@ -1,8 +1,8 @@
 <!-- src/components/Dashboard/FoodieGroupDashboard.vue -->
 <template>
   <div class="foodie-group-dashboard">
-    <!-- NOT AUTHENTICATED GATE -->
-    <div v-if="!isAuthenticated" class="signin-gate">
+    <!-- NOT AUTHENTICATED -->
+    <section v-if="!isAuthenticated" class="section-card signin-card">
       <h1>Foodie Group Dashboard</h1>
       <p class="muted">
         You need to be signed in as a Foodie Group Admin to access this dashboard.
@@ -11,23 +11,27 @@
         Sign In to Continue
       </button>
       <p class="muted tiny">
-        You’ll be redirected to the secure sign-in page and brought back here after.
+        You'll be redirected to the secure sign-in page and brought back here after.
       </p>
-    </div>
+    </section>
 
-    <!-- NOT AUTHORIZED GATE -->
-    <div v-else-if="notAuthorized" class="forbidden-gate">
+    <!-- ACCESS CHECK IN PROGRESS -->
+    <section v-else-if="!authChecked" class="section-card access-check-card">
+      <h1>Foodie Group Dashboard</h1>
+      <p class="subtitle">Checking your Foodie Group permissions…</p>
+    </section>
+
+    <!-- AUTHENTICATED BUT NOT AUTHORIZED -->
+    <section v-else-if="notAuthorized" class="section-card access-denied-card">
       <h1>Access Denied</h1>
-      <p class="muted">
-        {{ notAuthorizedMessage }}
-      </p>
+      <p>{{ notAuthorizedMessage }}</p>
       <button class="btn primary" @click="$router.push('/profile')">
         Back to Profile
       </button>
-    </div>
+    </section>
 
     <!-- AUTHENTICATED + AUTHORIZED DASHBOARD -->
-    <div v-else>
+    <template v-else>
       <!-- Header in the same spirit as Profile.vue -->
       <header class="profile-header">
         <h1>Foodie Group Dashboard</h1>
@@ -184,7 +188,7 @@
           <li>Pending Submissions: {{ stats.pendingSubmissions }}</li>
         </ul>
       </section>
-    </div>
+    </template>
   </div>
 </template>
 
@@ -231,9 +235,10 @@ export default {
       },
 
       // authorization gate
+      authChecked: false,
       notAuthorized: false,
       notAuthorizedMessage:
-        "You do not have permission to manage this Foodie Group.",
+        "You are not authorized to manage this Foodie Group.",
     };
   },
 
@@ -250,12 +255,22 @@ export default {
 
   async created() {
     // If not logged in, do not attempt API calls – let the gate render.
-    if (!this.isAuthenticated) return;
+    if (!this.isAuthenticated) {
+      this.authChecked = true;
+      return;
+    }
 
-    await Promise.all([this.loadCurrentUser(), this.loadGroupDetails()]);
-    if (this.notAuthorized) return;
+    try {
+      await Promise.all([this.loadCurrentUser(), this.loadGroupDetails()]);
+      if (this.notAuthorized) return;
 
-    await Promise.all([this.loadPendingCoupons(), this.loadActiveCoupons()]);
+      await Promise.all([
+        this.loadPendingCoupons(),
+        this.loadActiveCoupons(),
+      ]);
+    } finally {
+      this.authChecked = true;
+    }
   },
 
   methods: {
@@ -263,11 +278,12 @@ export default {
       signIn();
     },
 
-    markNotAuthorized(customMsg) {
+    markNotAuthorized(msg) {
       this.notAuthorized = true;
-      if (customMsg) {
-        this.notAuthorizedMessage = customMsg;
+      if (msg) {
+        this.notAuthorizedMessage = msg;
       }
+      this.authChecked = true;
     },
 
     // 🔹 Load current user (mirrors Profile.vue pattern)
@@ -895,12 +911,18 @@ textarea:focus {
   background: var(--color-error-hover);
 }
 
-.signin-gate,
-.forbidden-gate {
+.signin-card,
+.access-check-card,
+.access-denied-card {
   text-align: center;
   max-width: 500px;
   margin: var(--spacing-3xl) auto;
   padding: var(--spacing-xl);
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-lg);
 }
 
 .btn {
