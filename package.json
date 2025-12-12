@@ -10,7 +10,12 @@
     "migrate": "drizzle-kit generate && drizzle-kit push",
     "pull-schema": "drizzle-kit pull",
     "build:server": "tsc -p server/tsconfig.json",
-    "vercel-build": "npm run build:server && npm run build"
+    "vercel-build": "npm run build:server && npm run build",
+    "test": "vitest",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@aws-amplify/auth": "^6.12.3",
@@ -44,23 +49,33 @@
   "devDependencies": {
     "@babel/core": "^7.12.16",
     "@babel/eslint-parser": "^7.12.16",
+    "@electric-sql/pglite": "^0.3.14",
     "@prisma/client": "^6.9.0",
     "@types/pg": "^8.15.4",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "@vitest/ui": "^1.6.0",
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-service": "~5.0.0",
+    "@vue/test-utils": "^2.4.6",
     "concurrently": "^9.1.2",
     "drizzle-kit": "^0.31.1",
     "drizzle-orm": "^0.44.2",
     "eslint": "^7.32.0",
     "eslint-plugin-vue": "^8.0.3",
+    "happy-dom": "^15.7.1",
+    "jsdom": "^24.0.0",
+    "nock": "^13.5.0",
     "nodemon": "^3.1.10",
     "pg": "^8.16.0",
     "pg-connection-string": "^2.9.0",
     "serverless": "^3.40.0",
     "serverless-dotenv-plugin": "^6.0.0",
+    "supertest": "^6.3.4",
     "ts-node": "^10.9.2",
-    "tsx": "^4.20.2"
+    "tsx": "^4.20.2",
+    "vitest": "^1.6.0"
   },
   "eslintConfig": {
     "root": true,
