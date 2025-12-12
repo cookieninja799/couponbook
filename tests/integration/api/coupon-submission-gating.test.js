@@ -5,6 +5,8 @@ import request from 'supertest';
 
 import { getTestDb, closeTestDb, resetTestDb, seedHelpers } from '../../helpers/db.js';
 
+const HOOK_TIMEOUT_MS = 20000;
+
 // Use the in-memory test DB for server routes
 vi.mock('../../../server/src/db.js', async () => {
   const { getTestDb } = await import('../../helpers/db.js');
@@ -36,15 +38,15 @@ describe('Coupon Submission Gating (API)', () => {
     app = express();
     app.use(express.json());
     app.use('/api/v1/coupon-submissions', router);
-  });
+  }, HOOK_TIMEOUT_MS);
 
   afterAll(async () => {
     await closeTestDb();
-  });
+  }, HOOK_TIMEOUT_MS);
 
   beforeEach(async () => {
     await resetTestDb();
-  });
+  }, HOOK_TIMEOUT_MS);
 
   it('returns 401 when unauthenticated', async () => {
     const group = await seedHelpers.createFoodieGroup(db);

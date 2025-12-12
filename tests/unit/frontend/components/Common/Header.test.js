@@ -72,7 +72,7 @@ describe('Header', () => {
     expect(wrapper.find('.auth-btn').text()).toBe('Sign In');
   });
 
-  it('should show Log Out button when authenticated', () => {
+  it('should show profile dropdown when authenticated', async () => {
     store.state.auth.isAuthenticated = true;
 
     wrapper = mount(Header, {
@@ -81,8 +81,18 @@ describe('Header', () => {
       },
     });
 
-    expect(wrapper.text()).toContain('Log Out');
-    expect(wrapper.find('.auth-btn').text()).toBe('Log Out');
+    expect(wrapper.text()).not.toContain('Sign In');
+    expect(wrapper.find('.profile-link').exists()).toBe(true);
+    expect(wrapper.find('.profile-dropdown').exists()).toBe(false);
+
+    await wrapper.find('.profile-link').trigger('click');
+    expect(wrapper.find('.profile-dropdown').exists()).toBe(true);
+
+    const logoutButton = wrapper.findAll('.dropdown-item').find((btn) =>
+      btn.text().includes('Log out')
+    );
+
+    expect(logoutButton?.exists()).toBe(true);
   });
 
   it('should toggle menu on hamburger click', async () => {
@@ -110,7 +120,7 @@ describe('Header', () => {
     expect(loginSpy).toHaveBeenCalled();
   });
 
-  it('should call logout action when Log Out is clicked', async () => {
+  it('should call logout action when Log out is clicked', async () => {
     store.state.auth.isAuthenticated = true;
 
     wrapper = mount(Header, {
@@ -119,7 +129,14 @@ describe('Header', () => {
       },
     });
 
-    await wrapper.find('.auth-btn').trigger('click');
+    await wrapper.find('.profile-link').trigger('click');
+
+    const logoutButton = wrapper.findAll('.dropdown-item').find((btn) =>
+      btn.text().includes('Log out')
+    );
+
+    expect(logoutButton?.exists()).toBe(true);
+    await logoutButton?.trigger('click');
     expect(logoutSpy).toHaveBeenCalled();
   });
 });
