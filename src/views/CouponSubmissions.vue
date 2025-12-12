@@ -8,7 +8,7 @@
         You need to be signed in as a merchant or admin to submit coupons.
       </p>
       <button class="btn primary" @click="signInNow">
-        Sign In to Continue
+        <i class="pi pi-sign-in icon-spacing-sm"></i>Sign In to Continue
       </button>
       <p class="muted tiny">
         You'll be redirected to the secure sign-in page and brought back here after.
@@ -26,7 +26,7 @@
       <h1>Access Denied</h1>
       <p>{{ notAuthorizedMessage }}</p>
       <button class="btn primary" @click="$router.push('/profile')">
-        Back to Profile
+        <i class="pi pi-arrow-left icon-spacing-sm"></i>Back to Profile
       </button>
     </section>
 
@@ -38,7 +38,7 @@
         To submit coupons, you need to own at least one restaurant.
       </p>
       <button class="btn primary" @click="$router.push('/profile')">
-        Back to Profile
+        <i class="pi pi-arrow-left icon-spacing-sm"></i>Back to Profile
       </button>
       <p class="muted tiny">
         Contact support if you believe this is an error.

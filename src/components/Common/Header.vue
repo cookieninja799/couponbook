@@ -13,15 +13,32 @@
       </button>
       <nav class="navigation" :class="{ open: isMenuOpen }">
         <ul>
-          <li><router-link to="/">Home</router-link></li>
-          <li><router-link to="/coupon-book">Local Coupons</router-link></li>
-          <li><router-link to="/foodie-groups">Foodie Groups</router-link></li>
-          <li><router-link to="/event-page">Events</router-link></li>
+          <li><router-link to="/"><i class="pi pi-home icon-spacing-sm"></i>Home</router-link></li>
+          <li><router-link to="/coupon-book"><i class="pi pi-ticket icon-spacing-sm"></i>Local Coupons</router-link></li>
+          <li><router-link to="/foodie-groups"><i class="pi pi-users icon-spacing-sm"></i>Foodie Groups</router-link></li>
+          <li><router-link to="/event-page"><i class="pi pi-calendar icon-spacing-sm"></i>Events</router-link></li>
           <li v-if="!isAuthenticated">
-            <button @click="login" class="auth-btn">Sign In</button>
+            <button @click="login" class="auth-btn">
+              <i class="pi pi-sign-in icon-spacing-sm"></i>Sign In
+            </button>
           </li>
-          <li v-else>
-            <button @click="logout" class="auth-btn">Log Out</button>
+          <li v-else class="profile-dropdown-container">
+            <a @click.prevent="toggleProfileDropdown" href="#" class="nav-link profile-link" ref="profileButton">
+              Profile
+              <i class="pi pi-chevron-down dropdown-arrow" :class="{ open: isProfileDropdownOpen }"></i>
+            </a>
+            <ul v-if="isProfileDropdownOpen" class="profile-dropdown" ref="profileDropdown">
+              <li>
+                <button @click="goToProfilePage" class="dropdown-item">
+                  <i class="pi pi-user"></i>Profile Page
+                </button>
+              </li>
+              <li>
+                <button @click="handleLogout" class="dropdown-item">
+                  <i class="pi pi-sign-out"></i>Log out
+                </button>
+              </li>
+            </ul>
           </li>
         </ul>
       </nav>
@@ -30,24 +47,110 @@
 </template>
 <script>
 import { mapGetters, mapActions } from 'vuex';
+import { getAccessToken } from '@/services/authService';
 
 export default {
   name: 'AppHeader',
   data() {
     return {
-      isMenuOpen: false
+      isMenuOpen: false,
+      userRole: null,
+      isProfileDropdownOpen: false
     };
   },
   computed: {
     // pulls auth/isAuthenticated getter into this.isAuthenticated
     ...mapGetters('auth', ['isAuthenticated'])
   },
+  async created() {
+    if (this.isAuthenticated) {
+      await this.loadUserRole();
+    }
+    // Add click outside listener for dropdown
+    document.addEventListener('click', this.handleClickOutside);
+  },
+  beforeUnmount() {
+    // Remove click outside listener
+    document.removeEventListener('click', this.handleClickOutside);
+  },
+  watch: {
+    isAuthenticated(newVal) {
+      if (newVal) {
+        this.loadUserRole();
+      } else {
+        this.userRole = null;
+        this.isProfileDropdownOpen = false;
+      }
+    }
+  },
   methods: {
     toggleMenu() {
       this.isMenuOpen = !this.isMenuOpen;
     },
     // exposes this.login() and this.logout()
-    ...mapActions('auth', ['login', 'logout'])
+    ...mapActions('auth', ['login', 'logout']),
+    
+    toggleProfileDropdown() {
+      this.isProfileDropdownOpen = !this.isProfileDropdownOpen;
+    },
+
+    handleClickOutside(event) {
+      if (this.isProfileDropdownOpen) {
+        const profileButton = this.$refs.profileButton;
+        const profileDropdown = this.$refs.profileDropdown;
+        
+        if (profileButton && profileDropdown) {
+          if (!profileButton.contains(event.target) && !profileDropdown.contains(event.target)) {
+            this.isProfileDropdownOpen = false;
+          }
+        }
+      }
+    },
+
+    goToProfilePage() {
+      this.isProfileDropdownOpen = false;
+      this.isMenuOpen = false;
+      this.$router.push({ name: 'Profile' });
+    },
+
+    handleLogout() {
+      this.isProfileDropdownOpen = false;
+      this.isMenuOpen = false;
+      this.logout();
+    },
+    
+    async loadUserRole() {
+      if (!this.isAuthenticated) {
+        this.userRole = null;
+        return;
+      }
+
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          this.userRole = null;
+          return;
+        }
+
+        const res = await fetch('/api/v1/users/me', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          console.error('Failed to load user role in Header', res.status);
+          this.userRole = null;
+          return;
+        }
+
+        const data = await res.json();
+        this.userRole = data.role || null;
+      } catch (err) {
+        console.error('Error loading user role in Header', err);
+        this.userRole = null;
+      }
+    }
   }
 };
 </script>
@@ -67,6 +170,92 @@ export default {
 .auth-btn:hover {
   background: var(--color-secondary);
   color: var(--color-text-inverse);
+}
+
+.profile-btn {
+  margin-right: var(--spacing-sm);
+}
+
+.profile-dropdown-container {
+  position: relative;
+}
+
+.dropdown-arrow {
+  font-size: 0.7em;
+  transition: transform var(--transition-fast);
+  display: inline-block;
+  margin-left: var(--spacing-xs);
+}
+
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + var(--spacing-xs));
+  right: 0;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  list-style: none;
+  padding: var(--spacing-xs) 0;
+  margin: 0;
+  min-width: 220px;
+  z-index: calc(var(--z-index-dropdown) + 1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-dropdown li {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.profile-dropdown li:not(:last-child) {
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.dropdown-item {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: var(--font-size-base);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  line-height: 1.5;
+}
+
+.dropdown-item i {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-base);
+  width: 1.2em;
+  text-align: center;
+  transition: color var(--transition-fast);
+}
+
+.dropdown-item:hover {
+  background-color: var(--color-bg-muted);
+  color: var(--color-text-primary);
+}
+
+.dropdown-item:hover i {
+  color: var(--color-primary);
+}
+
+.dropdown-item:active {
+  background-color: var(--color-neutral-200);
 }
 
 .app-header {
@@ -215,6 +404,59 @@ export default {
     flex-direction: column;
     gap: var(--spacing-lg);
     padding: var(--spacing-lg);
+  }
+
+  .profile-dropdown-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .profile-link {
+    width: 100%;
+  }
+
+  .profile-dropdown {
+    position: static;
+    margin-top: var(--spacing-sm);
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+    box-shadow: none;
+    border: none;
+    border-left: 2px solid var(--color-border-light);
+    border-radius: 0;
+    background-color: var(--color-bg-muted);
+    padding: var(--spacing-xs) 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .profile-dropdown li {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .profile-dropdown li:not(:last-child) {
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .dropdown-item {
+    padding: var(--spacing-md) var(--spacing-lg);
+    padding-left: var(--spacing-xl);
+    width: 100%;
+    text-align: left;
+    white-space: normal;
+    word-wrap: break-word;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .dropdown-item i {
+    flex-shrink: 0;
   }
 }
 </style>

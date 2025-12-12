@@ -25,6 +25,10 @@
       :disabled="isDisabled"
       @click="handleClick"
     >
+      <i v-if="redeemStatus === 'redeemed'" class="pi pi-check-circle icon-spacing-sm"></i>
+      <i v-if="redeemStatus === 'locked'" class="pi pi-lock icon-spacing-sm"></i>
+      <i v-if="redeemStatus === 'login'" class="pi pi-sign-in icon-spacing-sm"></i>
+      <i v-if="redeemStatus === 'active'" class="pi pi-ticket icon-spacing-sm"></i>
       {{ buttonLabel }}
     </button>
   </div>
@@ -76,7 +80,7 @@ export default {
     buttonLabel() {
       switch (this.redeemStatus) {
         case 'redeemed':
-          return '✅ Redeemed';
+          return 'Redeemed';
         case 'expired':
           return 'Expired';
         case 'not-yet-valid':
@@ -84,7 +88,7 @@ export default {
         case 'login':
           return 'Sign in to redeem';
         case 'locked':
-          return `🔒 Join ${this.coupon.foodie_group_name} Coupon Book`;
+          return `Join ${this.coupon.foodie_group_name} Coupon Book`;
         default:
           return 'Redeem';
       }

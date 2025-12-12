@@ -8,7 +8,7 @@
         You need to be signed in as a Foodie Group Admin to access this dashboard.
       </p>
       <button class="btn primary" @click="signInNow">
-        Sign In to Continue
+        <i class="pi pi-sign-in icon-spacing-sm"></i>Sign In to Continue
       </button>
       <p class="muted tiny">
         You'll be redirected to the secure sign-in page and brought back here after.
@@ -26,7 +26,7 @@
       <h1>Access Denied</h1>
       <p>{{ notAuthorizedMessage }}</p>
       <button class="btn primary" @click="$router.push('/profile')">
-        Back to Profile
+        <i class="pi pi-arrow-left icon-spacing-sm"></i>Back to Profile
       </button>
     </section>
 
@@ -114,7 +114,9 @@
               placeholder="Enter Twitter URL"
             />
           </div>
-          <button type="submit">Save Changes</button>
+          <button type="submit">
+            <i class="pi pi-save icon-spacing-sm"></i>Save Changes
+          </button>
         </form>
       </section>
 
@@ -139,8 +141,12 @@
                   Submitted by: {{ c.merchantName }} ({{ "Id: " + c.merchantId }})<br />
                   Expires: {{ formatDate(c.expires_at) }}
                   <div class="action-buttons">
-                    <button @click="approveCoupon(c)">Approve</button>
-                    <button @click="rejectCoupon(c)">Reject</button>
+                    <button @click="approveCoupon(c)">
+                      <i class="pi pi-check icon-spacing-sm"></i>Approve
+                    </button>
+                    <button @click="rejectCoupon(c)">
+                      <i class="pi pi-times icon-spacing-sm"></i>Reject
+                    </button>
                   </div>
                 </li>
                 <li v-if="pendingCoupons.length === 0" class="muted tiny">

@@ -7,7 +7,7 @@
         You need to be signed in as an admin to access this dashboard.
       </p>
       <button class="btn primary" @click="signInNow">
-        Sign In to Your Account
+        <i class="pi pi-sign-in icon-spacing-sm"></i>Sign In to Your Account
       </button>
       <p class="muted tiny">
         You'll be redirected to the secure sign-in page and brought back here
@@ -61,19 +61,25 @@
         <p>
           View and manage Foodie Groups, assign admins, and monitor performance.
         </p>
-        <button class="btn primary" @click="manageGroups">Manage Foodie Groups</button>
+        <button class="btn primary" @click="manageGroups">
+          <i class="pi pi-users icon-spacing-sm"></i>Manage Foodie Groups
+        </button>
       </section>
 
       <section class="dashboard-section user-management">
         <h2>User Management</h2>
         <p>View all users, their roles, and manage access levels.</p>
-        <button class="btn primary" @click="manageUsers">Manage Users</button>
+        <button class="btn primary" @click="manageUsers">
+          <i class="pi pi-user-edit icon-spacing-sm"></i>Manage Users
+        </button>
       </section>
 
       <section class="dashboard-section system-settings">
         <h2>System Settings &amp; Reports</h2>
         <p>Access system reports, payment data, and global settings.</p>
-        <button class="btn primary" @click="viewReports">View Reports</button>
+        <button class="btn primary" @click="viewReports">
+          <i class="pi pi-chart-line icon-spacing-sm"></i>View Reports
+        </button>
       </section>
     </template>
   </div>

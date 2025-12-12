@@ -176,6 +176,50 @@ a:hover {
 .gap-3xl { gap: var(--spacing-3xl); }
 
 /* ============================================
+   ICON UTILITIES (PrimeIcons)
+   ============================================ */
+
+/* Base icon styles - PrimeIcons inherit color from parent */
+.pi {
+  font-size: 1em;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Icon sizes aligned with text sizes */
+.icon-xs { font-size: var(--font-size-xs); }
+.icon-sm { font-size: var(--font-size-sm); }
+.icon-base { font-size: var(--font-size-base); }
+.icon-lg { font-size: var(--font-size-lg); }
+.icon-xl { font-size: var(--font-size-xl); }
+.icon-2xl { font-size: var(--font-size-2xl); }
+
+/* Icon spacing utilities */
+.icon-spacing-xs { margin-right: var(--spacing-xs); }
+.icon-spacing-sm { margin-right: var(--spacing-sm); }
+.icon-spacing-md { margin-right: var(--spacing-md); }
+.icon-spacing-lg { margin-right: var(--spacing-lg); }
+
+.icon-spacing-left-xs { margin-left: var(--spacing-xs); }
+.icon-spacing-left-sm { margin-left: var(--spacing-sm); }
+.icon-spacing-left-md { margin-left: var(--spacing-md); }
+.icon-spacing-left-lg { margin-left: var(--spacing-lg); }
+
+/* Icon in buttons - ensure proper alignment */
+.btn .pi {
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* Icon in nav links - ensure proper alignment */
+.navigation a .pi,
+.nav-link .pi {
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* ============================================
    COMMON COMPONENT PATTERNS
    ============================================ */
 

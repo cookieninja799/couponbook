@@ -58,7 +58,7 @@
           </div>
 
           <button class="btn tertiary" @click="signOutNow">
-            Sign Out
+            <i class="pi pi-sign-out icon-spacing-sm"></i>Sign Out
           </button>
         </div>
       </section>
@@ -184,7 +184,7 @@
                   <div class="logo-upload-row">
                     <label class="file-label">
                       <span class="file-label-text">
-                        {{ m.logo_url ? 'Change Logo' : 'Upload Logo' }}
+                        <i class="pi pi-upload icon-spacing-sm"></i>{{ m.logo_url ? 'Change Logo' : 'Upload Logo' }}
                       </span>
                       <input type="file" accept="image/*" @change="onLogoFileChange(m, $event)" />
                     </label>
@@ -219,7 +219,7 @@
             <ul class="link-list">
               <!-- Create / Submit -->
               <li class="link-row clickable" @click="goToCouponSubmissions">
-                <span class="link-label">Create / Submit a Coupon</span>
+                <span class="link-label"><i class="pi pi-plus-circle icon-spacing-sm"></i>Create / Submit a Coupon</span>
                 <span class="link-helper">
                   Open the submission form and choose which restaurant the coupon belongs to.
                 </span>
@@ -227,7 +227,7 @@
 
               <!-- Approved -->
               <li class="link-row clickable" @click="loadApprovedCoupons">
-                <span class="link-label">View Approved Coupons</span>
+                <span class="link-label"><i class="pi pi-check-circle icon-spacing-sm"></i>View Approved Coupons</span>
                 <span class="link-helper">
                   See all live, approved coupons across your restaurants.
                 </span>
@@ -235,7 +235,7 @@
 
               <!-- Rejected -->
               <li class="link-row clickable" @click="loadRejectedCoupons">
-                <span class="link-label">View Rejected Coupons</span>
+                <span class="link-label"><i class="pi pi-times-circle icon-spacing-sm"></i>View Rejected Coupons</span>
                 <span class="link-helper">
                   Review coupons that were not approved and see the reason.
                 </span>
@@ -243,7 +243,7 @@
 
               <!-- Insights -->
               <li class="link-row clickable" @click="loadRedemptionInsights">
-                <span class="link-label">Redemption Insights</span>
+                <span class="link-label"><i class="pi pi-chart-bar icon-spacing-sm"></i>Redemption Insights</span>
                 <span class="link-helper">
                   See how many times coupons from your restaurants have been redeemed.
                 </span>
@@ -385,7 +385,7 @@
                     <div class="logo-upload-row">
                       <label class="file-label">
                         <span class="file-label-text">
-                          {{ m.logo_url ? 'Change Logo' : 'Upload Logo' }}
+                          <i class="pi pi-upload icon-spacing-sm"></i>{{ m.logo_url ? 'Change Logo' : 'Upload Logo' }}
                         </span>
                         <input type="file" accept="image/*" @change="onLogoFileChange(m, $event)" />
                       </label>
@@ -417,28 +417,28 @@
 
               <ul class="link-list">
                 <li class="link-row clickable" @click="goToCouponSubmissions">
-                  <span class="link-label">Create / Submit a Coupon</span>
+                  <span class="link-label"><i class="pi pi-plus-circle icon-spacing-sm"></i>Create / Submit a Coupon</span>
                   <span class="link-helper">
                     Open the submission form and choose which restaurant the coupon belongs to.
                   </span>
                 </li>
 
                 <li class="link-row clickable" @click="loadApprovedCoupons">
-                  <span class="link-label">View Approved Coupons</span>
+                  <span class="link-label"><i class="pi pi-check-circle icon-spacing-sm"></i>View Approved Coupons</span>
                   <span class="link-helper">
                     See all live, approved coupons across your restaurants.
                   </span>
                 </li>
 
                 <li class="link-row clickable" @click="loadRejectedCoupons">
-                  <span class="link-label">View Rejected Coupons</span>
+                  <span class="link-label"><i class="pi pi-times-circle icon-spacing-sm"></i>View Rejected Coupons</span>
                   <span class="link-helper">
                     Review coupons that were not approved and see the reason.
                   </span>
                 </li>
 
                 <li class="link-row clickable" @click="loadRedemptionInsights">
-                  <span class="link-label">Redemption Insights</span>
+                  <span class="link-label"><i class="pi pi-chart-bar icon-spacing-sm"></i>Redemption Insights</span>
                   <span class="link-helper">
                     See how many times coupons from your restaurants have been redeemed.
                   </span>
@@ -517,7 +517,7 @@
               <h3>Super Admin Dashboard</h3>
               <p>Access advanced tools and metrics for the entire platform.</p>
               <button class="btn primary" @click="goToAdminDashboard">
-                Go to Super Admin Dashboard
+                <i class="pi pi-cog icon-spacing-sm"></i>Go to Super Admin Dashboard
               </button>
               <p class="muted tiny">
                 This area is restricted to system administrators.
@@ -779,8 +779,7 @@ export default {
 
     // Navigate to SurveyJS coupon submission page
     goToCouponSubmissions() {
-      // adjust path/name if your route is different
-      this.$router.push('/coupon-submissions');
+      this.$router.push({ name: 'CouponSubmissions' });
     },
 
     async loadApprovedCoupons() {

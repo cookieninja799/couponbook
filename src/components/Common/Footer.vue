@@ -6,11 +6,6 @@
         <ul>
           <li><router-link to="/terms">Terms of Service</router-link></li>
           <li><router-link to="/privacy">Privacy Policy</router-link></li>
-          <!-- Add more links as needed -->
-          <li><router-link to="/dashboard/foodie-group">Foodie Group Dashboard</router-link></li>
-          <li><router-link to="/dashboard/super-admin">Super Admin Dashboard</router-link></li>
-          <li><router-link to="/profile">Profile</router-link></li>
-          <li><router-link to="/submissions">Submissions</router-link></li>
         </ul>
       </nav>
     </div>
