@@ -7,11 +7,6 @@ export const couponSurveyJson = {
       name: "metadata",
       elements: [
         {
-          type: "hidden",
-          name: "group_id",
-          defaultValue: "22222222-2222-2222-2222-222222222222"
-        },
-        {
           type: "dropdown",
           name: "group_id",
           title: "Select Foodie Group",
@@ -19,24 +14,14 @@ export const couponSurveyJson = {
           choices: [],
           searchEnabled: true
         },
-        // ↓ Replace the hidden merchant_id with a dropdown ↓
         {
           type: "dropdown",
           name: "merchant_id",            // must match your pgTable column
           title: "Select Merchant",
           isRequired: true,
-          /* OPTION A: Preload choices in JS and pass merchantChoices
-          choices: merchantChoices,       // e.g. [{ value: "uuid1", text: "Merchant A" }, ...]
-          searchEnabled: true             // enables built-in search/filter*/  
-          
-          //  OPTION B: Fetch live via REST  
-          choicesByUrl: {
-            url: "/api/v1/merchants",         // your endpoint
-            path: "",                  // JSON path to array
-            valueName: "id",               // field for the value
-            titleName: "name"              // field for the display text
-          },
-          searchEnabled: true  
+          // choices are loaded by the Vue page so we can scope to /merchants/mine
+          choices: [],
+          searchEnabled: true,
         },
         {
           type: "text",
@@ -69,7 +54,7 @@ export const couponSurveyJson = {
           },
           {
             type: "text",
-            name: "discountValue",
+            name: "discount_value",
             title: "Discount Value",
             inputType: "number",
             validators: [{ type: "numeric", minValue: 0 }]

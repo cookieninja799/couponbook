@@ -315,21 +315,19 @@ router.get('/me', auth(), async (req, res, next) => {
       role: dbUser.role, // 'customer' | 'merchant' | 'foodie_group_admin' | etc.
     };
 
-    // 3) If they are a merchant, attach ALL restaurants they own
-    if (dbUser.role === 'merchant') {
-      const merchantRows = await db
-        .select()                 // 👈 let Drizzle return the full row
-        .from(merchant)
-        .where(eq(merchant.ownerId, dbUser.id));
+    // 3) Always attach owned merchants (merchant capability is derived from ownership, not role)
+    const merchantRows = await db
+      .select()
+      .from(merchant)
+      .where(eq(merchant.ownerId, dbUser.id));
 
-      payload.merchants = merchantRows.map((m) => ({
-        id: m.id,
-        name: m.name,
-        logo_url: m.logoUrl,
-        foodie_group_id: m.foodieGroupId,
-        website_url: m.websiteUrl,
-      }));
-    }
+    payload.merchants = merchantRows.map((m) => ({
+      id: m.id,
+      name: m.name,
+      logo_url: m.logoUrl,
+      foodie_group_id: m.foodieGroupId,
+      website_url: m.websiteUrl,
+    }));
 
     return res.json(payload);
   } catch (err) {

@@ -345,6 +345,164 @@
               <p class="muted tiny">Access is limited to approved admins.</p>
             </div>
           </section>
+
+          <!-- Merchant capability: show restaurants if foodie_group_admin owns any -->
+          <template v-if="hasMerchantCapability">
+            <section class="section-card">
+              <h2>Your Restaurants</h2>
+              <p class="muted">
+                Manage each restaurant's profile. Logo upload will be per restaurant and
+                reused on all coupons for that location.
+              </p>
+
+              <!-- List of restaurants -->
+              <div class="merchant-list">
+                <article v-for="m in merchants" :key="m.id" class="merchant-card">
+                  <div class="merchant-card-header">
+                    <div class="merchant-logo-placeholder">
+                      <img v-if="m.logo_url" :src="m.logo_url" :alt="m.name || 'Merchant logo'"
+                        class="merchant-logo-img" />
+                      <span v-else class="initials">
+                        {{ (m.name || 'VS').trim().charAt(0).toUpperCase() }}
+                      </span>
+                    </div>
+                    <div>
+                      <h3>{{ m.name }}</h3>
+                      <p class="muted tiny">
+                        Foodie Group ID: {{ m.foodie_group_id || '—' }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="merchant-card-body">
+                    <p>
+                      <strong>Website:</strong>
+                      <span class="placeholder-text">
+                        {{ m.website_url || 'https://example.com' }}
+                      </span>
+                    </p>
+
+                    <div class="logo-upload-row">
+                      <label class="file-label">
+                        <span class="file-label-text">
+                          {{ m.logo_url ? 'Change Logo' : 'Upload Logo' }}
+                        </span>
+                        <input type="file" accept="image/*" @change="onLogoFileChange(m, $event)" />
+                      </label>
+
+                      <span v-if="uploadingLogoId === m.id" class="muted tiny" style="margin-left: 0.5rem;">
+                        Uploading…
+                      </span>
+                    </div>
+
+                    <p v-if="logoUploadError && uploadErrorMerchantId === m.id" class="muted tiny error-text"
+                      style="margin-top: 0.25rem;">
+                      {{ logoUploadError }}
+                    </p>
+
+                    <p class="muted tiny" style="margin-top: 0.5rem;">
+                      Recommended: square PNG or JPG, up to 5 MB. This logo will be used on
+                      all coupons for this restaurant.
+                    </p>
+                  </div>
+                </article>
+              </div>
+            </section>
+
+            <section class="section-card">
+              <h2>Merchant Tools</h2>
+              <p class="muted">
+                These tools apply to all restaurants linked to your account.
+              </p>
+
+              <ul class="link-list">
+                <li class="link-row clickable" @click="goToCouponSubmissions">
+                  <span class="link-label">Create / Submit a Coupon</span>
+                  <span class="link-helper">
+                    Open the submission form and choose which restaurant the coupon belongs to.
+                  </span>
+                </li>
+
+                <li class="link-row clickable" @click="loadApprovedCoupons">
+                  <span class="link-label">View Approved Coupons</span>
+                  <span class="link-helper">
+                    See all live, approved coupons across your restaurants.
+                  </span>
+                </li>
+
+                <li class="link-row clickable" @click="loadRejectedCoupons">
+                  <span class="link-label">View Rejected Coupons</span>
+                  <span class="link-helper">
+                    Review coupons that were not approved and see the reason.
+                  </span>
+                </li>
+
+                <li class="link-row clickable" @click="loadRedemptionInsights">
+                  <span class="link-label">Redemption Insights</span>
+                  <span class="link-helper">
+                    See how many times coupons from your restaurants have been redeemed.
+                  </span>
+                </li>
+              </ul>
+
+              <p v-if="merchantToolsLoading" class="muted tiny" style="margin-top: 0.75rem;">
+                Loading…
+              </p>
+              <p v-if="merchantToolsError" class="tiny error-text" style="margin-top: 0.5rem;">
+                {{ merchantToolsError }}
+              </p>
+
+              <div v-if="activeToolsView === 'approved' && approvedCoupons.length" class="tools-results-block">
+                <h3 class="tiny-heading">Approved Coupons</h3>
+                <ul class="tiny-list">
+                  <li v-for="c in approvedCoupons" :key="c.id">
+                    <strong>{{ c.title }}</strong>
+                    <span class="muted tiny">· {{ merchantNameById(c.merchant_id) }}</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div v-if="activeToolsView === 'rejected' && rejectedCoupons.length" class="tools-results-block">
+                <h3 class="tiny-heading">Rejected Coupons</h3>
+                <ul class="tiny-list">
+                  <li v-for="sub in rejectedCoupons" :key="sub.id">
+                    <strong>{{ sub.submissionData?.title || 'Untitled coupon' }}</strong>
+                    <span class="muted tiny">· {{ merchantNameById(sub.merchantId) }}</span>
+                    <br />
+                    <span class="muted tiny">
+                      Rejected on {{ formatDateTiny(sub.submittedAt) }}
+                      <span v-if="sub.rejectionMessage"> — Reason: {{ sub.rejectionMessage }}</span>
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div v-if="activeToolsView === 'insights' && redemptionInsights.length" class="tools-results-block">
+                <h3 class="tiny-heading">Redemption Insights</h3>
+                <ul class="tiny-list">
+                  <li v-for="row in redemptionInsights" :key="row.merchantId">
+                    <strong>{{ row.merchantName }}</strong>
+                    <span class="muted tiny">· {{ row.totalRedemptions }} total redemptions</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div v-if="activeToolsView === 'approved' && !merchantToolsLoading && !approvedCoupons.length"
+                class="muted tiny" style="margin-top: 0.5rem;">
+                No approved coupons found for your restaurants yet.
+              </div>
+
+              <div v-if="activeToolsView === 'rejected' && !merchantToolsLoading && !rejectedCoupons.length"
+                class="muted tiny" style="margin-top: 0.5rem;">
+                No rejected coupon submissions found for your restaurants.
+              </div>
+
+              <div v-if="activeToolsView === 'insights' && !merchantToolsLoading && !redemptionInsights.length"
+                class="muted tiny" style="margin-top: 0.5rem;">
+                No redemptions recorded yet for coupons from your restaurants.
+              </div>
+            </section>
+          </template>
         </template>
 
         <!-- Admin View -->
@@ -454,6 +612,12 @@ export default {
       if (!parts[0]) return "VS";
       if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
       return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+    },
+
+    // Merchant capability is derived from ownership, not role.
+    // A user has merchant capability if they own at least one merchant.
+    hasMerchantCapability() {
+      return this.merchants && this.merchants.length > 0;
     },
   },
 

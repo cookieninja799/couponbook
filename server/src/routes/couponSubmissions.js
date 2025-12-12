@@ -181,7 +181,7 @@ router.get('/by-merchant', auth(), async (req, res, next) => {
 // ────────────────────────────────────────────────────────────────
 // GET a single submission by ID
 // ────────────────────────────────────────────────────────────────
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', auth(), async (req, res, next) => {
   console.log('📦  GET /api/v1/coupon-submissions/' + req.params.id);
   try {
     const [sub] = await db
@@ -192,6 +192,43 @@ router.get('/:id', async (req, res, next) => {
       console.log('📦  submission not found');
       return res.status(404).json({ message: 'Submission not found' });
     }
+
+    // 🔐 authorize: admin OR merchant-owner OR group-admin
+    const authedSub = req.user && req.user.sub;
+    if (!authedSub) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const [dbUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.cognitoSub, authedSub));
+
+    if (!dbUser) {
+      return res.status(403).json({ error: 'User not registered' });
+    }
+
+    // Admin sees all
+    if (dbUser.role === 'admin') {
+      return res.json(sub);
+    }
+
+    // Merchant owner can read their own submission
+    if (sub.merchantId) {
+      const [dbMerchant] = await db
+        .select()
+        .from(merchant)
+        .where(eq(merchant.id, sub.merchantId));
+
+      if (dbMerchant && dbMerchant.ownerId === dbUser.id) {
+        return res.json(sub);
+      }
+    }
+
+    // Foodie group admin can read submissions for their group
+    const ok = await requireGroupAdmin(req, res, sub.groupId);
+    if (!ok) return; // response already sent
+
     res.json(sub);
   } catch (err) {
     console.error('📦  error in GET /coupon-submissions/:id', err);
@@ -202,15 +239,55 @@ router.get('/:id', async (req, res, next) => {
 // ────────────────────────────────────────────────────────────────
 // POST new submission
 // ────────────────────────────────────────────────────────────────
-router.post('/', async (req, res, next) => {
+router.post('/', auth(), async (req, res, next) => {
   console.log('📦  POST /api/v1/coupon-submissions', req.body);
   try {
     const { group_id, merchant_id, submission_data } = req.body;
+
+    const authedSub = req.user && req.user.sub;
+    if (!authedSub) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const [dbUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.cognitoSub, authedSub));
+
+    if (!dbUser) {
+      return res.status(403).json({ error: 'User not registered' });
+    }
+
+    if (!group_id) {
+      return res.status(400).json({ error: 'group_id is required' });
+    }
+    if (!merchant_id) {
+      return res.status(400).json({ error: 'merchant_id is required' });
+    }
+    if (!submission_data) {
+      return res.status(400).json({ error: 'submission_data is required' });
+    }
+
+    // Verify merchant exists and enforce ownership (admin bypass)
+    const [dbMerchant] = await db
+      .select()
+      .from(merchant)
+      .where(eq(merchant.id, merchant_id));
+
+    if (!dbMerchant) {
+      return res.status(404).json({ error: 'Merchant not found' });
+    }
+
+    if (dbUser.role !== 'admin' && dbMerchant.ownerId !== dbUser.id) {
+      return res.status(403).json({ error: 'You do not own this merchant' });
+    }
+
     const [newSub] = await db
       .insert(couponSubmission)
       .values({
         groupId:        group_id,
-        merchantId:     merchant_id,
+        // Hardening: always write the merchant ID we just validated
+        merchantId:     dbMerchant.id,
         state:          'pending',
         submissionData: submission_data,
       })

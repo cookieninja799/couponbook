@@ -67,6 +67,43 @@ router.get('/', async (req, res, next) => {
 });
 
 // ────────────────────────────────────────────────────────────────
+// GET merchants owned by the current user (admin sees all)
+// ────────────────────────────────────────────────────────────────
+router.get('/mine', auth(), async (req, res, next) => {
+  console.log('📦  GET /api/v1/merchants/mine hit');
+  try {
+    const authedSub = req.user && req.user.sub;
+    if (!authedSub) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const [dbUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.cognitoSub, authedSub));
+
+    if (!dbUser) {
+      return res.status(403).json({ error: 'User not registered' });
+    }
+
+    if (dbUser.role === 'admin') {
+      const all = await db.select().from(merchant);
+      return res.json(all);
+    }
+
+    const owned = await db
+      .select()
+      .from(merchant)
+      .where(eq(merchant.ownerId, dbUser.id));
+
+    return res.json(owned);
+  } catch (err) {
+    console.error('📦  error in GET /merchants/mine', err);
+    next(err);
+  }
+});
+
+// ────────────────────────────────────────────────────────────────
 // GET a single merchant by ID
 // ────────────────────────────────────────────────────────────────
 router.get('/:id', async (req, res, next) => {
