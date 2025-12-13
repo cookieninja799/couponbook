@@ -14,21 +14,18 @@ import { userManager } from '@/services/authService';
 
 // Initialize theme before app mount to avoid flash
 function initializeTheme() {
-  // Priority: 1) localStorage, 2) system preference, 3) default to light
+  // Priority: 1) localStorage (user preference), 2) browser adaptive (defaults to light)
   const savedTheme = localStorage.getItem('theme');
   
   if (savedTheme === 'dark' || savedTheme === 'light') {
+    // User has explicitly set a preference, use it
     document.documentElement.setAttribute('data-theme', savedTheme);
-    return;
-  }
-  
-  // Check system preference
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  if (prefersDark) {
-    document.documentElement.setAttribute('data-theme', 'dark');
   } else {
-    // Default to light mode
-    document.documentElement.setAttribute('data-theme', 'light');
+    // No saved preference - don't set data-theme attribute
+    // This allows browser adaptive CSS to handle it:
+    // - Defaults to light mode (from :root)
+    // - Uses dark if browser prefers dark (from @media prefers-color-scheme: dark)
+    document.documentElement.removeAttribute('data-theme');
   }
 }
 

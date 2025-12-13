@@ -42,7 +42,13 @@ export default {
   methods: {
     updateThemeState() {
       const currentTheme = document.documentElement.getAttribute('data-theme');
-      this.isDark = currentTheme === 'dark';
+      // If no data-theme attribute, check browser preference for adaptive mode
+      if (!currentTheme) {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        this.isDark = prefersDark;
+      } else {
+        this.isDark = currentTheme === 'dark';
+      }
     },
     
     toggleTheme() {
