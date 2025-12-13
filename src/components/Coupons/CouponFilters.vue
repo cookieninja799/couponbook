@@ -152,7 +152,7 @@ export default {
 .filter-group select:focus {
   outline: none;
   border-color: var(--color-secondary);
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(56, 66, 76, 0.1);
 }
 
 .filter-group input[type="checkbox"] {

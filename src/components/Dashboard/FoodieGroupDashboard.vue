@@ -844,7 +844,7 @@ input:focus,
 textarea:focus {
   outline: none;
   border-color: var(--color-secondary);
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(56, 66, 76, 0.1);
 }
 
 .submissions-board {
@@ -888,6 +888,12 @@ textarea:focus {
   padding: var(--spacing-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+}
+
+.card h3,
+.card p {
+  color: var(--color-text-primary);
 }
 
 .action-buttons {
@@ -909,20 +915,22 @@ textarea:focus {
 
 .action-buttons button:first-child {
   background: var(--color-success);
-  color: var(--color-text-inverse);
+  color: var(--color-text-on-success);
 }
 
 .action-buttons button:first-child:hover {
   background: var(--color-success-hover);
+  color: var(--color-text-on-success);
 }
 
 .action-buttons button:last-child {
   background: var(--color-error);
-  color: var(--color-text-inverse);
+  color: var(--color-text-on-error);
 }
 
 .action-buttons button:last-child:hover {
   background: var(--color-error-hover);
+  color: var(--color-text-on-error);
 }
 
 .signin-card,

@@ -2,43 +2,267 @@
 
 :root {
   /* ============================================
-     COLOR SYSTEM
+     NEW COLOR SYSTEM (A0-A50 Scale)
      ============================================ */
   
-  /* Primary Brand Colors - Coral */
-  --color-primary: #EF5430;
-  --color-primary-hover: #DD6146;
-  --color-primary-light: #FF6B35;
-  --color-primary-dark: #BE3F22;
+  /* Base Colors */
+  --clr-dark-a0: #000000;
+  --clr-light-a0: #ffffff;
   
-  /* Secondary Colors - Blue */
-  --color-secondary: #007BFF;
-  --color-secondary-hover: #0056B3;
-  --color-secondary-light: #4A9EFF;
-  --color-secondary-dark: #0056B3;
+  /* Primary Colors - Light Mode */
+  --clr-primary-light-a0: #f2542d;
+  --clr-primary-light-a10: #f76a43;
+  --clr-primary-light-a20: #fc7f5a;
+  --clr-primary-light-a30: #ff9270;
+  --clr-primary-light-a40: #ffa587;
+  --clr-primary-light-a50: #ffb79e;
+  
+  /* Primary Colors - Dark Mode */
+  --clr-primary-dark-a0: #d94b29;
+  --clr-primary-dark-a10: #f2542d;
+  --clr-primary-dark-a20: #f76a43;
+  --clr-primary-dark-a30: #fc7f5a;
+  --clr-primary-dark-a40: #ff9270;
+  --clr-primary-dark-a50: #ffa587;
+  
+  /* Surface Colors - Light Mode */
+  --clr-surface-light-a0: #38424c;
+  --clr-surface-light-a10: #4c555e;
+  --clr-surface-light-a20: #606870;
+  --clr-surface-light-a30: #757c83;
+  --clr-surface-light-a40: #8b9197;
+  --clr-surface-light-a50: #a1a6ab;
+  
+  /* Surface Colors - Dark Mode */
+  --clr-surface-dark-a0: #0f1720;
+  --clr-surface-dark-a10: #1a2733;
+  --clr-surface-dark-a20: #2d3748;
+  --clr-surface-dark-a30: #38424c;
+  --clr-surface-dark-a40: #4c555e;
+  --clr-surface-dark-a50: #606870;
+  
+  /* Tonal Surface Colors - Light Mode */
+  --clr-surface-tonal-light-a0: #4d464a;
+  --clr-surface-tonal-light-a10: #5f585c;
+  --clr-surface-tonal-light-a20: #716b6f;
+  --clr-surface-tonal-light-a30: #847f82;
+  --clr-surface-tonal-light-a40: #989396;
+  --clr-surface-tonal-light-a50: #aba8aa;
+  
+  /* Tonal Surface Colors - Dark Mode */
+  --clr-surface-tonal-dark-a0: #2d262a;
+  --clr-surface-tonal-dark-a10: #3f383c;
+  --clr-surface-tonal-dark-a20: #514b4f;
+  --clr-surface-tonal-dark-a30: #645e62;
+  --clr-surface-tonal-dark-a40: #787276;
+  --clr-surface-tonal-dark-a50: #8c868a;
+  
+  /* Success Colors - Light Mode */
+  --clr-success-light-a0: #22946e;
+  --clr-success-light-a10: #47d5a6;
+  --clr-success-light-a20: #9ae8ce;
+  
+  /* Success Colors - Dark Mode */
+  --clr-success-dark-a0: #1a7a5a;
+  --clr-success-dark-a10: #22946e;
+  --clr-success-dark-a20: #47d5a6;
+  
+  /* Warning Colors - Light Mode */
+  --clr-warning-light-a0: #a87a2a;
+  --clr-warning-light-a10: #d7ac61;
+  --clr-warning-light-a20: #ecd7b2;
+  
+  /* Warning Colors - Dark Mode */
+  --clr-warning-dark-a0: #8b6523;
+  --clr-warning-dark-a10: #a87a2a;
+  --clr-warning-dark-a20: #d7ac61;
+  
+  /* Danger Colors - Light Mode */
+  --clr-danger-light-a0: #9c2121;
+  --clr-danger-light-a10: #d94a4a;
+  --clr-danger-light-a20: #eb9e9e;
+  
+  /* Danger Colors - Dark Mode */
+  --clr-danger-dark-a0: #7a1a1a;
+  --clr-danger-dark-a10: #9c2121;
+  --clr-danger-dark-a20: #d94a4a;
+  
+  /* Info Colors - Light Mode */
+  --clr-info-light-a0: #21498a;
+  --clr-info-light-a10: #4077d1;
+  --clr-info-light-a20: #92b2e5;
+  
+  /* Info Colors - Dark Mode */
+  --clr-info-dark-a0: #1a3a6e;
+  --clr-info-dark-a10: #21498a;
+  --clr-info-dark-a20: #4077d1;
+  
+  /* ============================================
+     THEME-AWARE ALIASES (Default to Light Mode)
+     ============================================ */
+  
+  /* Primary */
+  --clr-primary-a0: var(--clr-primary-light-a0);
+  --clr-primary-a10: var(--clr-primary-light-a10);
+  --clr-primary-a20: var(--clr-primary-light-a20);
+  --clr-primary-a30: var(--clr-primary-light-a30);
+  --clr-primary-a40: var(--clr-primary-light-a40);
+  --clr-primary-a50: var(--clr-primary-light-a50);
+  
+  /* Surface */
+  --clr-surface-a0: var(--clr-surface-light-a0);
+  --clr-surface-a10: var(--clr-surface-light-a10);
+  --clr-surface-a20: var(--clr-surface-light-a20);
+  --clr-surface-a30: var(--clr-surface-light-a30);
+  --clr-surface-a40: var(--clr-surface-light-a40);
+  --clr-surface-a50: var(--clr-surface-light-a50);
+  
+  /* Tonal Surface */
+  --clr-surface-tonal-a0: var(--clr-surface-tonal-light-a0);
+  --clr-surface-tonal-a10: var(--clr-surface-tonal-light-a10);
+  --clr-surface-tonal-a20: var(--clr-surface-tonal-light-a20);
+  --clr-surface-tonal-a30: var(--clr-surface-tonal-light-a30);
+  --clr-surface-tonal-a40: var(--clr-surface-tonal-light-a40);
+  --clr-surface-tonal-a50: var(--clr-surface-tonal-light-a50);
   
   /* Semantic Colors */
-  --color-success: #28A745;
-  --color-success-hover: #218838;
-  --color-success-light: #5CB85C;
-  --color-success-dark: #1E7E34;
+  --clr-success-a0: var(--clr-success-light-a0);
+  --clr-success-a10: var(--clr-success-light-a10);
+  --clr-success-a20: var(--clr-success-light-a20);
   
-  --color-error: #B00020;
-  --color-error-hover: #C51162;
-  --color-error-light: #E57373;
-  --color-error-dark: #8B0000;
+  --clr-warning-a0: var(--clr-warning-light-a0);
+  --clr-warning-a10: var(--clr-warning-light-a10);
+  --clr-warning-a20: var(--clr-warning-light-a20);
   
-  --color-warning: #FFC107;
-  --color-warning-hover: #FFB300;
-  --color-warning-light: #FFD54F;
-  --color-warning-dark: #F57C00;
+  --clr-danger-a0: var(--clr-danger-light-a0);
+  --clr-danger-a10: var(--clr-danger-light-a10);
+  --clr-danger-a20: var(--clr-danger-light-a20);
   
-  --color-info: #17A2B8;
-  --color-info-hover: #138496;
-  --color-info-light: #5BC0DE;
-  --color-info-dark: #0E6674;
+  --clr-info-a0: var(--clr-info-light-a0);
+  --clr-info-a10: var(--clr-info-light-a10);
+  --clr-info-a20: var(--clr-info-light-a20);
   
-  /* Neutral Grays */
+  /* ============================================
+     DERIVED TEXT COLORS
+     ============================================ */
+  
+  /* Text on Primary (light text on dark primary a0-a20, dark text on light a30-a50) */
+  --clr-text-on-primary-a0: var(--clr-light-a0);
+  --clr-text-on-primary-a10: var(--clr-light-a0);
+  --clr-text-on-primary-a20: var(--clr-light-a0);
+  --clr-text-on-primary-a30: var(--clr-dark-a0);
+  --clr-text-on-primary-a40: var(--clr-dark-a0);
+  --clr-text-on-primary-a50: var(--clr-dark-a0);
+  
+  /* Text on Surface (light text on dark surfaces a0-a20, dark text on light a30-a50) */
+  --clr-text-on-surface-a0: var(--clr-light-a0);
+  --clr-text-on-surface-a10: var(--clr-light-a0);
+  --clr-text-on-surface-a20: var(--clr-light-a0);
+  --clr-text-on-surface-a30: var(--clr-dark-a0);
+  --clr-text-on-surface-a40: var(--clr-dark-a0);
+  --clr-text-on-surface-a50: var(--clr-dark-a0);
+  
+  /* Text on Tonal Surface */
+  --clr-text-on-surface-tonal-a0: var(--clr-light-a0);
+  --clr-text-on-surface-tonal-a10: var(--clr-light-a0);
+  --clr-text-on-surface-tonal-a20: var(--clr-light-a0);
+  --clr-text-on-surface-tonal-a30: var(--clr-dark-a0);
+  --clr-text-on-surface-tonal-a40: var(--clr-dark-a0);
+  --clr-text-on-surface-tonal-a50: var(--clr-dark-a0);
+  
+  /* Text on Semantic Colors */
+  --clr-text-on-success-a0: var(--clr-light-a0);
+  --clr-text-on-success-a10: var(--clr-light-a0);
+  --clr-text-on-success-a20: var(--clr-dark-a0);
+  
+  --clr-text-on-warning-a0: var(--clr-light-a0);
+  --clr-text-on-warning-a10: var(--clr-dark-a0);
+  --clr-text-on-warning-a20: var(--clr-dark-a0);
+  
+  --clr-text-on-danger-a0: var(--clr-light-a0);
+  --clr-text-on-danger-a10: var(--clr-light-a0);
+  --clr-text-on-danger-a20: var(--clr-dark-a0);
+  
+  --clr-text-on-info-a0: var(--clr-light-a0);
+  --clr-text-on-info-a10: var(--clr-light-a0);
+  --clr-text-on-info-a20: var(--clr-dark-a0);
+  
+  /* ============================================
+     BACKWARD COMPATIBILITY MAPPINGS (Light Mode)
+     ============================================ */
+  
+  /* Primary Brand Colors */
+  --color-primary: var(--clr-primary-a0);
+  --color-primary-hover: var(--clr-primary-a10);
+  --color-primary-light: var(--clr-primary-a20);
+  --color-primary-dark: var(--clr-primary-a0);
+  
+  /* Secondary Colors (Surface) */
+  --color-secondary: var(--clr-surface-a0);
+  --color-secondary-hover: var(--clr-surface-a10);
+  --color-secondary-light: var(--clr-surface-a20);
+  --color-secondary-dark: var(--clr-surface-a0);
+  
+  /* Tertiary Colors (Info for contrast) */
+  --color-tertiary: var(--clr-info-a10);
+  --color-tertiary-hover: var(--clr-info-a20);
+  --color-tertiary-light: var(--clr-info-a20);
+  --color-tertiary-dark: var(--clr-info-a0);
+  --color-text-on-tertiary: var(--clr-text-on-info-a10);
+  
+  /* Semantic Colors */
+  --color-success: var(--clr-success-a0);
+  --color-success-hover: var(--clr-success-a10);
+  --color-success-light: var(--clr-success-a20);
+  --color-success-dark: var(--clr-success-a0);
+  --color-text-on-success: var(--clr-text-on-success-a0);
+  
+  --color-error: var(--clr-danger-a0);
+  --color-error-hover: var(--clr-danger-a10);
+  --color-error-light: var(--clr-danger-a20);
+  --color-error-dark: var(--clr-danger-a0);
+  --color-text-on-error: var(--clr-text-on-danger-a0);
+  
+  --color-warning: var(--clr-warning-a0);
+  --color-warning-hover: var(--clr-warning-a10);
+  --color-warning-light: var(--clr-warning-a20);
+  --color-warning-dark: var(--clr-warning-a0);
+  --color-text-on-warning: var(--clr-text-on-warning-a0);
+  
+  --color-info: var(--clr-info-a0);
+  --color-info-hover: var(--clr-info-a10);
+  --color-info-light: var(--clr-info-a20);
+  --color-info-dark: var(--clr-info-a0);
+  --color-text-on-info: var(--clr-text-on-info-a0);
+  
+  /* Background Colors - Light Mode (use light backgrounds) */
+  --color-bg-primary: #F7F9FC;
+  --color-bg-secondary: #EDF1F5;
+  --color-bg-muted: #FAFAFA;
+  --color-bg-surface: var(--clr-light-a0);
+  --color-bg-overlay: rgba(112, 112, 112, 0.85);
+  
+  /* Text Colors - Light Mode (dark text on light backgrounds) */
+  --color-text-primary: #1F2933;
+  --color-text-secondary: #394452;
+  --color-text-muted: #6B7280;
+  --color-text-light: #9E9E9E;
+  --color-text-inverse: var(--clr-light-a0);
+  --color-text-on-primary: var(--clr-text-on-primary-a0);
+  --color-text-on-secondary: var(--clr-text-on-surface-a0);
+  
+  /* Slate (legacy) */
+  --color-slate: var(--clr-surface-a0);
+  --color-slate-light: var(--clr-surface-a20);
+  --color-slate-dark: var(--clr-surface-a0);
+  --color-text-on-slate: var(--clr-text-on-surface-a0);
+  
+  /* Border Colors (derived from surface) */
+  --color-border-light: var(--clr-surface-a30);
+  --color-border: var(--clr-surface-a20);
+  --color-border-dark: var(--clr-surface-a10);
+  
+  /* Neutral Grays (kept for compatibility) */
   --color-neutral-50: #FAFAFA;
   --color-neutral-100: #F5F5F5;
   --color-neutral-200: #EEEEEE;
@@ -49,37 +273,95 @@
   --color-neutral-700: #616161;
   --color-neutral-800: #424242;
   --color-neutral-900: #212121;
+}
+
+/* ============================================
+   DARK THEME OVERRIDES (applied via data-theme)
+   ============================================ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
   
-  /* Slate (for dark sections) */
-  --color-slate: #38424C;
-  --color-slate-light: #4A5568;
-  --color-slate-dark: #2D3748;
+  /* Switch to dark mode variants */
+  --clr-primary-a0: var(--clr-primary-dark-a0);
+  --clr-primary-a10: var(--clr-primary-dark-a10);
+  --clr-primary-a20: var(--clr-primary-dark-a20);
+  --clr-primary-a30: var(--clr-primary-dark-a30);
+  --clr-primary-a40: var(--clr-primary-dark-a40);
+  --clr-primary-a50: var(--clr-primary-dark-a50);
   
-  /* Text Colors */
-  --color-text-primary: #212121;
-  --color-text-secondary: #424242;
-  --color-text-muted: #757575;
-  --color-text-light: #9E9E9E;
-  --color-text-inverse: #FFFFFF;
-  --color-text-on-primary: #FFFFFF;
-  --color-text-on-secondary: #FFFFFF;
+  --clr-surface-a0: var(--clr-surface-dark-a0);
+  --clr-surface-a10: var(--clr-surface-dark-a10);
+  --clr-surface-a20: var(--clr-surface-dark-a20);
+  --clr-surface-a30: var(--clr-surface-dark-a30);
+  --clr-surface-a40: var(--clr-surface-dark-a40);
+  --clr-surface-a50: var(--clr-surface-dark-a50);
   
-  /* Background Colors */
-  --color-bg-primary: #FFFFFF;
-  --color-bg-secondary: #F5F5F5;
-  --color-bg-muted: #FAFAFA;
-  --color-bg-surface: #FFFFFF;
-  --color-bg-overlay: rgba(112, 112, 112, 0.85);
+  --clr-surface-tonal-a0: var(--clr-surface-tonal-dark-a0);
+  --clr-surface-tonal-a10: var(--clr-surface-tonal-dark-a10);
+  --clr-surface-tonal-a20: var(--clr-surface-tonal-dark-a20);
+  --clr-surface-tonal-a30: var(--clr-surface-tonal-dark-a30);
+  --clr-surface-tonal-a40: var(--clr-surface-tonal-dark-a40);
+  --clr-surface-tonal-a50: var(--clr-surface-tonal-dark-a50);
   
-  /* Border Colors */
-  --color-border-light: #E0E0E0;
-  --color-border: #BDBDBD;
-  --color-border-dark: #757575;
+  --clr-success-a0: var(--clr-success-dark-a0);
+  --clr-success-a10: var(--clr-success-dark-a10);
+  --clr-success-a20: var(--clr-success-dark-a20);
   
-  /* ============================================
-     TYPOGRAPHY
-     ============================================ */
+  --clr-warning-a0: var(--clr-warning-dark-a0);
+  --clr-warning-a10: var(--clr-warning-dark-a10);
+  --clr-warning-a20: var(--clr-warning-dark-a20);
   
+  --clr-danger-a0: var(--clr-danger-dark-a0);
+  --clr-danger-a10: var(--clr-danger-dark-a10);
+  --clr-danger-a20: var(--clr-danger-dark-a20);
+  
+  --clr-info-a0: var(--clr-info-dark-a0);
+  --clr-info-a10: var(--clr-info-dark-a10);
+  --clr-info-a20: var(--clr-info-dark-a20);
+  
+  /* Update backward compatibility mappings for dark mode */
+  --color-primary: var(--clr-primary-a0);
+  --color-primary-hover: var(--clr-primary-a10);
+  --color-primary-light: var(--clr-primary-a20);
+  --color-primary-dark: var(--clr-primary-a0);
+  
+  --color-secondary: var(--clr-surface-a20);
+  --color-secondary-hover: var(--clr-surface-a30);
+  --color-secondary-light: var(--clr-surface-a30);
+  --color-secondary-dark: var(--clr-surface-a10);
+  
+  /* Background Colors - Dark Mode */
+  --color-bg-primary: var(--clr-surface-dark-a0);
+  --color-bg-secondary: var(--clr-surface-dark-a10);
+  --color-bg-muted: var(--clr-surface-dark-a0);
+  --color-bg-surface: var(--clr-surface-dark-a10);
+  
+  /* Text Colors - Dark Mode (light text on dark backgrounds) */
+  --color-text-primary: #E8EEF5;
+  --color-text-secondary: #C9D4DF;
+  --color-text-muted: #9BA9B8;
+  --color-text-light: #6B7280;
+  --color-text-inverse: var(--clr-dark-a0);
+  --color-text-on-primary: var(--clr-text-on-primary-a0);
+  --color-text-on-secondary: var(--clr-text-on-surface-a20);
+  
+  --color-slate: var(--clr-surface-a20);
+  --color-slate-light: var(--clr-surface-a30);
+  --color-slate-dark: var(--clr-surface-a10);
+  --color-text-on-slate: var(--clr-text-on-surface-a20);
+  
+  --color-text-on-success: var(--clr-text-on-success-a0);
+  --color-text-on-error: var(--clr-text-on-danger-a0);
+  --color-text-on-warning: var(--clr-text-on-warning-a0);
+  --color-text-on-info: var(--clr-text-on-info-a0);
+  --color-text-on-tertiary: var(--clr-text-on-info-a10);
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+
+:root {
   /* Font Families */
   --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-family-heading: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -212,6 +494,90 @@
 }
 
 /* ============================================
+   BROWSER ADAPTIVE DARK MODE (prefers-color-scheme)
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    
+    /* Switch to dark mode variants */
+    --clr-primary-a0: var(--clr-primary-dark-a0);
+    --clr-primary-a10: var(--clr-primary-dark-a10);
+    --clr-primary-a20: var(--clr-primary-dark-a20);
+    --clr-primary-a30: var(--clr-primary-dark-a30);
+    --clr-primary-a40: var(--clr-primary-dark-a40);
+    --clr-primary-a50: var(--clr-primary-dark-a50);
+    
+    --clr-surface-a0: var(--clr-surface-dark-a0);
+    --clr-surface-a10: var(--clr-surface-dark-a10);
+    --clr-surface-a20: var(--clr-surface-dark-a20);
+    --clr-surface-a30: var(--clr-surface-dark-a30);
+    --clr-surface-a40: var(--clr-surface-dark-a40);
+    --clr-surface-a50: var(--clr-surface-dark-a50);
+    
+    --clr-surface-tonal-a0: var(--clr-surface-tonal-dark-a0);
+    --clr-surface-tonal-a10: var(--clr-surface-tonal-dark-a10);
+    --clr-surface-tonal-a20: var(--clr-surface-tonal-dark-a20);
+    --clr-surface-tonal-a30: var(--clr-surface-tonal-dark-a30);
+    --clr-surface-tonal-a40: var(--clr-surface-tonal-dark-a40);
+    --clr-surface-tonal-a50: var(--clr-surface-tonal-dark-a50);
+    
+    --clr-success-a0: var(--clr-success-dark-a0);
+    --clr-success-a10: var(--clr-success-dark-a10);
+    --clr-success-a20: var(--clr-success-dark-a20);
+    
+    --clr-warning-a0: var(--clr-warning-dark-a0);
+    --clr-warning-a10: var(--clr-warning-dark-a10);
+    --clr-warning-a20: var(--clr-warning-dark-a20);
+    
+    --clr-danger-a0: var(--clr-danger-dark-a0);
+    --clr-danger-a10: var(--clr-danger-dark-a10);
+    --clr-danger-a20: var(--clr-danger-dark-a20);
+    
+    --clr-info-a0: var(--clr-info-dark-a0);
+    --clr-info-a10: var(--clr-info-dark-a10);
+    --clr-info-a20: var(--clr-info-dark-a20);
+    
+    /* Update backward compatibility mappings */
+    --color-primary: var(--clr-primary-a0);
+    --color-primary-hover: var(--clr-primary-a10);
+    --color-primary-light: var(--clr-primary-a20);
+    --color-primary-dark: var(--clr-primary-a0);
+    
+    --color-secondary: var(--clr-surface-a20);
+    --color-secondary-hover: var(--clr-surface-a30);
+    --color-secondary-light: var(--clr-surface-a30);
+    --color-secondary-dark: var(--clr-surface-a10);
+    
+    /* Background Colors - Dark Mode (browser adaptive) */
+    --color-bg-primary: var(--clr-surface-dark-a0);
+    --color-bg-secondary: var(--clr-surface-dark-a10);
+    --color-bg-muted: var(--clr-surface-dark-a0);
+    --color-bg-surface: var(--clr-surface-dark-a10);
+    
+    /* Text Colors - Dark Mode (browser adaptive) */
+    --color-text-primary: #E8EEF5;
+    --color-text-secondary: #C9D4DF;
+    --color-text-muted: #9BA9B8;
+    --color-text-light: #6B7280;
+    --color-text-inverse: var(--clr-dark-a0);
+    --color-text-on-primary: var(--clr-text-on-primary-a0);
+    --color-text-on-secondary: var(--clr-text-on-surface-a20);
+    
+    --color-slate: var(--clr-surface-a20);
+    --color-slate-light: var(--clr-surface-a30);
+    --color-slate-dark: var(--clr-surface-a10);
+    --color-text-on-slate: var(--clr-text-on-surface-a20);
+    
+    --color-text-on-success: var(--clr-text-on-success-a0);
+    --color-text-on-error: var(--clr-text-on-danger-a0);
+    --color-text-on-warning: var(--clr-text-on-warning-a0);
+    --color-text-on-info: var(--clr-text-on-info-a0);
+    --color-text-on-tertiary: var(--clr-text-on-info-a10);
+  }
+}
+
+/* ============================================
    RESPONSIVE TYPOGRAPHY (Mobile Adjustments)
    ============================================ */
 
@@ -231,4 +597,3 @@
     --font-size-6xl: 2rem;      /* hero mobile: 32px */
   }
 }
-

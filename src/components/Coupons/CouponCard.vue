@@ -199,6 +199,8 @@ export default {
   border: 2px solid var(--color-border-light);
   box-shadow: var(--shadow-sm);
   margin-bottom: var(--spacing-sm);
+  background-color: #FFFFFF !important;
+  padding: var(--spacing-xs);
 }
 
 .merchant-name {
@@ -211,12 +213,17 @@ export default {
   font-size: var(--font-size-lg);
   color: var(--color-text-primary);
   margin-bottom: var(--spacing-md);
+  line-height: var(--line-height-normal);
 }
 
 .validity {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
   margin: var(--spacing-sm) 0;
+}
+
+.validity small {
+  color: var(--color-text-secondary);
 }
 
 .action-btn {
@@ -228,41 +235,48 @@ export default {
   min-height: var(--button-height-md);
   transition: all var(--transition-base);
   width: 100%;
-  color: var(--color-text-inverse);
   font-weight: var(--font-weight-medium);
 }
 
 .btn-primary {
   background-color: var(--color-secondary);
+  color: var(--color-text-on-secondary);
 }
 
 .btn-primary:hover:not(:disabled) {
   background-color: var(--color-secondary-hover);
+  color: var(--color-text-on-secondary);
 }
 
 .btn-secondary {
   background-color: var(--color-success);
+  color: var(--color-text-on-success);
 }
 
 .btn-secondary:hover:not(:disabled) {
   background-color: var(--color-success-hover);
+  color: var(--color-text-on-success);
 }
 
 .btn-tertiary {
   background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
 }
 
 .btn-tertiary:hover:not(:disabled) {
   background-color: var(--color-primary-hover);
+  color: var(--color-text-on-primary);
 }
 
 .btn-gray {
   background-color: var(--color-neutral-600);
+  color: var(--color-text-inverse);
   cursor: default;
 }
 
 .btn-gray:hover:not(:disabled) {
   background-color: var(--color-neutral-600);
+  color: var(--color-text-inverse);
 }
 
 .action-btn:disabled {

@@ -220,6 +220,7 @@ export default {
 <style scoped>
 .coupon-book-view {
   padding: var(--spacing-2xl);
+  color: var(--color-text-primary);
 }
 
 h1 {
@@ -270,7 +271,7 @@ h1 {
 .filter-tag {
   display: inline-block;
   background-color: var(--color-info);
-  color: var(--color-text-inverse);
+  color: var(--color-text-on-info);
   padding: var(--spacing-xs) var(--spacing-md);
   margin: var(--spacing-xs);
   border-radius: var(--radius-full);
@@ -281,6 +282,7 @@ h1 {
 
 .filter-tag:hover {
   background-color: var(--color-info-hover);
+  color: var(--color-text-on-info);
 }
 
 /* Fixed sidebar on larger screens */
@@ -312,5 +314,21 @@ h1 {
     position: relative;
     width: 100%;
   }
+}
+
+.loading {
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.error {
+  color: var(--color-error);
+  text-align: center;
+  padding: var(--spacing-xl);
+  background: var(--color-error-light);
+  background: rgba(176, 0, 32, 0.1);
+  border: 1px solid var(--color-error-light);
+  border-radius: var(--radius-md);
 }
 </style>

@@ -122,18 +122,20 @@ export default {
   border-radius: var(--radius-lg);
   text-align: center;
   max-width: 90%;
+  color: #FFFFFF;
 }
 
 .hero h1 {
   font-size: var(--font-size-6xl);
   margin-bottom: var(--spacing-lg);
-  color: var(--color-text-inverse);
+  color: #FFFFFF;
 }
 
 .hero p {
   font-size: var(--font-size-2xl);
   margin-bottom: var(--spacing-2xl);
-  color: var(--color-text-light);
+  color: #FFFFFF;
+  opacity: 0.95;
 }
 
 .cta-buttons {
@@ -162,25 +164,27 @@ export default {
 
 .btn.primary {
   background-color: var(--color-secondary);
-  color: var(--color-text-inverse);
+  color: var(--color-text-on-secondary);
 }
 
 .btn.primary:hover {
   background-color: var(--color-secondary-hover);
+  color: var(--color-text-on-secondary);
 }
 
 .btn.secondary {
   background-color: var(--color-success);
-  color: var(--color-text-inverse);
+  color: var(--color-text-on-success);
 }
 
 .btn.secondary:hover {
   background-color: var(--color-success-hover);
+  color: var(--color-text-on-success);
 }
 
 .btn.tertiary {
   background-color: var(--color-primary);
-  color: var(--color-text-inverse);
+  color: var(--color-text-on-primary);
 }
 
 .btn.tertiary:hover {
@@ -192,12 +196,18 @@ export default {
   background-color: var(--color-slate);
   padding: var(--spacing-2xl);
   text-align: center;
+  color: var(--color-text-on-slate);
 }
 
 .features h2 {
-  color: var(--color-text-inverse);
+  color: var(--color-text-on-slate);
   font-size: var(--font-size-4xl);
   margin-bottom: var(--spacing-xl);
+}
+
+.features p {
+  color: var(--color-text-on-slate);
+  opacity: 0.9;
 }
 
 .feature-cards {
@@ -208,15 +218,22 @@ export default {
 }
 
 .feature-cards .card {
-  background-color: var(--color-bg-muted);
+  background-color: var(--color-bg-surface);
   padding: var(--spacing-xl);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+  color: var(--color-text-primary);
 }
 
 .feature-cards .card h3 {
   margin-bottom: var(--spacing-lg);
   font-size: var(--font-size-2xl);
+  color: var(--color-text-primary);
+}
+
+.feature-cards .card p {
+  color: var(--color-text-secondary);
+  margin: 0;
 }
 
 /* Featured Events Section */

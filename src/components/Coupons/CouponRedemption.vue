@@ -166,42 +166,60 @@ export default {
 
 <style scoped>
 .coupon-redemption {
-  padding: 2rem;
+  padding: var(--spacing-2xl);
   text-align: center;
   max-width: 400px;
-  margin: 2rem auto;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  margin: var(--spacing-2xl) auto;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+
+.coupon-redemption h2 {
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.coupon-redemption > p {
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-lg);
 }
 .banner {
-  margin: 0 0 1rem 0;
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  font-size: 0.95rem;
+  margin: 0 0 var(--spacing-lg) 0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
   text-align: left;
 }
 .banner-error {
-  background: #ffe8e6;
-  color: #8a1f11;
-  border: 1px solid #ffb4ac;
+  background: var(--color-error-light);
+  background: rgba(176, 0, 32, 0.1);
+  color: var(--color-error-dark);
+  border: 1px solid var(--color-error-light);
 }
 .banner-success {
-  background: #e8fff0;
-  color: #0f6b2e;
-  border: 1px solid #b8f1cf;
+  background: var(--color-success-light);
+  background: rgba(40, 167, 69, 0.1);
+  color: var(--color-success-dark);
+  border: 1px solid var(--color-success-light);
 }
 .coupon-details {
-  border: 1px solid #eee;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  border: 1px solid var(--color-border-light);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  background: var(--color-bg-muted);
+  color: var(--color-text-primary);
 }
 .coupon-description {
-  font-size: 1.1rem;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
 }
 .validity {
-  font-size: 0.8rem;
-  color: #555;
-  margin-top: 0.5rem;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-sm);
 }
 .qr-code {
   width: 100px;
@@ -212,24 +230,39 @@ export default {
   margin-top: 1rem;
 }
 .actions button {
-  margin: 0 0.5rem 0.5rem;
-  padding: 0.5rem 1rem;
+  margin: 0 var(--spacing-sm) var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: var(--font-size-base);
+  min-height: var(--button-height-md);
+  font-weight: var(--font-weight-medium);
+  transition: background-color var(--transition-base);
 }
 .primary-btn {
-  background-color: #28a745;
-  color: #fff;
+  background-color: var(--color-success);
+  color: var(--color-text-on-success);
+}
+.primary-btn:hover:not(:disabled) {
+  background-color: var(--color-success-hover);
+  color: var(--color-text-on-success);
 }
 .secondary-btn {
-  background-color: #007bff;
-  color: #fff;
+  background-color: var(--color-secondary);
+  color: var(--color-text-on-secondary);
+}
+.secondary-btn:hover:not(:disabled) {
+  background-color: var(--color-secondary-hover);
+  color: var(--color-text-on-secondary);
 }
 .cancel-btn {
-  background-color: #dc3545;
-  color: #fff;
+  background-color: var(--color-error);
+  color: var(--color-text-on-error);
+}
+.cancel-btn:hover:not(:disabled) {
+  background-color: var(--color-error-hover);
+  color: var(--color-text-on-error);
 }
 .actions button[disabled] {
   opacity: 0.6;

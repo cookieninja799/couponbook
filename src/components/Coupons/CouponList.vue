@@ -48,6 +48,12 @@ export default {
 .coupon-list {
   padding: var(--spacing-lg);
   text-align: center;
+  color: var(--color-text-primary);
+}
+
+.coupon-list h2 {
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-lg);
 }
 
 .coupons-container {

@@ -25,27 +25,41 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-bg-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-index-modal-backdrop);
 }
 .modal-content {
-  background: #fff;
-  padding: 1.5rem;
-  border-radius: 8px;
+  background: var(--color-bg-surface);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
   position: relative;
   width: 90%;
   max-width: 500px;
+  box-shadow: var(--shadow-xl);
+  color: var(--color-text-primary);
 }
 .modal-close {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
   background: transparent;
   border: none;
-  font-size: 1.5rem;
+  font-size: var(--font-size-2xl);
   cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: color var(--transition-fast);
+  line-height: 1;
+  padding: var(--spacing-xs);
+  min-width: var(--button-height-md);
+  min-height: var(--button-height-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-close:hover {
+  color: var(--color-text-primary);
 }
 </style>

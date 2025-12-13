@@ -54,44 +54,58 @@ export default {
 
 <style scoped>
 .event-rsvp {
-  padding: 1rem;
+  padding: var(--spacing-lg);
   max-width: 400px;
-  margin: 2rem auto;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  margin: var(--spacing-2xl) auto;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
 }
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-lg);
 }
 label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
 }
 input, select {
   width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family-base);
+  transition: border-color var(--transition-fast);
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--color-secondary);
 }
 button {
-  margin-right: 0.5rem;
-  padding: 0.5rem 1rem;
+  margin-right: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
+  min-height: var(--button-height-md);
+  font-weight: var(--font-weight-medium);
+  transition: background-color var(--transition-base);
 }
 button[type="submit"] {
-  background-color: #007bff;
-  color: #fff;
+  background-color: var(--color-secondary);
+  color: var(--color-text-on-secondary);
 }
 button[type="submit"]:hover {
-  background-color: #0056b3;
+  background-color: var(--color-secondary-hover);
 }
 button[type="button"] {
-  background-color: #dc3545;
-  color: #fff;
+  background-color: var(--color-error);
+  color: var(--color-text-on-error);
 }
 button[type="button"]:hover {
-  background-color: #c82333;
+  background-color: var(--color-error-hover);
+  color: var(--color-text-on-error);
 }
 </style>

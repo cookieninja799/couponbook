@@ -24,6 +24,12 @@ describe('Design Tokens', () => {
       expect(cssContent).toContain('--color-secondary-hover:');
     });
 
+    it('should define tertiary colors', () => {
+      expect(cssContent).toContain('--color-tertiary:');
+      expect(cssContent).toContain('--color-tertiary-hover:');
+      expect(cssContent).toContain('--color-text-on-tertiary:');
+    });
+
     it('should define semantic colors', () => {
       expect(cssContent).toContain('--color-success:');
       expect(cssContent).toContain('--color-error:');
@@ -43,6 +49,28 @@ describe('Design Tokens', () => {
       expect(cssContent).toContain('--color-bg-secondary:');
       expect(cssContent).toContain('--color-bg-muted:');
       expect(cssContent).toContain('--color-bg-surface:');
+    });
+
+    it('should define dark theme overrides', () => {
+      // The new design system uses :root[data-theme="dark"] to override tokens
+      // Check that dark theme selector exists
+      expect(cssContent).toContain(':root[data-theme="dark"]');
+      
+      // Check that dark mode color variants are defined
+      expect(cssContent).toContain('--clr-primary-dark-a0:');
+      expect(cssContent).toContain('--clr-surface-dark-a0:');
+      expect(cssContent).toContain('--clr-success-dark-a0:');
+      expect(cssContent).toContain('--clr-danger-dark-a0:');
+      expect(cssContent).toContain('--clr-warning-dark-a0:');
+      expect(cssContent).toContain('--clr-info-dark-a0:');
+      
+      // Check that dark theme overrides backward compatibility mappings
+      expect(cssContent).toContain(':root[data-theme="dark"]');
+      // Verify that tokens are overridden in dark mode (not separate -dark tokens)
+      const darkThemeSection = cssContent.split(':root[data-theme="dark"]')[1];
+      expect(darkThemeSection).toContain('--color-bg-primary:');
+      expect(darkThemeSection).toContain('--color-text-primary:');
+      expect(darkThemeSection).toContain('--color-primary:');
     });
   });
 

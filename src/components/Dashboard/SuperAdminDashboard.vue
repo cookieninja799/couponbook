@@ -245,6 +245,12 @@ export default {
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
   margin-bottom: var(--spacing-xl);
+  color: var(--color-text-primary);
+}
+
+.section-card h1,
+.section-card h2 {
+  color: var(--color-text-primary);
 }
 
 .dashboard-section {
@@ -253,14 +259,25 @@ export default {
   padding: var(--spacing-lg);
   border-radius: var(--radius-lg);
   margin-bottom: var(--spacing-xl);
+  color: var(--color-text-primary);
 }
 
 .dashboard-section h2 {
   margin-bottom: var(--spacing-lg);
+  color: var(--color-text-primary);
 }
 
 .dashboard-section p {
   margin-bottom: var(--spacing-lg);
+  color: var(--color-text-primary);
+}
+
+.dashboard-section ul {
+  color: var(--color-text-primary);
+}
+
+.dashboard-section li {
+  color: var(--color-text-primary);
 }
 
 .dashboard-section ul {

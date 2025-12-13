@@ -19,6 +19,11 @@ body {
   font-size: var(--font-size-base);
 }
 
+:root[data-theme="dark"] body {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
 /* Headings */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-family-heading);
@@ -51,6 +56,30 @@ a {
 a:hover {
   color: var(--color-secondary-hover);
   text-decoration: underline;
+}
+
+:root[data-theme="dark"] a {
+  color: var(--color-secondary);
+}
+
+:root[data-theme="dark"] a:hover {
+  color: var(--color-secondary-hover);
+}
+
+/* Browser adaptive dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+  }
+
+  :root:not([data-theme="light"]) a {
+    color: var(--color-secondary);
+  }
+
+  :root:not([data-theme="light"]) a:hover {
+    color: var(--color-secondary-hover);
+  }
 }
 
 /* Container Utility */
@@ -102,6 +131,34 @@ a:hover {
 .bg-secondary { background-color: var(--color-bg-secondary); }
 .bg-muted { background-color: var(--color-bg-muted); }
 .bg-surface { background-color: var(--color-bg-surface); }
+
+/* ============================================
+   LOGO STYLING (White Background for PNGs/SVGs)
+   ============================================ */
+
+/* Ensure merchant logos and other brand logos have white backgrounds for proper visibility */
+/* Logos are typically designed for white backgrounds, so we keep it white even in dark mode */
+/* Note: Header logo (.app-header .logo) is excluded to allow dynamic background */
+img[class*="merchant-logo"]:not(.app-header .logo),
+.merchant-logo:not(.app-header .logo),
+.merchant-logo-img {
+  background-color: #FFFFFF !important;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+}
+
+/* For circular logos, ensure background is visible */
+img.merchant-logo[style*="border-radius: 50%"]:not(.app-header .logo),
+.merchant-logo[style*="border-radius: 50%"]:not(.app-header .logo),
+.merchant-logo-placeholder img {
+  background-color: #FFFFFF !important;
+}
+
+/* Explicitly exclude header logo from white background - use header container color */
+.app-header .logo,
+.app-header img.logo {
+  background-color: var(--color-bg-primary) !important;
+}
 
 /* ============================================
    SPACING UTILITIES
@@ -264,12 +321,40 @@ a:hover {
 }
 
 .btn-tertiary {
-  background-color: var(--color-primary);
-  color: var(--color-text-on-primary);
+  background-color: var(--color-tertiary);
+  color: var(--color-text-on-tertiary);
 }
 
 .btn-tertiary:hover:not(:disabled) {
-  background-color: var(--color-primary-dark);
+  background-color: var(--color-tertiary-hover);
+}
+
+/* Button on primary background - use tertiary for contrast */
+.bg-primary .btn-primary,
+[style*="background-color: var(--color-primary)"] .btn-primary,
+[style*="background: var(--color-primary)"] .btn-primary {
+  background-color: var(--color-tertiary);
+  color: var(--color-text-on-tertiary);
+}
+
+.bg-primary .btn-primary:hover:not(:disabled),
+[style*="background-color: var(--color-primary)"] .btn-primary:hover:not(:disabled),
+[style*="background: var(--color-primary)"] .btn-primary:hover:not(:disabled) {
+  background-color: var(--color-tertiary-hover);
+}
+
+/* Button on secondary background - use tertiary for contrast */
+.bg-secondary .btn-secondary,
+[style*="background-color: var(--color-secondary)"] .btn-secondary,
+[style*="background: var(--color-secondary)"] .btn-secondary {
+  background-color: var(--color-tertiary);
+  color: var(--color-text-on-tertiary);
+}
+
+.bg-secondary .btn-secondary:hover:not(:disabled),
+[style*="background-color: var(--color-secondary)"] .btn-secondary:hover:not(:disabled),
+[style*="background: var(--color-secondary)"] .btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-tertiary-hover);
 }
 
 /* ============================================

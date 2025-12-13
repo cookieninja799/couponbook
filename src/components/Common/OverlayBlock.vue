@@ -47,23 +47,17 @@
   </script>
   
   <style scoped>
-  /* -------------------------------------------------
-     Light mode color system
-     Based on existing VivaSpot palette
-     - Backgrounds: whites / light grays
-     - Text: slate gray
-     - Accent: coral (#FF6B35 / #DD6146)
-  -------------------------------------------------- */
+  /* Themed overlay variables (inherit from design tokens) */
   :host, .overlay-block {
-    --overlay-veil-bg: rgba(112, 112, 112, 0.85);  
-    --overlay-card-bg: #ffffff;                     /* pure white */
-    --overlay-card-fg: #38424c;                     /* slate gray text */
-    --overlay-card-border: rgba(56, 66, 76, 0.15);  /* faint slate border */
+    --overlay-veil-bg: var(--color-bg-overlay, rgba(112, 112, 112, 0.85));
+    --overlay-card-bg: var(--color-bg-surface);
+    --overlay-card-fg: var(--color-text-primary);
+    --overlay-card-border: var(--color-border-light);
     --overlay-radius: 8px;
     --overlay-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    --overlay-btn-bg: #FF6B35;
-    --overlay-btn-bg-hover: #DD6146;
-    --overlay-btn-fg: #ffffff;
+    --overlay-btn-bg: var(--color-primary-light);
+    --overlay-btn-bg-hover: var(--color-primary-hover);
+    --overlay-btn-fg: var(--color-text-on-primary);
   }
   
   /* Root wrapper */
@@ -141,7 +135,7 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
   .overlay-block__btn:focus {
-    outline: 2px solid #38424c;
+    outline: 2px solid var(--color-secondary);
     outline-offset: 2px;
   }
   

@@ -169,7 +169,7 @@ export default {
 
 .auth-btn:hover {
   background: var(--color-secondary);
-  color: var(--color-text-inverse);
+  color: var(--color-text-on-secondary);
 }
 
 .profile-btn {
@@ -195,7 +195,7 @@ export default {
   position: absolute;
   top: calc(100% + var(--spacing-xs));
   right: 0;
-  background-color: var(--color-bg-primary);
+  background-color: var(--color-bg-surface);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
@@ -207,6 +207,7 @@ export default {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  color: var(--color-text-primary);
 }
 
 .profile-dropdown li {
@@ -304,6 +305,9 @@ export default {
   height: 8vh;
   width: auto;
   max-width: 100%;
+  background-color: var(--color-bg-primary);
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
 }
 
 .navigation ul {
@@ -322,9 +326,12 @@ export default {
 }
 
 /* Menu link styles */
-.navigation a {
-  text-decoration: none;
-  color: var(--color-slate);
+.navigation a,
+.navigation router-link,
+.navigation a.router-link,
+.navigation router-link a {
+  text-decoration: none !important;
+  color: var(--color-text-primary) !important;
   padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
   transition: background-color var(--transition-slow), color var(--transition-slow);
@@ -333,10 +340,28 @@ export default {
   align-items: center;
 }
 
-.navigation a:hover {
+.navigation a:hover,
+.navigation router-link:hover,
+.navigation a.router-link:hover {
   background-color: var(--color-primary);
-  color: var(--color-text-inverse);
-  text-decoration: none;
+  color: var(--color-text-on-primary) !important;
+  text-decoration: none !important;
+}
+
+.navigation a.router-link-active,
+.navigation router-link.router-link-active {
+  color: var(--color-text-primary) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.navigation a i,
+.navigation router-link i {
+  color: inherit !important;
+}
+
+.navigation a:hover i,
+.navigation router-link:hover i {
+  color: inherit !important;
 }
 
 /* Hamburger Button Styles */
@@ -363,7 +388,7 @@ export default {
 .hamburger-line {
   width: var(--spacing-2xl);
   height: 3px;
-  background-color: var(--color-slate);
+  background-color: var(--color-text-primary);
   border-radius: var(--radius-sm);
   transition: all var(--transition-base);
 }

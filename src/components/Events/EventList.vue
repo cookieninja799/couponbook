@@ -44,6 +44,7 @@ export default {
   flex-wrap: wrap;
   justify-content: center;
   align-items: stretch;
-  gap: 1rem;
+  gap: var(--spacing-lg);
+  color: var(--color-text-primary);
 }
 </style>

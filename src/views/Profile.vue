@@ -1017,6 +1017,17 @@ export default {
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
   margin-bottom: var(--spacing-xl);
+  color: var(--color-text-primary);
+}
+
+.section-card h1,
+.section-card h2,
+.section-card h3 {
+  color: var(--color-text-primary);
+}
+
+.section-card p {
+  color: var(--color-text-primary);
 }
 
 /* Account header / role pill */
@@ -1080,19 +1091,29 @@ export default {
   min-width: 140px;
   padding: var(--spacing-md) var(--spacing-lg);
   border-radius: var(--radius-lg);
-  background: var(--color-neutral-50);
+  background: var(--color-bg-surface);
   border: 1px solid var(--color-border-light);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition-base);
+}
+
+.stat-card:hover {
+  box-shadow: var(--shadow-sm);
 }
 
 .stat-number {
   display: block;
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
 }
 
 .stat-label {
   font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
+  display: block;
 }
 
 /* Skeleton list placeholder */
@@ -1121,7 +1142,8 @@ export default {
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border-light);
   padding: var(--spacing-md) var(--spacing-lg);
-  background: var(--color-neutral-50);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
 }
 
 .merchant-card-header {
@@ -1133,10 +1155,25 @@ export default {
 
 .merchant-card-header h3 {
   margin: 0;
+  color: var(--color-text-primary);
+}
+
+.merchant-card-body {
+  color: var(--color-text-primary);
 }
 
 .merchant-card-body p {
   margin: var(--spacing-xs) 0;
+  color: var(--color-text-primary);
+}
+
+.merchant-card-body strong {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.merchant-card-body .placeholder-text {
+  color: var(--color-text-secondary);
 }
 
 /* Logo placeholder / image */
@@ -1162,6 +1199,11 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  background-color: #FFFFFF !important;
+}
+
+.merchant-logo-placeholder {
+  background-color: #FFFFFF !important;
 }
 
 /* File upload UI */
@@ -1256,12 +1298,15 @@ export default {
 }
 
 .btn.tertiary {
-  background: var(--color-neutral-100);
+  background: var(--color-bg-muted);
   color: var(--color-text-primary);
+  border: 1px solid var(--color-border-light);
 }
 
 .btn.tertiary:hover:not(:disabled) {
-  background: var(--color-neutral-200);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
 }
 
 .btn[disabled] {

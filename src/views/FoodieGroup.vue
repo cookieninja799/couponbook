@@ -540,7 +540,7 @@ export default {
 
 .banner-content {
   text-align: center;
-  color: var(--color-text-inverse);
+  color: #FFFFFF;
   padding: var(--spacing-lg);
   position: relative;
   z-index: 1;
@@ -553,7 +553,7 @@ export default {
     2px 2px 4px rgba(0, 0, 0, 0.9),
     0 0 10px rgba(0, 0, 0, 0.7),
     0 0 20px rgba(0, 0, 0, 0.5);
-  color: var(--color-text-inverse);
+  color: #FFFFFF;
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
   letter-spacing: -0.02em;
@@ -566,7 +566,7 @@ export default {
     1px 1px 3px rgba(0, 0, 0, 0.9),
     0 0 8px rgba(0, 0, 0, 0.6),
     0 0 15px rgba(0, 0, 0, 0.4);
-  color: var(--color-text-inverse);
+  color: #FFFFFF;
   line-height: var(--line-height-normal);
   font-weight: var(--font-weight-medium);
 }
@@ -604,21 +604,28 @@ export default {
 .social-links a {
   padding: var(--spacing-sm) var(--spacing-lg);
   background: var(--color-secondary);
-  color: var(--color-text-inverse);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: var(--radius-md);
   text-decoration: none;
   transition: all var(--transition-slow);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   font-weight: var(--font-weight-medium);
+  min-height: var(--button-height-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .social-links a:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   transform: translateY(-2px);
-}
-
-.social-links a:hover {
-  background: var(--color-secondary-hover);
+  background: rgba(255, 255, 255, 0.3);
+  color: #FFFFFF !important;
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .container {
@@ -633,6 +640,15 @@ export default {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   margin-bottom: var(--spacing-2xl);
+  color: var(--color-text-primary);
+}
+
+.section-card h2 {
+  color: var(--color-text-primary);
+}
+
+.section-card p {
+  color: var(--color-text-primary);
 }
 
 .purchase-banner {
@@ -703,7 +719,7 @@ export default {
 .filter-tag {
   display: inline-block;
   background-color: var(--color-info);
-  color: var(--color-text-inverse);
+  color: var(--color-text-on-info);
   padding: var(--spacing-xs) var(--spacing-md);
   margin: var(--spacing-xs) var(--spacing-xs) 0 0;
   border-radius: var(--radius-full);
@@ -714,6 +730,7 @@ export default {
 
 .filter-tag:hover {
   background-color: var(--color-info-hover);
+  color: var(--color-text-on-info);
 }
 
 /* 📱 Mobile: stack sidebar above coupons */

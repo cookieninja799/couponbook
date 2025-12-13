@@ -320,6 +320,12 @@ export default {
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
   margin-bottom: var(--spacing-xl);
+  color: var(--color-text-primary);
+}
+
+.section-card h1,
+.section-card h2 {
+  color: var(--color-text-primary);
 }
 
 .signin-card,
@@ -330,6 +336,7 @@ export default {
   max-width: 500px;
   margin: var(--spacing-3xl) auto;
   padding: var(--spacing-xl);
+  color: var(--color-text-primary);
 }
 
 .subtitle {

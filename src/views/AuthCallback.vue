@@ -54,10 +54,11 @@ onMounted(async () => {
 
 <style scoped>
 .auth-callback {
-  padding: 2rem;
+  padding: var(--spacing-2xl);
   text-align: center;
+  color: var(--color-text-primary);
 }
 .error {
-  color: red;
+  color: var(--color-error);
 }
 </style>

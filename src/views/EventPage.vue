@@ -94,23 +94,29 @@ export default {
 
 <style scoped>
 .event-page-view {
-  padding: 2rem;
+  padding: var(--spacing-2xl);
   max-width: 1000px;
   margin: 0 auto;
   text-align: center;
+  color: var(--color-text-primary);
+}
+
+.event-page-view h1 {
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xl);
 }
 
 /* Light mode overrides for OverlayBlock (your requested values) */
 .featured-events {
   /* These cascade into OverlayBlock via CSS variables */
-  --overlay-veil-bg: rgba(112, 112, 112, 0.85);
-  --overlay-card-bg: #ffffff;
-  --overlay-card-fg: #38424c;
-  --overlay-card-border: rgba(56, 66, 76, 0.15);
+  --overlay-veil-bg: var(--color-bg-overlay);
+  --overlay-card-bg: var(--color-bg-surface);
+  --overlay-card-fg: var(--color-text-primary);
+  --overlay-card-border: var(--color-border-light);
   --overlay-radius: 8px;
   --overlay-shadow: 0 4px 20px rgba(0,0,0,0.1);
-  --overlay-btn-bg: #FF6B35;
-  --overlay-btn-bg-hover: #DD6146;
-  --overlay-btn-fg: #ffffff;
+  --overlay-btn-bg: var(--color-primary-light);
+  --overlay-btn-bg-hover: var(--color-primary-hover);
+  --overlay-btn-fg: var(--color-text-on-primary);
 }
 </style>

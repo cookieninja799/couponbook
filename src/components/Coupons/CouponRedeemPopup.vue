@@ -498,17 +498,19 @@ export default {
   display: flex;
   align-items: stretch;
   justify-content: center;
-  background: var(--color-neutral-100);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
 }
 
 .dialog {
   width: 100%;
   max-width: 520px;
   margin: var(--spacing-3xl) auto;
-  background: var(--color-bg-primary);
+  background: var(--color-bg-surface);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
   display: flex;
+  color: var(--color-text-primary);
 }
 
 /* Inner content */
@@ -518,6 +520,7 @@ export default {
   width: 100%;
   max-height: calc(100vh - 48px);
   overflow-y: auto;
+  color: var(--color-text-primary);
 }
 
 .popup-header {
@@ -527,12 +530,14 @@ export default {
 .popup-header h2 {
   margin: 0;
   font-size: var(--font-size-2xl);
+  color: var(--color-text-primary);
 }
 
 /* States */
 .state {
   padding: var(--spacing-lg) 0;
   font-size: var(--font-size-base);
+  color: var(--color-text-primary);
 }
 
 .state.error {
@@ -543,6 +548,7 @@ export default {
 .lead {
   margin: var(--spacing-sm) 0 var(--spacing-lg);
   line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
 }
 
 .note {
@@ -574,11 +580,12 @@ export default {
 
 .btn.primary {
   background: var(--color-secondary);
-  color: var(--color-text-inverse);
+  color: var(--color-text-on-secondary);
 }
 
 .btn.primary:hover:not(:disabled) {
   background: var(--color-secondary-hover);
+  color: var(--color-text-on-secondary);
 }
 
 .btn.primary:disabled {
@@ -594,13 +601,30 @@ export default {
 
 .btn.ghost:hover {
   border-color: var(--color-border-dark);
-  background: var(--color-neutral-50);
+  background: var(--color-bg-muted);
+  color: var(--color-text-primary);
 }
 
 .success {
   margin: var(--spacing-sm) 0 var(--spacing-lg);
   font-weight: var(--font-weight-semibold);
   color: var(--color-success);
+}
+
+.instructions {
+  color: var(--color-text-primary);
+  margin: var(--spacing-md) 0;
+  line-height: var(--line-height-normal);
+}
+
+.confirm,
+.redeemed {
+  color: var(--color-text-primary);
+}
+
+.confirm p,
+.redeemed p {
+  color: var(--color-text-primary);
 }
 
 /* Details card */

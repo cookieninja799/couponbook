@@ -45,46 +45,50 @@ export default {
 
 <style scoped>
 .admin-dashboard {
-  padding: 2rem;
+  padding: var(--spacing-2xl);
 }
 
 .admin-dashboard h1 {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-2xl);
 }
 
 .overview,
 .recent-activities,
 .user-management {
-  margin-bottom: 2rem;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f9f9f9;
+  margin-bottom: var(--spacing-2xl);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg-muted);
 }
 
 .overview h2,
 .recent-activities h2,
 .user-management h2 {
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-lg);
 }
 
 .overview ul,
 .recent-activities ul {
   list-style: disc;
-  padding-left: 1.5rem;
+  padding-left: var(--spacing-xl);
+  color: var(--color-text-primary);
 }
 
 button {
-  background-color: #007bff;
-  color: #fff;
+  background-color: var(--color-secondary);
+  color: var(--color-text-on-secondary);
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
   cursor: pointer;
+  min-height: var(--button-height-md);
+  font-weight: var(--font-weight-medium);
+  transition: background-color var(--transition-base);
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: var(--color-secondary-hover);
 }
 </style>

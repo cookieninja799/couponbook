@@ -87,11 +87,11 @@ export default {
   display: flex;
   flex-direction: column;
   width: 300px;
-  margin-bottom: 2rem;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #f9f9f9;
+  margin-bottom: var(--spacing-2xl);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-muted);
 }
 
 .event-details h2 {
@@ -140,14 +140,17 @@ export default {
   width: 80px;
   object-fit: contain;
   border-radius: 50%;
-  border: 2px solid #ddd;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  margin-bottom: 0.5rem;
+  border: 2px solid var(--color-border-light);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-sm);
+  background-color: #FFFFFF !important;
+  padding: var(--spacing-xs);
 }
 
 .merchant-name {
-  font-size: 1.2rem;
-  font-weight: bold;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
 }
 
 /* Locked overlay styles */
@@ -157,28 +160,32 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255, 255, 255, 0.9);
+  background: var(--color-bg-surface);
+  opacity: 0.95;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  color: #555;
-  border-radius: 8px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-lg);
 }
 
 .redirect-btn {
-  margin-top: 0.5rem;
-  background-color: #007bff;
-  color: #fff;
+  margin-top: var(--spacing-sm);
+  background-color: var(--color-secondary);
+  color: var(--color-text-on-secondary);
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color var(--transition-base);
+  min-height: var(--button-height-md);
+  font-weight: var(--font-weight-medium);
 }
 
 .redirect-btn:hover {
-  background-color: #0056b3;
+  background-color: var(--color-secondary-hover);
 }
 </style>

@@ -154,8 +154,14 @@ export default {
 
 <style scoped>
 .foodie-group-list {
-  padding: 2rem;
+  padding: var(--spacing-2xl);
   text-align: center;
+  color: var(--color-text-primary);
+}
+
+.foodie-group-list h1 {
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xl);
 }
 
 .group-list-container {
@@ -167,66 +173,93 @@ export default {
 }
 
 .group-card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1.5rem;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
   width: 300px;
-  background-color: #fff;
+  background-color: var(--color-bg-surface);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   min-height: 350px;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease,
-    transform 0.2s ease;
+  transition: box-shadow var(--transition-base), border-color var(--transition-base),
+    transform var(--transition-base);
 }
 
 /* Highlight when user has an active coupon book for this group */
 .group-card--joined {
-  border: 2px solid #ef5430;
+  border: 2px solid var(--color-primary);
   box-shadow:
-    0 0 0 1px rgba(239, 84, 48, 0.08),
-    0 6px 14px rgba(0, 0, 0, 0.08);
+    0 0 0 1px rgba(242, 84, 45, 0.08),
+    var(--shadow-md);
   transform: translateY(-2px);
 }
 
 .card-content {
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-text-primary);
+}
+
+.card-content h2 {
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.card-content p {
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
 }
 
 .badge-joined {
   display: inline-block;
-  padding: 0.25rem 0.6rem;
-  margin-bottom: 0.5rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background-color: #fff3ee;
-  color: #ef5430;
-  border: 1px solid #ffd0bd;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  background-color: var(--color-primary-light);
+  background-color: rgba(242, 84, 45, 0.1);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary-light);
+  border: 1px solid rgba(242, 84, 45, 0.2);
 }
 
 .location {
   font-style: italic;
-  color: #555;
-  margin-bottom: 1rem;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-lg);
 }
 
-.btn {
+.btn,
+a.btn,
+router-link.btn {
   display: inline-block;
-  padding: 0.75rem 1.5rem;
-  background-color: #007bff;
-  color: #fff;
-  text-decoration: none;
-  border-radius: 4px;
-  transition: background-color 0.3s;
+  padding: var(--spacing-md) var(--spacing-xl);
+  background-color: var(--color-secondary);
+  color: var(--color-text-on-secondary) !important;
+  text-decoration: none !important;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-base), color var(--transition-base);
+  min-height: var(--button-height-md);
+  font-weight: var(--font-weight-medium);
 }
 
-.btn:hover {
-  background-color: #0056b3;
+.btn:hover,
+a.btn:hover,
+router-link.btn:hover {
+  background-color: var(--color-secondary-hover);
+  color: var(--color-text-on-secondary) !important;
+  text-decoration: none !important;
+}
+
+.btn:visited,
+a.btn:visited,
+router-link.btn:visited {
+  color: var(--color-text-on-secondary) !important;
 }
 
 .error {
-  color: red;
-  margin-top: 1rem;
+  color: var(--color-error);
+  margin-top: var(--spacing-lg);
 }
 </style>

@@ -12,6 +12,29 @@ import surveyjs from './plugins/surveyjs'
 import vueQRCode from './plugins/vueQRCode'
 import { userManager } from '@/services/authService';
 
+// Initialize theme before app mount to avoid flash
+function initializeTheme() {
+  // Priority: 1) localStorage, 2) system preference, 3) default to light
+  const savedTheme = localStorage.getItem('theme');
+  
+  if (savedTheme === 'dark' || savedTheme === 'light') {
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    return;
+  }
+  
+  // Check system preference
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (prefersDark) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    // Default to light mode
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+}
+
+// Initialize theme immediately
+initializeTheme();
+
 const app = createApp(App);
 
 // make userManager available via inject()
