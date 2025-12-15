@@ -775,7 +775,7 @@ export default {
 .user-context {
   padding: var(--spacing-md) var(--spacing-lg);
   border-radius: var(--radius-full);
-  background: var(--color-neutral-100);
+  background: var(--surface-2);
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;

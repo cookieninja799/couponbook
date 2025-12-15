@@ -196,7 +196,7 @@ export default {
   top: calc(100% + var(--spacing-xs));
   right: 0;
   background-color: var(--color-bg-surface);
-  border: 1px solid var(--color-border-light);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   list-style: none;
@@ -219,7 +219,7 @@ export default {
 }
 
 .profile-dropdown li:not(:last-child) {
-  border-bottom: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .dropdown-item {
@@ -261,7 +261,7 @@ export default {
 
 .app-header {
   background-color: var(--color-bg-primary);
-  border-bottom: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--border-subtle);
   padding: var(--spacing-lg) 0;
   position: relative;
   z-index: var(--z-index-fixed);
@@ -449,7 +449,7 @@ export default {
     width: 100%;
     box-shadow: none;
     border: none;
-    border-left: 2px solid var(--color-border-light);
+    border-left: 2px solid var(--border-subtle);
     border-radius: 0;
     background-color: var(--color-bg-muted);
     padding: var(--spacing-xs) 0;
@@ -464,7 +464,7 @@ export default {
   }
 
   .profile-dropdown li:not(:last-child) {
-    border-bottom: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--border-subtle);
   }
 
   .dropdown-item {

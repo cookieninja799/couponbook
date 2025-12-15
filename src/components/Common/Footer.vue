@@ -29,7 +29,7 @@ export default {
 <style scoped>
 .app-footer {
   background-color: var(--color-bg-muted);
-  border-top: 1px solid var(--color-border-light);
+  border-top: 1px solid var(--border-subtle);
   padding: var(--spacing-lg) 0;
   text-align: center;
   color: var(--color-text-primary);

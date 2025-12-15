@@ -170,7 +170,7 @@ export default {
   text-align: center;
   max-width: 400px;
   margin: var(--spacing-2xl) auto;
-  border: 1px solid var(--color-border-light);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   background: var(--color-bg-surface);
   color: var(--color-text-primary);
@@ -205,7 +205,7 @@ export default {
   border: 1px solid var(--color-success-light);
 }
 .coupon-details {
-  border: 1px solid var(--color-border-light);
+  border: 1px solid var(--border-subtle);
   padding: var(--spacing-lg);
   margin-bottom: var(--spacing-lg);
   background: var(--color-bg-muted);

@@ -239,7 +239,7 @@ export default {
 /* Featured Events Section */
 .featured-events {
   padding: var(--spacing-2xl);
-  background: var(--color-neutral-100);
+  background: var(--surface-2);
   text-align: center;
 
   /* Light-mode variables for OverlayBlock */

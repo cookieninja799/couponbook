@@ -632,14 +632,16 @@ export default {
   margin-top: var(--spacing-lg);
   padding: var(--spacing-lg);
   border-radius: var(--radius-lg);
-  background: var(--color-neutral-50);
-  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
 }
 
 .details-card h3 {
   margin: 0 0 var(--spacing-sm);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
 }
 
 .details-list {
@@ -674,7 +676,7 @@ export default {
   content: "";
   grid-column: 1 / span 2;
   height: 1px;
-  background: var(--color-border-light);
+  background: var(--color-border);
   margin: var(--spacing-xs) 0;
 }
 

@@ -89,7 +89,7 @@ export default {
   width: 300px;
   margin-bottom: var(--spacing-2xl);
   padding: var(--spacing-lg);
-  border: 1px solid var(--color-border-light);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   background: var(--color-bg-muted);
 }
@@ -140,7 +140,7 @@ export default {
   width: 80px;
   object-fit: contain;
   border-radius: 50%;
-  border: 2px solid var(--color-border-light);
+  border: 2px solid var(--border-subtle);
   box-shadow: var(--shadow-sm);
   margin-bottom: var(--spacing-sm);
   background-color: #FFFFFF !important;

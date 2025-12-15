@@ -1181,8 +1181,8 @@ export default {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: var(--color-neutral-100);
-  border: 1px dashed var(--color-border);
+  background: var(--surface-2);
+  border: 1px dashed var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
