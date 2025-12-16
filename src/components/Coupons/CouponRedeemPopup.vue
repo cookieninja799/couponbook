@@ -24,6 +24,11 @@
               until you confirm redemption.
             </p>
 
+            <p class="instructions">
+              Show this coupon receipt to your server or cashier at the restaurant so they can
+              verify it and apply your discount to your bill.
+            </p>
+
             <div class="actions">
               <button class="btn primary" @click="confirmRedeem" :disabled="submitting">
                 {{ submitting ? 'Redeeming…' : 'Confirm Redeem' }}

@@ -81,6 +81,26 @@ import CouponList from '@/components/Coupons/CouponList.vue';
 import SidebarFilters from '@/components/Coupons/SidebarFilters.vue';
 import { mapGetters } from 'vuex';
 
+const getCouponSortPriority = (coupon, now = new Date()) => {
+  if (coupon.expires_at) {
+    const expiresAt = new Date(coupon.expires_at);
+    if (expiresAt < now) return 5;
+  }
+
+  if (coupon.redeemed_by_user) return 4;
+
+  if (coupon.valid_from) {
+    const validFrom = new Date(coupon.valid_from);
+    if (validFrom > now) return 3;
+  }
+
+  if (coupon.locked && coupon.foodie_group_name !== 'Vivaspot Community') {
+    return 2;
+  }
+
+  return 1;
+};
+
 export default {
   name: "CouponBookView",
   components: { CouponList, SidebarFilters },
@@ -210,6 +230,11 @@ export default {
           c.cuisine_type.toLowerCase() === this.filters.cuisineType.toLowerCase()
         );
       }
+
+      const nowForSort = new Date();
+      filtered.sort(
+        (a, b) => getCouponSortPriority(a, nowForSort) - getCouponSortPriority(b, nowForSort)
+      );
 
       return filtered;
     }

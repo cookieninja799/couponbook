@@ -25,26 +25,37 @@
         <!-- Filter by Cuisine Type -->
         <div class="filter-group">
           <label for="cuisineType">Cuisine Type:</label>
-          <select id="cuisineType" v-model="cuisineType" @change="applyFilter">
-            <option value="">All</option>
-            <option value="Italian">Italian</option>
-            <option value="French">French</option>
-            <option value="Cafe">Cafe</option>
-            <option value="Modern American">Modern American</option>
-            <option value="Contemporary">Contemporary</option>
-            <option value="Fast Food">Fast Food</option>
-            <option value="Fusion">Fusion</option>
-            <option value="Dessert">Dessert</option>
-            <option value="Romantic">Romantic</option>
-            <option value="Appetizers">Appetizers</option>
-            <option value="Breakfast">Breakfast</option>
-            <option value="Bar & Grill">Bar & Grill</option>
-            <option value="Brunch">Brunch</option>
-            <option value="Casual Dining">Casual Dining</option>
-            <option value="Diner">Diner</option>
-            <option value="Seasonal">Seasonal</option>
-            <option value="Family">Family</option>
-          </select>
+          <!-- Desktop: dropdown with clear button -->
+          <div class="select-wrapper hide-mobile">
+            <select id="cuisineType" v-model="cuisineType" @change="applyFilter">
+              <option value="">All</option>
+              <option 
+                v-for="option in cuisineOptions" 
+                :key="option.value" 
+                :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            <button 
+              v-if="cuisineType" 
+              class="clear-btn" 
+              @click="clearCuisine"
+              type="button"
+              aria-label="Clear cuisine filter">
+              &times;
+            </button>
+          </div>
+          <!-- Mobile: tappable chip list -->
+          <div class="filter-chips show-mobile">
+            <button
+              v-for="option in cuisineOptions"
+              :key="option.value"
+              :class="['chip', { active: cuisineType === option.value }]"
+              @click="toggleCuisine(option.value)"
+              type="button">
+              {{ option.label }}
+            </button>
+          </div>
         </div>
 
         <!-- Checkbox for active coupons -->
@@ -58,12 +69,37 @@
         <!-- Filter by Coupon Type -->
         <div class="filter-group">
           <label for="couponType">Coupon Type:</label>
-          <select id="couponType" v-model="couponType" @change="applyFilter">
-            <option value="">All</option>
-            <option value="percentage">Percentage</option>
-            <option value="bogo">BOGO</option>
-            <option value="free">Free</option>
-          </select>
+          <!-- Desktop: dropdown with clear button -->
+          <div class="select-wrapper hide-mobile">
+            <select id="couponType" v-model="couponType" @change="applyFilter">
+              <option value="">All</option>
+              <option 
+                v-for="option in couponTypeOptions" 
+                :key="option.value" 
+                :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            <button 
+              v-if="couponType" 
+              class="clear-btn" 
+              @click="clearCouponType"
+              type="button"
+              aria-label="Clear coupon type filter">
+              &times;
+            </button>
+          </div>
+          <!-- Mobile: tappable chip list -->
+          <div class="filter-chips show-mobile">
+            <button
+              v-for="option in couponTypeOptions"
+              :key="option.value"
+              :class="['chip', { active: couponType === option.value }]"
+              @click="toggleCouponType(option.value)"
+              type="button">
+              {{ option.label }}
+            </button>
+          </div>
         </div>
       </div>
     </transition>
@@ -79,7 +115,32 @@ export default {
       activeOnly: false,
       couponType: "",
       cuisineType: "",
-      isCollapsed: false
+      isCollapsed: false,
+      // Options arrays for reuse in both select and chips
+      cuisineOptions: [
+        { value: "Italian", label: "Italian" },
+        { value: "French", label: "French" },
+        { value: "Cafe", label: "Cafe" },
+        { value: "Modern American", label: "Modern American" },
+        { value: "Contemporary", label: "Contemporary" },
+        { value: "Fast Food", label: "Fast Food" },
+        { value: "Fusion", label: "Fusion" },
+        { value: "Dessert", label: "Dessert" },
+        { value: "Romantic", label: "Romantic" },
+        { value: "Appetizers", label: "Appetizers" },
+        { value: "Breakfast", label: "Breakfast" },
+        { value: "Bar & Grill", label: "Bar & Grill" },
+        { value: "Brunch", label: "Brunch" },
+        { value: "Casual Dining", label: "Casual Dining" },
+        { value: "Diner", label: "Diner" },
+        { value: "Seasonal", label: "Seasonal" },
+        { value: "Family", label: "Family" }
+      ],
+      couponTypeOptions: [
+        { value: "percentage", label: "Percentage" },
+        { value: "bogo", label: "BOGO" },
+        { value: "free", label: "Free" }
+      ]
     };
   },
   methods: {
@@ -94,6 +155,24 @@ export default {
         couponType: this.couponType,
         cuisineType: this.cuisineType
       });
+    },
+    // Toggle methods for mobile chip selection
+    toggleCuisine(value) {
+      this.cuisineType = this.cuisineType === value ? "" : value;
+      this.applyFilter();
+    },
+    toggleCouponType(value) {
+      this.couponType = this.couponType === value ? "" : value;
+      this.applyFilter();
+    },
+    // Clear methods for desktop dropdowns
+    clearCuisine() {
+      this.cuisineType = "";
+      this.applyFilter();
+    },
+    clearCouponType() {
+      this.couponType = "";
+      this.applyFilter();
     }
   }
 };
@@ -169,6 +248,77 @@ export default {
   .sidebar-filters {
     width: 100%;
     margin-bottom: var(--spacing-lg);
+  }
+}
+
+/* Select wrapper for positioning clear button */
+.select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.select-wrapper select {
+  flex: 1;
+  padding-right: var(--spacing-xl);
+}
+
+/* Clear button for desktop dropdowns */
+.clear-btn {
+  position: absolute;
+  right: var(--spacing-sm);
+  background: none;
+  border: none;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0 var(--spacing-xs);
+  line-height: 1;
+  transition: color var(--transition-fast);
+}
+.clear-btn:hover {
+  color: var(--color-danger);
+}
+
+/* Mobile chip/button list */
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+.chip {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full, 9999px);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.chip:hover {
+  border-color: var(--color-primary);
+  background: var(--color-bg-secondary);
+}
+.chip.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* Responsive visibility utilities (scoped) */
+.hide-mobile {
+  display: flex;
+}
+.show-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+  .show-mobile {
+    display: flex !important;
   }
 }
 </style>

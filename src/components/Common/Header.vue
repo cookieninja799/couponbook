@@ -81,6 +81,11 @@ export default {
         this.userRole = null;
         this.isProfileDropdownOpen = false;
       }
+    },
+    // Close menu on route change
+    $route() {
+      this.isMenuOpen = false;
+      this.isProfileDropdownOpen = false;
     }
   },
   methods: {
