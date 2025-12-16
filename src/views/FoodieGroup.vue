@@ -95,6 +95,7 @@ import SidebarFilters from '@/components/Coupons/SidebarFilters.vue';
 import OverlayBlock from '@/components/Common/OverlayBlock.vue';
 import { mapGetters } from 'vuex';
 import { signIn, getAccessToken } from '@/services/authService';
+import { ensureCouponsHaveCuisine } from '@/utils/helpers';
 
 export default {
   name: 'FoodieGroupView',
@@ -272,7 +273,8 @@ export default {
         console.log('📦  GET /api/v1/coupons from FoodieGroup.vue');
         const res = await fetch('/api/v1/coupons');
         if (!res.ok) throw new Error(`Status ${res.status}`);
-        const all = await res.json();
+        const allPayload = await res.json();
+        const all = ensureCouponsHaveCuisine(allPayload);
         this.coupons = all
           .filter(c => String(c.foodie_group_id) === String(groupId))
           .map(c => ({ redeemed_by_user: false, ...c }));

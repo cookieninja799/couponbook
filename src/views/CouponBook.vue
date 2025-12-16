@@ -82,6 +82,7 @@ import CouponList from '@/components/Coupons/CouponList.vue';
 import SidebarFilters from '@/components/Coupons/SidebarFilters.vue';
 import { mapGetters } from 'vuex';
 import { getAccessToken } from '@/services/authService';
+import { ensureCouponsHaveCuisine } from '@/utils/helpers';
 
 const getCouponSortPriority = (coupon, now = new Date()) => {
   if (coupon.expires_at) {
@@ -148,7 +149,8 @@ export default {
       try {
         const res = await fetch('/api/v1/coupons');
         if (!res.ok) throw new Error(`Server responded ${res.status}`);
-        this.coupons = await res.json();
+        const rawCoupons = await res.json();
+        this.coupons = ensureCouponsHaveCuisine(rawCoupons);
       } catch (err) {
         console.error("Failed to load coupons", err);
         this.error = "Could not load coupons. " + err.message;
