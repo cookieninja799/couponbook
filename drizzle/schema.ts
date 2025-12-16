@@ -15,6 +15,7 @@ export const couponSubmission = pgTable("coupon_submission", {
 	state: submissionState().notNull(),
 	submittedAt: timestamp("submitted_at", { mode: 'string' }).defaultNow().notNull(),
 	submissionData: jsonb("submission_data").notNull(),
+	rejectionMessage: text("rejection_message"),
 	deletedAt: timestamp("deleted_at", { mode: 'string' }),
 }, (table) => [
 	foreignKey({

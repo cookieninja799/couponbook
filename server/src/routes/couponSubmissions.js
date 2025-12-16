@@ -8,7 +8,7 @@ import {
   user,
   foodieGroupMembership,   // ⬅️ add this
 } from '../schema.js';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, isNull } from 'drizzle-orm';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
@@ -144,7 +144,7 @@ router.get('/by-merchant', auth(), async (req, res, next) => {
 
     const baseWhere = [
       inArray(couponSubmission.merchantId, merchantIds),
-      eq(couponSubmission.deletedAt, null), // ignore soft-deleted
+      isNull(couponSubmission.deletedAt), // ignore soft-deleted
     ];
 
     const whereExpr = state
@@ -155,13 +155,14 @@ router.get('/by-merchant', auth(), async (req, res, next) => {
     const rows = await db
       .select({
         id:              couponSubmission.id,
-        merchant_id:     couponSubmission.merchantId,
-        group_id:        couponSubmission.groupId,
-        state:           couponSubmission.state,
-        submitted_at:    couponSubmission.submittedAt,
-        submission_data: couponSubmission.submissionData,
-        deleted_at:      couponSubmission.deletedAt,
-        merchant_name:   merchant.name,
+        merchantId:       couponSubmission.merchantId,
+        groupId:          couponSubmission.groupId,
+        state:            couponSubmission.state,
+        submittedAt:      couponSubmission.submittedAt,
+        submissionData:   couponSubmission.submissionData,
+        rejectionMessage: couponSubmission.rejectionMessage,
+        deletedAt:        couponSubmission.deletedAt,
+        merchantName:     merchant.name,
       })
       .from(couponSubmission)
       .leftJoin(

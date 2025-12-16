@@ -846,7 +846,15 @@ export default {
         }
 
         const subs = await res.json();
-        this.rejectedCoupons = subs || [];
+        const list = Array.isArray(subs) ? subs : [];
+        // Defensive normalization: backend may return snake_case or camelCase
+        this.rejectedCoupons = list.map((s) => ({
+          ...s,
+          merchantId: s.merchantId ?? s.merchant_id,
+          submittedAt: s.submittedAt ?? s.submitted_at,
+          submissionData: s.submissionData ?? s.submission_data,
+          rejectionMessage: s.rejectionMessage ?? s.rejection_message,
+        }));
       } catch (err) {
         console.error('Error loading rejected coupons', err);
         this.merchantToolsError = 'Could not load rejected coupon submissions.';

@@ -21,11 +21,13 @@ async function runMigrations(pg) {
   const migration0 = readFileSync(join(drizzleDir, '0000_mature_betty_brant.sql'), 'utf-8');
   const migration1 = readFileSync(join(drizzleDir, '0001_nifty_cloak.sql'), 'utf-8');
   const migration2 = readFileSync(join(drizzleDir, '0002_add_foodie_group_admin_role.sql'), 'utf-8');
+  const migration3 = readFileSync(join(drizzleDir, '0003_add_rejection_message_to_coupon_submission.sql'), 'utf-8');
   
   // Split by statement breakpoint and execute each statement
   const statements0 = migration0.split('--> statement-breakpoint').map(s => s.trim()).filter(Boolean);
   const statements1 = migration1.split('--> statement-breakpoint').map(s => s.trim()).filter(Boolean);
   const statements2 = migration2.split('--> statement-breakpoint').map(s => s.trim()).filter(Boolean);
+  const statements3 = migration3.split('--> statement-breakpoint').map(s => s.trim()).filter(Boolean);
   
   for (const stmt of statements0) {
     await pg.exec(stmt);
@@ -36,6 +38,10 @@ async function runMigrations(pg) {
   }
 
   for (const stmt of statements2) {
+    await pg.exec(stmt);
+  }
+
+  for (const stmt of statements3) {
     await pg.exec(stmt);
   }
   

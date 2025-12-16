@@ -1,6 +1,6 @@
 // CouponSubmissions route unit tests
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createMockRequest, createMockResponse } from '../../../helpers/mocks.js';
+import { createMockRequest, createMockResponse, createMockNext } from '../../../helpers/mocks.js';
 
 // Mock dependencies
 vi.mock('../../../../server/src/db.js', () => ({
@@ -9,12 +9,20 @@ vi.mock('../../../../server/src/db.js', () => ({
     from: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
     leftJoin: vi.fn().mockReturnThis(),
+    orderBy: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
     values: vi.fn().mockReturnThis(),
     returning: vi.fn(),
     update: vi.fn().mockReturnThis(),
     set: vi.fn().mockReturnThis(),
   },
+}));
+
+vi.mock('drizzle-orm', () => ({
+  eq: vi.fn((...args) => ({ __op: 'eq', args })),
+  and: vi.fn((...args) => ({ __op: 'and', args })),
+  inArray: vi.fn((...args) => ({ __op: 'inArray', args })),
+  isNull: vi.fn((arg) => ({ __op: 'isNull', arg })),
 }));
 
 vi.mock('../../../../server/src/middleware/auth.js', () => ({
@@ -25,6 +33,9 @@ vi.mock('../../../../server/src/middleware/auth.js', () => ({
 }));
 
 import { db } from '../../../../server/src/db.js';
+import couponSubmissionsRouter from '../../../../server/src/routes/couponSubmissions.js';
+import { couponSubmission } from '../../../../server/src/schema.js';
+import { eq, isNull } from 'drizzle-orm';
 
 describe('CouponSubmissions Routes', () => {
   let req, res;
@@ -118,6 +129,85 @@ describe('CouponSubmissions Routes', () => {
       });
 
       expect(submissionData.title).toBe('Test Coupon');
+    });
+  });
+
+  describe('GET /api/v1/coupon-submissions/by-merchant', () => {
+    it('should use isNull for deletedAt and return camelCase shape including rejectionMessage', async () => {
+      req = createMockRequest({
+        user: { sub: 'test-sub' },
+        query: { state: 'rejected' },
+      });
+      res = createMockResponse();
+      const next = createMockNext();
+
+      // 1) Local user
+      db.select.mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([
+            { id: 'user-1', cognitoSub: 'test-sub', role: 'merchant' },
+          ]),
+        }),
+      });
+
+      // 2) Owned merchants
+      db.select.mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([{ id: 'm1', name: 'Merchant 1' }]),
+        }),
+      });
+
+      // 3) Submissions query
+      const rows = [
+        {
+          id: 'sub-1',
+          merchantId: 'm1',
+          groupId: 'g1',
+          state: 'rejected',
+          submittedAt: '2025-01-01T00:00:00.000Z',
+          submissionData: { title: 'Test Coupon' },
+          rejectionMessage: 'Needs more details',
+          deletedAt: null,
+          merchantName: 'Merchant 1',
+        },
+      ];
+
+      const mockOrderBy = vi.fn().mockResolvedValue(rows);
+      db.select.mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          leftJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: mockOrderBy,
+            }),
+          }),
+        }),
+      });
+
+      // Find and invoke the actual route handler (skip auth middleware by calling the last stack item)
+      const layer = couponSubmissionsRouter.stack.find(
+        (l) => l.route && l.route.path === '/by-merchant',
+      );
+      const handler = layer.route.stack[layer.route.stack.length - 1].handle;
+
+      await handler(req, res, next);
+
+      // Soft-delete predicate should be null-safe
+      expect(isNull).toHaveBeenCalledWith(couponSubmission.deletedAt);
+      expect(eq).not.toHaveBeenCalledWith(couponSubmission.deletedAt, null);
+
+      // The /by-merchant select should be camelCase + include rejectionMessage
+      const selectArg = db.select.mock.calls[2][0];
+      expect(selectArg).toHaveProperty('merchantId');
+      expect(selectArg).toHaveProperty('submittedAt');
+      expect(selectArg).toHaveProperty('submissionData');
+      expect(selectArg).toHaveProperty('rejectionMessage');
+      expect(selectArg).not.toHaveProperty('merchant_id');
+      expect(selectArg).not.toHaveProperty('submitted_at');
+      expect(selectArg).not.toHaveProperty('submission_data');
+
+      // Response should include rejectionMessage for UI display
+      expect(res.json).toHaveBeenCalledWith(rows);
+      expect(res.json.mock.calls[0][0][0].rejectionMessage).toBe('Needs more details');
     });
   });
 });
