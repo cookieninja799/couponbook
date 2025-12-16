@@ -238,6 +238,76 @@ router.get('/:id', auth(), async (req, res, next) => {
 });
 
 // ────────────────────────────────────────────────────────────────
+// Validation helpers for submission_data
+// ────────────────────────────────────────────────────────────────
+const VALID_COUPON_TYPES = ['percent', 'amount', 'bogo', 'free_item'];
+
+function validateSubmissionData(data) {
+  const errors = [];
+
+  // Required fields
+  const requiredFields = ['title', 'description', 'coupon_type', 'valid_from', 'expires_at'];
+  for (const field of requiredFields) {
+    if (!data[field] || (typeof data[field] === 'string' && !data[field].trim())) {
+      errors.push(`${field} is required`);
+    }
+  }
+
+  // Validate coupon_type enum
+  if (data.coupon_type && !VALID_COUPON_TYPES.includes(data.coupon_type)) {
+    errors.push(`coupon_type must be one of: ${VALID_COUPON_TYPES.join(', ')}`);
+  }
+
+  // Validate dates
+  if (data.valid_from) {
+    const validFrom = new Date(data.valid_from);
+    if (isNaN(validFrom.getTime())) {
+      errors.push('valid_from must be a valid date');
+    }
+  }
+  if (data.expires_at) {
+    const expiresAt = new Date(data.expires_at);
+    if (isNaN(expiresAt.getTime())) {
+      errors.push('expires_at must be a valid date');
+    }
+  }
+
+  // Validate discount_value is required for percent/amount
+  if (data.coupon_type === 'percent' || data.coupon_type === 'amount') {
+    if (data.discount_value === undefined || data.discount_value === null || data.discount_value === '') {
+      errors.push('discount_value is required for percent/amount coupon types');
+    } else if (typeof data.discount_value !== 'number' && isNaN(Number(data.discount_value))) {
+      errors.push('discount_value must be a number');
+    }
+  }
+
+  return errors;
+}
+
+function normalizeSubmissionData(data) {
+  const normalized = { ...data };
+
+  // Default discount_value to 0 for bogo/free_item
+  if (normalized.coupon_type === 'bogo' || normalized.coupon_type === 'free_item') {
+    if (normalized.discount_value === undefined || normalized.discount_value === null || normalized.discount_value === '') {
+      normalized.discount_value = 0;
+    }
+  }
+
+  // Coerce discount_value to number
+  if (normalized.discount_value !== undefined && normalized.discount_value !== null) {
+    normalized.discount_value = Number(normalized.discount_value);
+  }
+
+  // Normalize locked to true if omitted
+  if (normalized.locked === undefined || normalized.locked === null) {
+    normalized.locked = true;
+  }
+
+  return normalized;
+}
+
+// ────────────────────────────────────────────────────────────────
 // POST new submission
 // ────────────────────────────────────────────────────────────────
 router.post('/', auth(), async (req, res, next) => {
@@ -269,6 +339,18 @@ router.post('/', auth(), async (req, res, next) => {
       return res.status(400).json({ error: 'submission_data is required' });
     }
 
+    // Validate submission_data fields
+    const validationErrors = validateSubmissionData(submission_data);
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ 
+        error: 'Validation failed', 
+        details: validationErrors 
+      });
+    }
+
+    // Normalize submission_data (defaults for discount_value, locked, etc.)
+    const normalizedData = normalizeSubmissionData(submission_data);
+
     // Verify merchant exists and enforce ownership (admin bypass)
     const [dbMerchant] = await db
       .select()
@@ -290,7 +372,7 @@ router.post('/', auth(), async (req, res, next) => {
         // Hardening: always write the merchant ID we just validated
         merchantId:     dbMerchant.id,
         state:          'pending',
-        submissionData: submission_data,
+        submissionData: normalizedData,
       })
       .returning();
     res.status(201).json(newSub);
@@ -362,11 +444,12 @@ router.put('/:id', auth(), async (req, res, next) => {
         title:         submissionData.title,
         description:   submissionData.description,
         couponType:    submissionData.coupon_type,
-        discountValue: submissionData.discount_value,
+        discountValue: submissionData.discount_value ?? 0,
         validFrom:     new Date(submissionData.valid_from),
         expiresAt:     new Date(submissionData.expires_at),
-        qrCodeUrl:     submissionData.qr_code_url,
-        locked:        submissionData.locked,
+        qrCodeUrl:     submissionData.qr_code_url || null,
+        locked:        submissionData.locked ?? true,
+        cuisineType:   submissionData.cuisine_type || null,
       };
 
       const [newCoupon] = await db

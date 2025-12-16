@@ -54,8 +54,33 @@ const assembleText = (coupon) => {
     coupon.merchant_name,
     coupon.merchantName,
     coupon.foodie_group_name,
+    coupon.cuisine_type,
+    coupon.cuisineType,
   ];
   return fields.map(normalizeText).join(' ');
+};
+
+/**
+ * Assembles searchable text from a coupon including normalized coupon type.
+ * Used for keyword search across all relevant fields.
+ */
+export const assembleSearchableText = (coupon) => {
+  const baseText = assembleText(coupon);
+  
+  // Include the normalized coupon type name for searching
+  const couponType = coupon.coupon_type || coupon.couponType;
+  const typeLabels = {
+    percentage: 'percentage percent off',
+    percent: 'percentage percent off',
+    amount: 'amount dollars off',
+    bogo: 'bogo buy one get one',
+    free: 'free item complimentary',
+    free_item: 'free item complimentary',
+  };
+  
+  const typeSearchText = typeLabels[couponType?.toLowerCase()] || '';
+  
+  return `${baseText} ${typeSearchText}`.toLowerCase();
 };
 
 const inferCuisineFromText = (text) => {

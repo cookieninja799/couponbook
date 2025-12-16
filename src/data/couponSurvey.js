@@ -57,7 +57,11 @@ export const couponSurveyJson = {
             name: "discount_value",
             title: "Discount Value",
             inputType: "number",
-            validators: [{ type: "numeric", minValue: 0 }]
+            // Required for percent/amount, hidden for bogo/free_item
+            visibleIf: "{coupon_type} = 'percent' or {coupon_type} = 'amount'",
+            requiredIf: "{coupon_type} = 'percent' or {coupon_type} = 'amount'",
+            validators: [{ type: "numeric", minValue: 0 }],
+            defaultValue: 0
           },
           {
             type: "text",

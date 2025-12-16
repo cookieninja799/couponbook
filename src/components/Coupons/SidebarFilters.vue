@@ -22,15 +22,15 @@
           />
         </div>
 
-        <!-- Filter by Cuisine Type -->
-        <div class="filter-group">
+        <!-- Filter by Cuisine Type (only show if cuisines are available) -->
+        <div class="filter-group" v-if="effectiveCuisineOptions.length > 0">
           <label for="cuisineType">Cuisine Type:</label>
           <!-- Desktop: dropdown with clear button -->
           <div class="select-wrapper hide-mobile">
             <select id="cuisineType" v-model="cuisineType" @change="applyFilter">
               <option value="">All</option>
               <option 
-                v-for="option in cuisineOptions" 
+                v-for="option in effectiveCuisineOptions" 
                 :key="option.value" 
                 :value="option.value">
                 {{ option.label }}
@@ -48,7 +48,7 @@
           <!-- Mobile: tappable chip list -->
           <div class="filter-chips show-mobile">
             <button
-              v-for="option in cuisineOptions"
+              v-for="option in effectiveCuisineOptions"
               :key="option.value"
               :class="['chip', { active: cuisineType === option.value }]"
               @click="toggleCuisine(option.value)"
@@ -109,6 +109,13 @@
 <script>
 export default {
   name: "SidebarFilters",
+  props: {
+    // Cuisine options derived from loaded coupons (data-driven)
+    availableCuisines: {
+      type: Array,
+      default: () => []
+    }
+  },
   data() {
     return {
       keyword: "",
@@ -116,32 +123,22 @@ export default {
       couponType: "",
       cuisineType: "",
       isCollapsed: false,
-      // Options arrays for reuse in both select and chips
-      cuisineOptions: [
-        { value: "Italian", label: "Italian" },
-        { value: "French", label: "French" },
-        { value: "Cafe", label: "Cafe" },
-        { value: "Modern American", label: "Modern American" },
-        { value: "Contemporary", label: "Contemporary" },
-        { value: "Fast Food", label: "Fast Food" },
-        { value: "Fusion", label: "Fusion" },
-        { value: "Dessert", label: "Dessert" },
-        { value: "Romantic", label: "Romantic" },
-        { value: "Appetizers", label: "Appetizers" },
-        { value: "Breakfast", label: "Breakfast" },
-        { value: "Bar & Grill", label: "Bar & Grill" },
-        { value: "Brunch", label: "Brunch" },
-        { value: "Casual Dining", label: "Casual Dining" },
-        { value: "Diner", label: "Diner" },
-        { value: "Seasonal", label: "Seasonal" },
-        { value: "Family", label: "Family" }
-      ],
+      // Coupon type options matching normalized UI values (percentage|amount|bogo|free)
       couponTypeOptions: [
-        { value: "percentage", label: "Percentage" },
-        { value: "bogo", label: "BOGO" },
-        { value: "free", label: "Free" }
+        { value: "percentage", label: "Percentage Off" },
+        { value: "amount", label: "Amount Off" },
+        { value: "bogo", label: "Buy One, Get One" },
+        { value: "free", label: "Free Item" }
       ]
     };
+  },
+  computed: {
+    // Use availableCuisines prop if provided, otherwise empty
+    effectiveCuisineOptions() {
+      return this.availableCuisines && this.availableCuisines.length > 0
+        ? this.availableCuisines
+        : [];
+    }
   },
   methods: {
     toggleCollapse() {

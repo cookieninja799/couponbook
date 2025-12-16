@@ -23,6 +23,7 @@ router.get('/', async (req, res, next) => {
         expires_at:        coupon.expiresAt,
         qr_code_url:       coupon.qrCodeUrl,
         locked:            coupon.locked,
+        cuisine_type:      coupon.cuisineType,
         merchant_id:       coupon.merchantId,
         merchant_name:     merchant.name,
         merchant_logo:     merchant.logoUrl,
@@ -308,6 +309,50 @@ router.get('/redemptions/me', auth(), async (req, res, next) => {
     res.json(rows);
   } catch (err) {
     console.error('🎟️  error in GET /api/v1/coupons/redemptions/me', err);
+    next(err);
+  }
+});
+
+// PATCH /api/v1/coupons/:id - Update a coupon (admin only for now)
+router.patch('/:id', auth(), async (req, res, next) => {
+  console.log('📦  PATCH /api/v1/coupons/' + req.params.id, req.body);
+  try {
+    // For now, allow any authenticated user to update (could restrict to admin later)
+    if (!req.user?.sub) {
+      return res.status(401).json({ error: 'Sign in required' });
+    }
+
+    const couponId = req.params.id;
+    const updates = {};
+
+    // Only allow specific fields to be updated
+    const allowedFields = ['cuisine_type', 'title', 'description', 'locked'];
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        // Map snake_case to camelCase for Drizzle
+        const camelField = field === 'cuisine_type' ? 'cuisineType' : field;
+        updates[camelField] = req.body[field];
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    const [updated] = await db
+      .update(coupon)
+      .set(updates)
+      .where(eq(coupon.id, couponId))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ message: 'Coupon not found' });
+    }
+
+    console.log('📦  updated coupon', updated.id);
+    res.json(updated);
+  } catch (err) {
+    console.error('📦  error in PATCH /api/v1/coupons/:id', err);
     next(err);
   }
 });

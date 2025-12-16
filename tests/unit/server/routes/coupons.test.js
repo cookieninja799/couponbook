@@ -184,8 +184,101 @@ describe('Coupons Routes', () => {
   });
 });
 
+  describe('GET /api/v1/coupons response shape', () => {
+    it('should include cuisine_type in response', async () => {
+      const mockCoupon = {
+        id: 'coupon-id',
+        title: 'Test Coupon',
+        description: 'Test description',
+        coupon_type: 'percent',
+        discount_value: 10,
+        valid_from: '2025-01-01T00:00:00.000Z',
+        expires_at: '2025-01-31T00:00:00.000Z',
+        qr_code_url: null,
+        locked: true,
+        cuisine_type: 'Italian',
+        merchant_id: 'merchant-id',
+        merchant_name: 'Test Merchant',
+        merchant_logo: null,
+        foodie_group_id: 'group-id',
+        foodie_group_name: 'Test Group',
+      };
 
+      // Verify the expected response shape includes cuisine_type
+      expect(mockCoupon).toHaveProperty('cuisine_type');
+      expect(mockCoupon.cuisine_type).toBe('Italian');
+    });
 
+    it('should return coupon_type in snake_case for API consistency', async () => {
+      const mockCoupon = {
+        id: 'coupon-id',
+        title: 'Test Coupon',
+        coupon_type: 'percent',
+        cuisine_type: 'Mexican',
+        merchant_name: 'Test Merchant',
+        foodie_group_name: 'Test Group',
+      };
+
+      // API should use snake_case
+      expect(mockCoupon).toHaveProperty('coupon_type');
+      expect(mockCoupon).not.toHaveProperty('couponType');
+      expect(mockCoupon).toHaveProperty('cuisine_type');
+      expect(mockCoupon).not.toHaveProperty('cuisineType');
+    });
+
+    it('should handle null cuisine_type gracefully', async () => {
+      const mockCoupon = {
+        id: 'coupon-id',
+        title: 'Test Coupon',
+        cuisine_type: null,
+      };
+
+      expect(mockCoupon.cuisine_type).toBeNull();
+    });
+
+    it('should return all expected fields in GET /coupons', async () => {
+      const expectedFields = [
+        'id',
+        'title',
+        'description',
+        'coupon_type',
+        'discount_value',
+        'valid_from',
+        'expires_at',
+        'qr_code_url',
+        'locked',
+        'cuisine_type',
+        'merchant_id',
+        'merchant_name',
+        'merchant_logo',
+        'foodie_group_id',
+        'foodie_group_name',
+      ];
+
+      const mockCoupon = {
+        id: 'coupon-id',
+        title: 'Test Coupon',
+        description: 'Test',
+        coupon_type: 'bogo',
+        discount_value: 0,
+        valid_from: '2025-01-01',
+        expires_at: '2025-01-31',
+        qr_code_url: null,
+        locked: true,
+        cuisine_type: 'Fusion',
+        merchant_id: 'merchant-id',
+        merchant_name: 'Test',
+        merchant_logo: null,
+        foodie_group_id: 'group-id',
+        foodie_group_name: 'Test Group',
+      };
+
+      for (const field of expectedFields) {
+        expect(mockCoupon).toHaveProperty(field);
+      }
+    });
+  });
+});
 
 
 

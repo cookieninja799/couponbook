@@ -4,7 +4,10 @@
   
     <div class="content-wrapper">
       <!-- Sidebar Filters -->
-      <SidebarFilters @filter-changed="updateFilters" />
+      <SidebarFilters 
+        :availableCuisines="availableCuisines"
+        @filter-changed="updateFilters" 
+      />
 
       <!-- Main Content Area -->
       <div class="coupons-content">
@@ -16,16 +19,10 @@
         <!-- Active Filter Tags -->
         <div class="active-filter-tags">
           <span 
-            v-if="filters.merchant" 
+            v-if="filters.keyword" 
             class="filter-tag"
-            @click="removeFilter('merchant')">
-            Merchant: {{ filters.merchant }} &times;
-          </span>
-          <span 
-            v-if="filters.title" 
-            class="filter-tag"
-            @click="removeFilter('title')">
-            Title: {{ filters.title }} &times;
+            @click="removeFilter('keyword')">
+            Search: {{ filters.keyword }} &times;
           </span>
           <span 
             v-if="filters.activeOnly" 
@@ -38,18 +35,6 @@
             class="filter-tag"
             @click="removeFilter('couponType')">
             Type: {{ filters.couponType }} &times;
-          </span>
-          <span 
-            v-if="filters.foodieGroup" 
-            class="filter-tag"
-            @click="removeFilter('foodieGroup')">
-            Foodie Group: {{ filters.foodieGroup }} &times;
-          </span>
-          <span 
-            v-if="filters.locked" 
-            class="filter-tag"
-            @click="removeFilter('locked')">
-            Access: {{ filters.locked }} &times;
           </span>
           <span 
             v-if="filters.cuisineType" 
@@ -82,7 +67,7 @@ import CouponList from '@/components/Coupons/CouponList.vue';
 import SidebarFilters from '@/components/Coupons/SidebarFilters.vue';
 import { mapGetters } from 'vuex';
 import { getAccessToken } from '@/services/authService';
-import { ensureCouponsHaveCuisine } from '@/utils/helpers';
+import { ensureCouponsHaveCuisine, assembleSearchableText } from '@/utils/helpers';
 
 const getCouponSortPriority = (coupon, now = new Date()) => {
   if (coupon.expires_at) {
@@ -113,12 +98,9 @@ export default {
       loading: true,
       error: null,
       filters: {
-        merchant: "",
-        title: "",
+        keyword: "",
         activeOnly: false,
         couponType: "",
-        foodieGroup: "",
-        locked: "",
         cuisineType: ""
       },
       purchasedGroupIds: [],
@@ -223,6 +205,24 @@ export default {
   computed: {
     ...mapGetters('auth', ['isAuthenticated']),
 
+    /**
+     * Derive available cuisine types from loaded coupons.
+     * This makes the cuisine filter data-driven.
+     */
+    availableCuisines() {
+      const cuisineSet = new Set();
+      for (const c of this.coupons) {
+        const cuisine = c.cuisine_type || c.cuisineType;
+        if (cuisine && typeof cuisine === 'string' && cuisine.trim()) {
+          cuisineSet.add(cuisine.trim());
+        }
+      }
+      // Sort alphabetically and return as array of { value, label }
+      return Array.from(cuisineSet)
+        .sort((a, b) => a.localeCompare(b))
+        .map(c => ({ value: c, label: c }));
+    },
+
     filteredCoupons() {
       let filtered = this.coupons;
 
@@ -241,18 +241,13 @@ export default {
         return diffMs < THIRTY_DAYS_MS;
       });
 
-      if (this.filters.merchant) {
-        filtered = filtered.filter(c =>
-          (c.merchantName || "")
-            .toLowerCase()
-            .includes(this.filters.merchant.toLowerCase())
-        );
-      }
-
-      if (this.filters.title) {
-        filtered = filtered.filter(c =>
-          (c.title || "").toLowerCase().includes(this.filters.title.toLowerCase())
-        );
+      // Keyword search across merchant, title, description, foodie group, cuisine, coupon type
+      if (this.filters.keyword) {
+        const keyword = this.filters.keyword.toLowerCase().trim();
+        filtered = filtered.filter(c => {
+          const searchText = assembleSearchableText(c);
+          return searchText.includes(keyword);
+        });
       }
 
       if (this.filters.activeOnly) {
@@ -269,18 +264,6 @@ export default {
 
       if (this.filters.couponType) {
         filtered = filtered.filter(c => c.coupon_type === this.filters.couponType);
-      }
-
-      if (this.filters.foodieGroup) {
-        filtered = filtered.filter(c =>
-          c.foodie_group_id === this.filters.foodieGroup
-        );
-      }
-
-      if (this.filters.locked) {
-        filtered = filtered.filter(c =>
-          this.filters.locked === "locked" ? c.locked === true : c.locked === false
-        );
       }
 
       if (this.filters.cuisineType) {

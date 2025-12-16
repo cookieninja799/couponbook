@@ -33,7 +33,10 @@
         <div class="coupons-layout">
           <!-- 🧱 LEFT: sidebar filters -->
           <aside class="coupons-sidebar">
-            <SidebarFilters @filter-changed="updateFilters" />
+            <SidebarFilters 
+              :availableCuisines="availableCuisines"
+              @filter-changed="updateFilters" 
+            />
 
             <!-- Active filter chips -->
             <div class="active-filter-tags">
@@ -170,6 +173,22 @@ export default {
 
   computed: {
     ...mapGetters('auth', ['isAuthenticated']),
+
+    /**
+     * Derive available cuisine types from loaded coupons (data-driven).
+     */
+    availableCuisines() {
+      const cuisineSet = new Set();
+      for (const c of this.coupons) {
+        const cuisine = c.cuisine_type || c.cuisineType;
+        if (cuisine && typeof cuisine === 'string' && cuisine.trim()) {
+          cuisineSet.add(cuisine.trim());
+        }
+      }
+      return Array.from(cuisineSet)
+        .sort((a, b) => a.localeCompare(b))
+        .map(c => ({ value: c, label: c }));
+    },
 
     filteredCoupons() {
       let filtered = this.coupons;

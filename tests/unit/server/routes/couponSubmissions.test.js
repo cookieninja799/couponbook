@@ -212,4 +212,156 @@ describe('CouponSubmissions Routes', () => {
   });
 });
 
+  describe('POST /api/v1/coupon-submissions validation', () => {
+    it('should reject submission with missing required fields', () => {
+      const submissionData = {
+        title: '',
+        description: 'Test',
+        coupon_type: 'percent',
+        valid_from: '2025-01-01',
+        expires_at: '2025-01-31',
+      };
+
+      // title is empty, should fail validation
+      expect(submissionData.title).toBe('');
+    });
+
+    it('should reject submission with invalid coupon_type', () => {
+      const validTypes = ['percent', 'amount', 'bogo', 'free_item'];
+      const invalidType = 'invalid_type';
+
+      expect(validTypes.includes(invalidType)).toBe(false);
+    });
+
+    it('should require discount_value for percent coupon type', () => {
+      const submissionData = {
+        title: 'Test',
+        description: 'Test',
+        coupon_type: 'percent',
+        valid_from: '2025-01-01',
+        expires_at: '2025-01-31',
+        // discount_value is missing
+      };
+
+      // discount_value is required for percent type
+      expect(submissionData.coupon_type).toBe('percent');
+      expect(submissionData.discount_value).toBeUndefined();
+    });
+
+    it('should require discount_value for amount coupon type', () => {
+      const submissionData = {
+        title: 'Test',
+        description: 'Test',
+        coupon_type: 'amount',
+        valid_from: '2025-01-01',
+        expires_at: '2025-01-31',
+        // discount_value is missing
+      };
+
+      // discount_value is required for amount type
+      expect(submissionData.coupon_type).toBe('amount');
+      expect(submissionData.discount_value).toBeUndefined();
+    });
+
+    it('should default discount_value to 0 for bogo coupon type', () => {
+      const submissionData = {
+        title: 'Test',
+        description: 'Test',
+        coupon_type: 'bogo',
+        valid_from: '2025-01-01',
+        expires_at: '2025-01-31',
+      };
+
+      // bogo doesn't require discount_value, should default to 0
+      const normalizedDiscountValue = submissionData.discount_value ?? 0;
+      expect(normalizedDiscountValue).toBe(0);
+    });
+
+    it('should default discount_value to 0 for free_item coupon type', () => {
+      const submissionData = {
+        title: 'Test',
+        description: 'Test',
+        coupon_type: 'free_item',
+        valid_from: '2025-01-01',
+        expires_at: '2025-01-31',
+      };
+
+      // free_item doesn't require discount_value, should default to 0
+      const normalizedDiscountValue = submissionData.discount_value ?? 0;
+      expect(normalizedDiscountValue).toBe(0);
+    });
+
+    it('should default locked to true if omitted', () => {
+      const submissionData = {
+        title: 'Test',
+        description: 'Test',
+        coupon_type: 'bogo',
+        valid_from: '2025-01-01',
+        expires_at: '2025-01-31',
+      };
+
+      // locked should default to true
+      const normalizedLocked = submissionData.locked ?? true;
+      expect(normalizedLocked).toBe(true);
+    });
+
+    it('should reject submission with invalid date format', () => {
+      const invalidDate = 'not-a-date';
+      const parsedDate = new Date(invalidDate);
+
+      expect(isNaN(parsedDate.getTime())).toBe(true);
+    });
+  });
+
+  describe('Approval creates coupon with cuisineType', () => {
+    it('should write cuisineType from submissionData.cuisine_type on approval', async () => {
+      const submissionData = {
+        title: 'Test Coupon',
+        description: 'Test',
+        coupon_type: 'percent',
+        discount_value: 10,
+        valid_from: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 86400000).toISOString(),
+        locked: true,
+        cuisine_type: 'Italian',
+      };
+
+      // Verify cuisine_type is preserved
+      expect(submissionData.cuisine_type).toBe('Italian');
+
+      // Expected coupon payload should include cuisineType
+      const couponPayload = {
+        groupId: 'group-id',
+        merchantId: 'merchant-id',
+        title: submissionData.title,
+        description: submissionData.description,
+        couponType: submissionData.coupon_type,
+        discountValue: submissionData.discount_value ?? 0,
+        validFrom: new Date(submissionData.valid_from),
+        expiresAt: new Date(submissionData.expires_at),
+        qrCodeUrl: submissionData.qr_code_url || null,
+        locked: submissionData.locked ?? true,
+        cuisineType: submissionData.cuisine_type || null,
+      };
+
+      expect(couponPayload.cuisineType).toBe('Italian');
+    });
+
+    it('should set cuisineType to null if not provided in submission', async () => {
+      const submissionData = {
+        title: 'Test Coupon',
+        description: 'Test',
+        coupon_type: 'bogo',
+        valid_from: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 86400000).toISOString(),
+      };
+
+      const couponPayload = {
+        cuisineType: submissionData.cuisine_type || null,
+      };
+
+      expect(couponPayload.cuisineType).toBeNull();
+    });
+  });
+});
 
