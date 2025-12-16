@@ -6,8 +6,9 @@
         v-for="coupon in coupons" 
         :key="coupon.id" 
         :coupon="coupon" 
-        :hasPurchasedCouponBook="hasPurchasedCouponBook"
+        :hasPurchasedCouponBook="hasPurchasedForCoupon(coupon)"
         :isAuthenticated="isAuthenticated"
+        :forceGoToGroupForFoodieGroupCoupons="forceGoToGroupForFoodieGroupCoupons"
         @redeem="handleRedeem"
         @purchase-coupon-book="$emit('purchase-coupon-book', $event)"
       />
@@ -26,12 +27,22 @@ export default {
       type: Array,
       default: () => []
     },
+    // Single-group mode: used on FoodieGroup.vue
     hasPurchasedCouponBook: {
       type: Boolean,
       default: false
     },
-    // 🔐 new prop
+    // Multi-group mode: used on CouponBook.vue (Local Coupons)
+    purchasedGroupIds: {
+      type: Array,
+      default: () => []
+    },
     isAuthenticated: {
+      type: Boolean,
+      default: false
+    },
+    // When true, foodie group coupons show "Go to ... Coupon Book" instead of direct redeem
+    forceGoToGroupForFoodieGroupCoupons: {
       type: Boolean,
       default: false
     }
@@ -39,6 +50,20 @@ export default {
   methods: {
     handleRedeem(coupon) {
       this.$emit('redeem', coupon);
+    },
+
+    /**
+     * Determine if the user has purchased the coupon book for this coupon's group.
+     * - If purchasedGroupIds is provided (multi-group mode), check if coupon's group is in the list.
+     * - Otherwise, fall back to hasPurchasedCouponBook (single-group mode).
+     */
+    hasPurchasedForCoupon(coupon) {
+      // Multi-group mode: check per-coupon
+      if (this.purchasedGroupIds && this.purchasedGroupIds.length > 0) {
+        return this.purchasedGroupIds.includes(coupon.foodie_group_id);
+      }
+      // Single-group mode: use the single boolean
+      return this.hasPurchasedCouponBook;
     }
   }
 };

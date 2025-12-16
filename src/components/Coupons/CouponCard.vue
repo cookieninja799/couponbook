@@ -26,9 +26,10 @@
       @click="handleClick"
     >
       <i v-if="redeemStatus === 'redeemed'" class="pi pi-check-circle icon-spacing-sm"></i>
-      <i v-if="redeemStatus === 'locked'" class="pi pi-lock icon-spacing-sm"></i>
+      <i v-if="redeemStatus === 'locked' || redeemStatus === 'join-group'" class="pi pi-lock icon-spacing-sm"></i>
       <i v-if="redeemStatus === 'login'" class="pi pi-sign-in icon-spacing-sm"></i>
       <i v-if="redeemStatus === 'active'" class="pi pi-ticket icon-spacing-sm"></i>
+      <i v-if="redeemStatus === 'goto-group'" class="pi pi-arrow-right icon-spacing-sm"></i>
       {{ buttonLabel }}
     </button>
   </div>
@@ -42,7 +43,9 @@ export default {
   props: {
     coupon: { type: Object, required: true },
     hasPurchasedCouponBook: { type: Boolean, default: false },
-    isAuthenticated: { type: Boolean, default: false } // from Vuex getter or parent
+    isAuthenticated: { type: Boolean, default: false },
+    // When true, foodie group coupons always route to the group page instead of direct redeem
+    forceGoToGroupForFoodieGroupCoupons: { type: Boolean, default: false }
   },
 
   computed: {
@@ -66,12 +69,28 @@ export default {
       );
     },
 
+    /** Is this a foodie group coupon (not Vivaspot Community)? */
+    isFoodieGroupCoupon() {
+      return this.coupon.foodie_group_name && this.coupon.foodie_group_name !== 'Vivaspot Community';
+    },
+
     /** 🧠 Unified metadata state */
     redeemStatus() {
       if (this.coupon.redeemed_by_user) return 'redeemed';
       if (this.isExpired) return 'expired';
       if (this.isNotYetValid) return 'not-yet-valid';
       if (!this.isAuthenticated) return 'login';
+
+      // When on Local Coupons page, foodie group coupons should route to group page
+      if (this.forceGoToGroupForFoodieGroupCoupons && this.isFoodieGroupCoupon) {
+        if (this.hasPurchasedCouponBook) {
+          return 'goto-group'; // Purchased → "Go to ... Coupon Book to Redeem"
+        } else {
+          return 'join-group'; // Not purchased → "Join ... Coupon Book"
+        }
+      }
+
+      // Original behavior for FoodieGroup.vue (direct redeem page)
       if (this.isLocked && !this.hasPurchasedCouponBook) return 'locked';
       return 'active';
     },
@@ -88,6 +107,10 @@ export default {
         case 'login':
           return 'Sign in to redeem';
         case 'locked':
+          return `Join ${this.coupon.foodie_group_name} Coupon Book`;
+        case 'goto-group':
+          return `Go to ${this.coupon.foodie_group_name} Coupon Book to Redeem`;
+        case 'join-group':
           return `Join ${this.coupon.foodie_group_name} Coupon Book`;
         default:
           return 'Redeem';
@@ -106,6 +129,12 @@ export default {
       }
       if (!this.isAuthenticated) {
         return "btn-tertiary"; 
+      }
+      if (this.redeemStatus === 'goto-group') {
+        return "btn-secondary"; // Green - user has access
+      }
+      if (this.redeemStatus === 'join-group' || this.redeemStatus === 'locked') {
+        return "btn-primary"; // Orange - needs to join/purchase
       }
       if (this.isLocked && !this.hasPurchasedCouponBook) {
         return "btn-primary";
@@ -132,8 +161,8 @@ export default {
         return;
       }
 
-      // Locked + not purchased → redirect to group
-      if (this.redeemStatus === 'locked') {
+      // Locked, join-group, or goto-group → redirect to group page
+      if (this.redeemStatus === 'locked' || this.redeemStatus === 'join-group' || this.redeemStatus === 'goto-group') {
         this.redirectToGroup();
         return;
       }

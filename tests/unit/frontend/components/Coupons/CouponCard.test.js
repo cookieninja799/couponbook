@@ -155,6 +155,159 @@ describe('CouponCard', () => {
     await wrapper.find('button').trigger('click');
     expect(signIn).toHaveBeenCalled();
   });
+
+  // ─── forceGoToGroupForFoodieGroupCoupons mode (Local Coupons page) ───
+
+  describe('forceGoToGroupForFoodieGroupCoupons mode', () => {
+    const foodieGroupCoupon = {
+      ...mockCoupon,
+      foodie_group_name: 'Chapel Hill Foodies',
+      foodie_group_id: 'group-chapel-hill',
+      locked: false,
+    };
+
+    it('should show "Go to ... Coupon Book to Redeem" when purchased and forceGoToGroup is true', () => {
+      wrapper = mount(CouponCard, {
+        props: {
+          coupon: foodieGroupCoupon,
+          hasPurchasedCouponBook: true,
+          isAuthenticated: true,
+          forceGoToGroupForFoodieGroupCoupons: true,
+        },
+        global: {
+          plugins: [router],
+        },
+      });
+
+      expect(wrapper.text()).toContain('Go to Chapel Hill Foodies Coupon Book to Redeem');
+    });
+
+    it('should show "Join ... Coupon Book" when NOT purchased and forceGoToGroup is true', () => {
+      wrapper = mount(CouponCard, {
+        props: {
+          coupon: foodieGroupCoupon,
+          hasPurchasedCouponBook: false,
+          isAuthenticated: true,
+          forceGoToGroupForFoodieGroupCoupons: true,
+        },
+        global: {
+          plugins: [router],
+        },
+      });
+
+      expect(wrapper.text()).toContain('Join Chapel Hill Foodies Coupon Book');
+    });
+
+    it('should route to FoodieGroupView when clicking "Go to ... Coupon Book to Redeem"', async () => {
+      // Create a router with the FoodieGroupView route
+      const routerWithRoute = createMockRouter([
+        { path: '/', component: { template: '<div>Home</div>' } },
+        { path: '/foodie-group/:id', name: 'FoodieGroupView', component: { template: '<div>Group</div>' } },
+      ]);
+      
+      // Spy on the push method
+      const pushSpy = vi.spyOn(routerWithRoute, 'push');
+
+      wrapper = mount(CouponCard, {
+        props: {
+          coupon: foodieGroupCoupon,
+          hasPurchasedCouponBook: true,
+          isAuthenticated: true,
+          forceGoToGroupForFoodieGroupCoupons: true,
+        },
+        global: {
+          plugins: [routerWithRoute],
+        },
+      });
+
+      await wrapper.find('button').trigger('click');
+
+      // Should have navigated to FoodieGroupView
+      expect(pushSpy).toHaveBeenCalledWith({
+        name: 'FoodieGroupView',
+        params: { id: 'group-chapel-hill' },
+      });
+    });
+
+    it('should route to FoodieGroupView when clicking "Join ... Coupon Book"', async () => {
+      // Create a router with the FoodieGroupView route
+      const routerWithRoute = createMockRouter([
+        { path: '/', component: { template: '<div>Home</div>' } },
+        { path: '/foodie-group/:id', name: 'FoodieGroupView', component: { template: '<div>Group</div>' } },
+      ]);
+      
+      // Spy on the push method
+      const pushSpy = vi.spyOn(routerWithRoute, 'push');
+
+      wrapper = mount(CouponCard, {
+        props: {
+          coupon: foodieGroupCoupon,
+          hasPurchasedCouponBook: false,
+          isAuthenticated: true,
+          forceGoToGroupForFoodieGroupCoupons: true,
+        },
+        global: {
+          plugins: [routerWithRoute],
+        },
+      });
+
+      await wrapper.find('button').trigger('click');
+
+      expect(pushSpy).toHaveBeenCalledWith({
+        name: 'FoodieGroupView',
+        params: { id: 'group-chapel-hill' },
+      });
+    });
+
+    it('should NOT affect Vivaspot Community coupons - show Redeem directly', () => {
+      const communityCoupon = {
+        ...mockCoupon,
+        foodie_group_name: 'Vivaspot Community',
+        foodie_group_id: 'vivaspot-community',
+      };
+
+      wrapper = mount(CouponCard, {
+        props: {
+          coupon: communityCoupon,
+          hasPurchasedCouponBook: false,
+          isAuthenticated: true,
+          forceGoToGroupForFoodieGroupCoupons: true,
+        },
+        global: {
+          plugins: [router],
+        },
+      });
+
+      // Should show Redeem, not "Go to" or "Join"
+      expect(wrapper.text()).toContain('Redeem');
+      expect(wrapper.text()).not.toContain('Go to');
+      expect(wrapper.text()).not.toContain('Join');
+    });
+
+    it('should emit redeem event for Vivaspot Community coupons even with forceGoToGroup', async () => {
+      const communityCoupon = {
+        ...mockCoupon,
+        foodie_group_name: 'Vivaspot Community',
+        foodie_group_id: 'vivaspot-community',
+      };
+
+      wrapper = mount(CouponCard, {
+        props: {
+          coupon: communityCoupon,
+          hasPurchasedCouponBook: false,
+          isAuthenticated: true,
+          forceGoToGroupForFoodieGroupCoupons: true,
+        },
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await wrapper.find('button').trigger('click');
+      expect(wrapper.emitted('redeem')).toBeTruthy();
+      expect(wrapper.emitted('redeem')[0][0]).toEqual(communityCoupon);
+    });
+  });
 });
 
 

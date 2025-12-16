@@ -67,8 +67,9 @@
         <CouponList
           v-else
           :coupons="filteredCoupons"
-          :hasPurchasedCouponBook="hasPurchasedCouponBook"
+          :purchasedGroupIds="purchasedGroupIds"
           :isAuthenticated="isAuthenticated"
+          :forceGoToGroupForFoodieGroupCoupons="true"
           @redeem="handleRedeem"
         />
       </div>
@@ -80,6 +81,7 @@
 import CouponList from '@/components/Coupons/CouponList.vue';
 import SidebarFilters from '@/components/Coupons/SidebarFilters.vue';
 import { mapGetters } from 'vuex';
+import { getAccessToken } from '@/services/authService';
 
 const getCouponSortPriority = (coupon, now = new Date()) => {
   if (coupon.expires_at) {
@@ -118,11 +120,27 @@ export default {
         locked: "",
         cuisineType: ""
       },
-      hasPurchasedCouponBook: false
+      purchasedGroupIds: [],
+      loadingPurchases: false
     };
   },
   mounted() {
     this.fetchCoupons();
+    // If already authenticated on load, fetch purchases
+    if (this.isAuthenticated) {
+      this.loadMyGroupPurchases();
+    }
+  },
+
+  watch: {
+    // When user logs in, load their purchases
+    isAuthenticated(newVal, oldVal) {
+      if (newVal && !oldVal) {
+        this.loadMyGroupPurchases();
+      } else if (!newVal) {
+        this.purchasedGroupIds = [];
+      }
+    }
   },
 
   methods: {
@@ -136,6 +154,45 @@ export default {
         this.error = "Could not load coupons. " + err.message;
       } finally {
         this.loading = false;
+      }
+    },
+
+    async loadMyGroupPurchases() {
+      this.loadingPurchases = true;
+      try {
+        const token = await getAccessToken();
+        if (!token) return;
+
+        const res = await fetch('/api/v1/groups/my/purchases', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          console.error('Failed to load my group purchases', res.status, res.statusText);
+          return;
+        }
+
+        const purchases = await res.json();
+        const now = new Date();
+
+        // Active coupon books: status === 'paid' and not expired
+        const activeGroupIds = (Array.isArray(purchases) ? purchases : [])
+          .filter((p) => {
+            if (p.status !== 'paid') return false;
+            if (!p.expiresAt) return true;
+            const exp = new Date(p.expiresAt);
+            if (Number.isNaN(exp.getTime())) return true;
+            return exp >= now;
+          })
+          .map((p) => p.groupId);
+
+        this.purchasedGroupIds = activeGroupIds;
+      } catch (err) {
+        console.error('Error loading my group purchases', err);
+      } finally {
+        this.loadingPurchases = false;
       }
     },
 
