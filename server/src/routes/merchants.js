@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 
 // 🔐 Auth middleware (default export is verifyJwt → auth())
 import auth from '../middleware/auth.js';
+import { resolveLocalUser, canManageMerchant } from '../authz/index.js';
 
 // 📦 File upload & S3
 import multer from 'multer';
@@ -69,22 +70,10 @@ router.get('/', async (req, res, next) => {
 // ────────────────────────────────────────────────────────────────
 // GET merchants owned by the current user (admin sees all)
 // ────────────────────────────────────────────────────────────────
-router.get('/mine', auth(), async (req, res, next) => {
+router.get('/mine', auth(), resolveLocalUser, async (req, res, next) => {
   console.log('📦  GET /api/v1/merchants/mine hit');
   try {
-    const authedSub = req.user && req.user.sub;
-    if (!authedSub) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const [dbUser] = await db
-      .select()
-      .from(user)
-      .where(eq(user.cognitoSub, authedSub));
-
-    if (!dbUser) {
-      return res.status(403).json({ error: 'User not registered' });
-    }
+    const dbUser = req.dbUser;
 
     if (dbUser.role === 'admin') {
       const all = await db.select().from(merchant);
@@ -208,6 +197,7 @@ router.delete('/:id', async (req, res, next) => {
 router.post(
   '/:id/logo',
   auth(),               // ⬅️ verify Cognito JWT → sets req.user
+  resolveLocalUser,
   upload.single('file'),
   async (req, res, next) => {
     const merchantId = req.params.id;
@@ -224,49 +214,12 @@ router.post(
         return res.status(400).json({ error: 'No file uploaded' });
       }
 
-      const authedSub = req.user && req.user.sub;
-      console.log('📦  logo route req.user =', {
-        sub: authedSub,
-        username: req.user?.username,
-      });
+      const dbUser = req.dbUser;
 
-      if (!authedSub) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-      // 1) Find local user row by Cognito sub
-      console.time('db:findUser');
-      const [dbUser] = await db
-        .select()
-        .from(user)
-        .where(eq(user.cognitoSub, authedSub));
-      console.timeEnd('db:findUser');
-
-      if (!dbUser) {
-        console.warn('📦  No local user row for sub', authedSub);
-        return res.status(403).json({ error: 'User not registered' });
-      }
-
-      // 2) Verify merchant exists
-      console.time('db:findMerchant');
-      const [dbMerchant] = await db
-        .select()
-        .from(merchant)
-        .where(eq(merchant.id, merchantId));
-      console.timeEnd('db:findMerchant');
-
-      if (!dbMerchant) {
-        console.log('📦  merchant not found for logo upload');
-        return res.status(404).json({ error: 'Merchant not found' });
-      }
-
-      // 3) Ownership check (merchant.owner_id → user.id)
-      if (dbMerchant.ownerId && dbMerchant.ownerId !== dbUser.id) {
-        console.warn(
-          '📦  user tried to modify merchant they do not own',
-          { userId: dbUser.id, merchantOwnerId: dbMerchant.ownerId }
-        );
-        return res.status(403).json({ error: 'You do not own this merchant' });
+      // 3) Ownership check (admin OR merchant owner)
+      const allowed = await canManageMerchant(dbUser, merchantId);
+      if (!allowed) {
+        return res.status(403).json({ error: 'Forbidden: You do not own this merchant' });
       }
 
       // 4) If S3 is not configured in dev, just fake a URL so the UI works
@@ -291,8 +244,8 @@ router.post(
 
       // 5) Real S3 upload path
       const { mimetype, buffer, originalname } = req.file;
-      const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
-      if (!allowed.includes(mimetype)) {
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
+      if (!allowedTypes.includes(mimetype)) {
         return res.status(400).json({ error: 'Unsupported file type' });
       }
 

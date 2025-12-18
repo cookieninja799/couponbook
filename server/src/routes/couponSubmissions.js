@@ -10,6 +10,7 @@ import {
 } from '../schema.js';
 import { eq, and, inArray, isNull } from 'drizzle-orm';
 import auth from '../middleware/auth.js';
+import { resolveLocalUser, canManageMerchant, canManageGroup } from '../authz/index.js';
 
 const router = express.Router();
 console.log('📦  couponSubmissions router loaded');
@@ -19,31 +20,15 @@ console.log('📦  couponSubmissions router loaded');
 // If groupId is not provided, infer it from foodie_group_membership
 // for the current foodie_group_admin / admin.
 // ────────────────────────────────────────────────────────────────
-router.get('/', auth(), async (req, res, next) => {
+router.get('/', auth(), resolveLocalUser, async (req, res, next) => {
   console.log('📦  GET /api/v1/coupon-submissions hit', req.query);
   try {
     let { groupId } = req.query;
+    const dbUser = req.dbUser;
 
     // If no groupId passed, infer from membership
     if (!groupId) {
-      const authedSub = req.user && req.user.sub;
-      if (!authedSub) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-      // Look up local user
-      const [dbUser] = await db
-        .select()
-        .from(user)
-        .where(eq(user.cognitoSub, authedSub));
-
-      if (!dbUser) {
-        console.warn('📦  No local user for sub in GET /coupon-submissions', authedSub);
-        return res.status(403).json({ error: 'User not registered' });
-      }
-
-      // Super admin shortcut: later you may support multi-group admin;
-      // for now, this is the “default group” behavior.
+      // Super admin shortcut
       if (dbUser.role === 'admin') {
         // For now, admins must still pass groupId explicitly if they manage many groups.
         return res.status(400).json({ error: 'groupId is required for admin users' });
@@ -68,8 +53,10 @@ router.get('/', auth(), async (req, res, next) => {
     }
 
     // 🔐 Ensure this user can admin this group
-    const dbUser = await requireGroupAdmin(req, res, groupId);
-    if (!dbUser) return; // response already sent
+    const allowed = await canManageGroup(dbUser, groupId);
+    if (!allowed) {
+      return res.status(403).json({ error: 'Forbidden: You are not an admin for this group' });
+    }
 
     // Only pending for that group
     const subs = await db
@@ -105,24 +92,10 @@ router.get('/', auth(), async (req, res, next) => {
 // Returns all submissions for merchants owned by the authed user,
 // optionally filtered by ?state=rejected / ?state=pending / etc.
 // ────────────────────────────────────────────────────────────────
-router.get('/by-merchant', auth(), async (req, res, next) => {
+router.get('/by-merchant', auth(), resolveLocalUser, async (req, res, next) => {
   console.log('📦  GET /api/v1/coupon-submissions/by-merchant');
   try {
-    const authedSub = req.user && req.user.sub;
-    if (!authedSub) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    // 1) Find local user row by Cognito sub
-    const [dbUser] = await db
-      .select()
-      .from(user)
-      .where(eq(user.cognitoSub, authedSub));
-
-    if (!dbUser) {
-      console.warn('📦  No local user for sub in by-merchant', authedSub);
-      return res.status(403).json({ error: 'User not registered' });
-    }
+    const dbUser = req.dbUser;
 
     // 2) Find all merchants owned by this user
     const ownedMerchants = await db
@@ -182,7 +155,7 @@ router.get('/by-merchant', auth(), async (req, res, next) => {
 // ────────────────────────────────────────────────────────────────
 // GET a single submission by ID
 // ────────────────────────────────────────────────────────────────
-router.get('/:id', auth(), async (req, res, next) => {
+router.get('/:id', auth(), resolveLocalUser, async (req, res, next) => {
   console.log('📦  GET /api/v1/coupon-submissions/' + req.params.id);
   try {
     const [sub] = await db
@@ -195,19 +168,7 @@ router.get('/:id', auth(), async (req, res, next) => {
     }
 
     // 🔐 authorize: admin OR merchant-owner OR group-admin
-    const authedSub = req.user && req.user.sub;
-    if (!authedSub) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const [dbUser] = await db
-      .select()
-      .from(user)
-      .where(eq(user.cognitoSub, authedSub));
-
-    if (!dbUser) {
-      return res.status(403).json({ error: 'User not registered' });
-    }
+    const dbUser = req.dbUser;
 
     // Admin sees all
     if (dbUser.role === 'admin') {
@@ -215,22 +176,18 @@ router.get('/:id', auth(), async (req, res, next) => {
     }
 
     // Merchant owner can read their own submission
-    if (sub.merchantId) {
-      const [dbMerchant] = await db
-        .select()
-        .from(merchant)
-        .where(eq(merchant.id, sub.merchantId));
-
-      if (dbMerchant && dbMerchant.ownerId === dbUser.id) {
-        return res.json(sub);
-      }
+    const isOwner = await canManageMerchant(dbUser, sub.merchantId);
+    if (isOwner) {
+      return res.json(sub);
     }
 
     // Foodie group admin can read submissions for their group
-    const ok = await requireGroupAdmin(req, res, sub.groupId);
-    if (!ok) return; // response already sent
+    const isGAdmin = await canManageGroup(dbUser, sub.groupId);
+    if (isGAdmin) {
+      return res.json(sub);
+    }
 
-    res.json(sub);
+    res.status(403).json({ error: 'Forbidden: You do not have access to this submission' });
   } catch (err) {
     console.error('📦  error in GET /coupon-submissions/:id', err);
     next(err);
@@ -310,24 +267,11 @@ function normalizeSubmissionData(data) {
 // ────────────────────────────────────────────────────────────────
 // POST new submission
 // ────────────────────────────────────────────────────────────────
-router.post('/', auth(), async (req, res, next) => {
+router.post('/', auth(), resolveLocalUser, async (req, res, next) => {
   console.log('📦  POST /api/v1/coupon-submissions', req.body);
   try {
     const { group_id, merchant_id, submission_data } = req.body;
-
-    const authedSub = req.user && req.user.sub;
-    if (!authedSub) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const [dbUser] = await db
-      .select()
-      .from(user)
-      .where(eq(user.cognitoSub, authedSub));
-
-    if (!dbUser) {
-      return res.status(403).json({ error: 'User not registered' });
-    }
+    const dbUser = req.dbUser;
 
     if (!group_id) {
       return res.status(400).json({ error: 'group_id is required' });
@@ -352,25 +296,16 @@ router.post('/', auth(), async (req, res, next) => {
     const normalizedData = normalizeSubmissionData(submission_data);
 
     // Verify merchant exists and enforce ownership (admin bypass)
-    const [dbMerchant] = await db
-      .select()
-      .from(merchant)
-      .where(eq(merchant.id, merchant_id));
-
-    if (!dbMerchant) {
-      return res.status(404).json({ error: 'Merchant not found' });
-    }
-
-    if (dbUser.role !== 'admin' && dbMerchant.ownerId !== dbUser.id) {
-      return res.status(403).json({ error: 'You do not own this merchant' });
+    const allowed = await canManageMerchant(dbUser, merchant_id);
+    if (!allowed) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this merchant' });
     }
 
     const [newSub] = await db
       .insert(couponSubmission)
       .values({
         groupId:        group_id,
-        // Hardening: always write the merchant ID we just validated
-        merchantId:     dbMerchant.id,
+        merchantId:     merchant_id,
         state:          'pending',
         submissionData: normalizedData,
       })
@@ -388,9 +323,11 @@ router.post('/', auth(), async (req, res, next) => {
 // PUT update submission (approve/reject → may create coupon)
 // Only foodie_group_admin for that group (or admin) can do this.
 // ────────────────────────────────────────────────────────────────
-router.put('/:id', auth(), async (req, res, next) => {
+router.put('/:id', auth(), resolveLocalUser, async (req, res, next) => {
   const submissionId = req.params.id;
   const { state, message } = req.body;
+  const dbUser = req.dbUser;
+
   console.log(`📦  PUT /api/v1/coupon-submissions/${submissionId}`, {
     state,
     message,
@@ -414,8 +351,10 @@ router.put('/:id', auth(), async (req, res, next) => {
     }
 
     // 🔐 Check group admin rights for this group
-    const dbUser = await requireGroupAdmin(req, res, groupId);
-    if (!dbUser) return; // response already sent
+    const allowed = await canManageGroup(dbUser, groupId);
+    if (!allowed) {
+      return res.status(403).json({ error: 'Forbidden: You are not an admin for this group' });
+    }
 
     // Proceed with update
     const updateData = { state };
@@ -474,58 +413,5 @@ router.put('/:id', auth(), async (req, res, next) => {
   }
 });
 
-
-// Helper: ensure current Cognito user is group admin (or super admin)
-async function requireGroupAdmin(req, res, groupId) {
-  const authedSub = req.user && req.user.sub;
-  if (!authedSub) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return null;
-  }
-
-  // 1) Local user row
-  const [dbUser] = await db
-    .select()
-    .from(user)
-    .where(eq(user.cognitoSub, authedSub));
-
-  if (!dbUser) {
-    console.warn('📦  No local user for sub', authedSub);
-    res.status(403).json({ error: 'User not registered' });
-    return null;
-  }
-
-  // Super admin shortcut
-  if (dbUser.role === 'admin') {
-    return dbUser;
-  }
-
-  // 2) Membership for this group
-  const memberships = await db
-    .select()
-    .from(foodieGroupMembership)
-    .where(
-      and(
-        eq(foodieGroupMembership.userId, dbUser.id),
-        eq(foodieGroupMembership.groupId, groupId),
-      ),
-    );
-
-  const isGroupAdmin = memberships.some((m) =>
-    m.role === 'foodie_group_admin' || m.role === 'admin',
-  );
-
-  if (!isGroupAdmin) {
-    console.warn(
-      '📦  User is not foodie_group_admin / admin for group',
-      dbUser.id,
-      groupId,
-    );
-    res.status(403).json({ error: 'Not authorized for this group' });
-    return null;
-  }
-
-  return dbUser;
-}
 
 export default router;

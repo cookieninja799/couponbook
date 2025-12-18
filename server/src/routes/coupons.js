@@ -4,6 +4,7 @@ import { db } from '../db.js';
 import { coupon, merchant, foodieGroup, couponRedemption, user } from '../schema.js';
 import { eq, and, sql } from 'drizzle-orm';
 import auth from '../middleware/auth.js'; // auth() verifies Cognito token and sets req.user
+import { resolveLocalUser, canManageMerchant, canManageCoupon, hasEntitlement } from '../authz/index.js';
 
 const router = express.Router();
 
@@ -76,7 +77,7 @@ router.get('/:id', async (req, res, next) => {
 });
 
 // POST /api/v1/coupons
-router.post('/', async (req, res, next) => {
+router.post('/', auth(), resolveLocalUser, async (req, res, next) => {
   console.log('📦  POST /api/v1/coupons', req.body);
   try {
     const {
@@ -89,6 +90,16 @@ router.post('/', async (req, res, next) => {
       merchant_id,
       group_id,
     } = req.body;
+
+    if (!merchant_id) {
+      return res.status(400).json({ error: 'merchant_id is required' });
+    }
+
+    // 🔐 Authz: admin OR merchant owner
+    const allowed = await canManageMerchant(req.dbUser, merchant_id);
+    if (!allowed) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this merchant' });
+    }
 
     const [newCoupon] = await db
       .insert(coupon)
@@ -112,7 +123,7 @@ router.post('/', async (req, res, next) => {
 });
 
 // POST /api/v1/coupons/:id/redeem  (ONE canonical route)
-router.post('/:id/redeem', auth(), async (req, res, next) => {
+router.post('/:id/redeem', auth(), resolveLocalUser, async (req, res, next) => {
   try {
     const couponId = req.params.id;
     console.log('🎟️  Redeem attempt start', {
@@ -121,12 +132,6 @@ router.post('/:id/redeem', auth(), async (req, res, next) => {
       sub: req.user?.sub,
       email: req.user?.email,
     });
-
-    // 0) Must have a verified Cognito subject
-    if (!req.user?.sub) {
-      console.warn('🔒 Missing req.user.sub (JWT not verified)');
-      return res.status(401).json({ error: 'Sign in required to redeem this coupon' });
-    }
 
     // 1) Ensure coupon exists
     const [c] = await db.select().from(coupon).where(eq(coupon.id, couponId));
@@ -147,25 +152,18 @@ router.post('/:id/redeem', auth(), async (req, res, next) => {
     }
 
     // 3) Map Cognito subject -> local user row via *cognitoSub*
-    let [u] = await db.select().from(user).where(eq(user.cognitoSub, req.user.sub));
-    if (!u) {
-      console.log('👤 No local user; creating', { sub: req.user.sub, email: req.user?.email });
+    const u = req.dbUser;
 
-      const safeName =
-        req.user?.name ||
-        (req.user?.email ? req.user.email.split('@')[0] : 'user-' + req.user.sub.slice(0, 6));
-
-      const safeEmail = req.user?.email || `${req.user.sub}@unknown.local`;
-
-      const inserted = await db
-        .insert(user)
-        .values({
-          cognitoSub: req.user.sub,
-          email:      safeEmail,
-          name:       safeName,
-        })
-        .returning();
-      u = inserted[0];
+    // 3.5) Entitlement check for locked coupons
+    if (c.locked) {
+      const allowed = await hasEntitlement(u, c.groupId);
+      if (!allowed) {
+        console.warn('⛔ User not entitled to locked coupon', { userId: u.id, groupId: c.groupId });
+        return res.status(403).json({ 
+          error: 'LOCKED', 
+          message: 'This coupon is part of a premium book. Please purchase access to redeem.' 
+        });
+      }
     }
 
     // 4) One-per-user check
@@ -222,31 +220,9 @@ router.post('/:id/redeem', auth(), async (req, res, next) => {
 
 // GET /api/v1/coupons/redemptions/merchant-insights
 // Summary of redemptions for all coupons at restaurants owned by the authed user
-router.get('/redemptions/merchant-insights', auth(), async (req, res, next) => {
+router.get('/redemptions/merchant-insights', auth(), resolveLocalUser, async (req, res, next) => {
   try {
-    if (!req.user?.sub) {
-      return res.status(401).json({ error: 'Sign in required' });
-    }
-
-    // Ensure we have a local user row for this Cognito subject
-    let [u] = await db.select().from(user).where(eq(user.cognitoSub, req.user.sub));
-    if (!u) {
-      const safeName =
-        req.user?.name ||
-        (req.user?.email ? req.user.email.split('@')[0] : 'user-' + req.user.sub.slice(0, 6));
-
-      const safeEmail = req.user?.email || `${req.user.sub}@unknown.local`;
-
-      const inserted = await db
-        .insert(user)
-        .values({
-          cognitoSub: req.user.sub,
-          email:      safeEmail,
-          name:       safeName,
-        })
-        .returning();
-      u = inserted[0];
-    }
+    const u = req.dbUser;
 
     // Aggregate redemptions per coupon for merchants this user owns
     const rows = await db
@@ -272,31 +248,9 @@ router.get('/redemptions/merchant-insights', auth(), async (req, res, next) => {
 });
 
 // GET /api/v1/coupons/redemptions/me
-router.get('/redemptions/me', auth(), async (req, res, next) => {
+router.get('/redemptions/me', auth(), resolveLocalUser, async (req, res, next) => {
   try {
-    if (!req.user?.sub) {
-      return res.status(401).json({ error: 'Sign in required' });
-    }
-
-    // Find or create local user (same as in redeem route)
-    let [u] = await db.select().from(user).where(eq(user.cognitoSub, req.user.sub));
-    if (!u) {
-      const safeName =
-        req.user?.name ||
-        (req.user?.email ? req.user.email.split('@')[0] : 'user-' + req.user.sub.slice(0, 6));
-
-      const safeEmail = req.user?.email || `${req.user.sub}@unknown.local`;
-
-      const inserted = await db
-        .insert(user)
-        .values({
-          cognitoSub: req.user.sub,
-          email:      safeEmail,
-          name:       safeName,
-        })
-        .returning();
-      u = inserted[0];
-    }
+    const u = req.dbUser;
 
     const rows = await db
       .select({
@@ -313,16 +267,18 @@ router.get('/redemptions/me', auth(), async (req, res, next) => {
   }
 });
 
-// PATCH /api/v1/coupons/:id - Update a coupon (admin only for now)
-router.patch('/:id', auth(), async (req, res, next) => {
+// PATCH /api/v1/coupons/:id - Update a coupon
+router.patch('/:id', auth(), resolveLocalUser, async (req, res, next) => {
   console.log('📦  PATCH /api/v1/coupons/' + req.params.id, req.body);
   try {
-    // For now, allow any authenticated user to update (could restrict to admin later)
-    if (!req.user?.sub) {
-      return res.status(401).json({ error: 'Sign in required' });
+    const couponId = req.params.id;
+
+    // 🔐 Authz: admin OR merchant owner
+    const allowed = await canManageCoupon(req.dbUser, couponId);
+    if (!allowed) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this coupon' });
     }
 
-    const couponId = req.params.id;
     const updates = {};
 
     // Only allow specific fields to be updated
@@ -358,12 +314,20 @@ router.patch('/:id', auth(), async (req, res, next) => {
 });
 
 // DELETE /api/v1/coupons/:id
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', auth(), resolveLocalUser, async (req, res, next) => {
   console.log('📦  DELETE /api/v1/coupons/' + req.params.id);
   try {
+    const couponId = req.params.id;
+
+    // 🔐 Authz: admin OR merchant owner
+    const allowed = await canManageCoupon(req.dbUser, couponId);
+    if (!allowed) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this coupon' });
+    }
+
     const result = await db
       .delete(coupon)
-      .where(eq(coupon.id, req.params.id));
+      .where(eq(coupon.id, couponId));
 
     if (!result.count) {
       console.log('📦  coupon not found for delete');

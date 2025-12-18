@@ -138,26 +138,20 @@ describe('CouponSubmissions Routes', () => {
         user: { sub: 'test-sub' },
         query: { state: 'rejected' },
       });
+      // Route now expects req.dbUser from resolveLocalUser middleware
+      req.dbUser = { id: 'user-1', cognitoSub: 'test-sub', role: 'merchant' };
+      
       res = createMockResponse();
       const next = createMockNext();
 
-      // 1) Local user
-      db.select.mockReturnValueOnce({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue([
-            { id: 'user-1', cognitoSub: 'test-sub', role: 'merchant' },
-          ]),
-        }),
-      });
-
-      // 2) Owned merchants
+      // 1) Owned merchants (first query in the handler)
       db.select.mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockResolvedValue([{ id: 'm1', name: 'Merchant 1' }]),
         }),
       });
 
-      // 3) Submissions query
+      // 2) Submissions query (second query in the handler)
       const rows = [
         {
           id: 'sub-1',
@@ -196,7 +190,7 @@ describe('CouponSubmissions Routes', () => {
       expect(eq).not.toHaveBeenCalledWith(couponSubmission.deletedAt, null);
 
       // The /by-merchant select should be camelCase + include rejectionMessage
-      const selectArg = db.select.mock.calls[2][0];
+      const selectArg = db.select.mock.calls[1][0];
       expect(selectArg).toHaveProperty('merchantId');
       expect(selectArg).toHaveProperty('submittedAt');
       expect(selectArg).toHaveProperty('submissionData');
@@ -210,7 +204,6 @@ describe('CouponSubmissions Routes', () => {
       expect(res.json.mock.calls[0][0][0].rejectionMessage).toBe('Needs more details');
     });
   });
-});
 
   describe('POST /api/v1/coupon-submissions validation', () => {
     it('should reject submission with missing required fields', () => {

@@ -12,7 +12,7 @@ Viva Spot Coupon Book is a full-stack web application designed to help "foodie g
 - **Backend**: [Node.js](https://nodejs.org/), [Express 5](https://expressjs.com/), [Drizzle ORM](https://orm.drizzle.team/)
 - **Database**: [PostgreSQL](https://www.postgresql.org/)
 - **Authentication**: [AWS Cognito](https://aws.amazon.com/cognito/)
-- **Infrastructure**: [AWS Lambda](https://aws.amazon.com/lambda/) (via [Serverless Framework](https://www.serverless.com/)), [S3](https://aws.amazon.com/s3/)
+- **Infrastructure**: [Vercel](https://vercel.com/)
 - **Payments**: [Stripe](https://stripe.com/)
 - **Testing**: [Vitest](https://vitest.dev/), [Supertest](https://github.com/ladjs/supertest), [PGLite](https://pglite.dev/)
 
@@ -161,7 +161,7 @@ Create a `.env` file in the root directory. Key variables include:
 │   ├── store/            # Vuex state management
 │   └── views/            # Main page components
 ├── tests/                # Full test suite
-├── serverless.yaml       # AWS Lambda deployment config
+├── vercel.json           # Vercel deployment config
 └── package.json          # Project dependencies & scripts
 ```
 
@@ -169,20 +169,20 @@ Create a `.env` file in the root directory. Key variables include:
 
 ## 📦 Deployment
 
-### Backend
-The backend is designed to be highly portable and can be deployed in two main ways:
+### Vercel (Recommended)
 
-1.  **AWS Lambda**: Deploys via Serverless Framework (uses `serverless-http`).
-    ```bash
-    serverless deploy --stage prod
-    ```
-2.  **Vercel Functions**: The `api/` directory contains a rewrite rule that allows the Express app to run as a Vercel Serverless Function.
+The project is optimized for deployment on Vercel.
 
-### Frontend
-The frontend is a standard Vue SPA. It can be built and hosted on Vercel, Netlify, or AWS S3 + CloudFront:
+1.  **Frontend**: Standard Vue SPA build.
+2.  **Backend**: The Express app in `server/src/` is automatically served via Vercel Serverless Functions through the `api/[...slug].js` entrypoint.
+
+To deploy:
 ```bash
-npm run build
+vercel --prod
 ```
+
+### Local Development
+The project can also be run locally using the `npm run dev` and `npm run serve` commands.
 
 ---
 

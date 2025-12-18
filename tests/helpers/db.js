@@ -232,4 +232,17 @@ export const seedHelpers = {
       .returning();
     return newMembership;
   },
+
+  async createCouponRedemption(db, couponId, userId, overrides = {}) {
+    const { couponRedemption } = schema;
+    const [newRedemption] = await db
+      .insert(couponRedemption)
+      .values({
+        couponId,
+        userId,
+        redeemedAt: overrides.redeemedAt || new Date().toISOString(),
+      })
+      .returning();
+    return newRedemption;
+  },
 };

@@ -182,7 +182,6 @@ describe('Coupons Routes', () => {
       expect(user[0].cognitoSub).toBe('test-sub');
     });
   });
-});
 
   describe('GET /api/v1/coupons response shape', () => {
     it('should include cuisine_type in response', async () => {
