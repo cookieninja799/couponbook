@@ -25,8 +25,8 @@
             </p>
 
             <p class="instructions">
-              Show this coupon receipt to your server or cashier at the restaurant so they can
-              verify it and apply your discount to your bill.
+              Show this Current Page - "Confirm Redeem" to your server or cashier so they can
+              verify your redemption and apply your discount to your bill.
             </p>
 
             <div class="actions">
@@ -45,8 +45,8 @@
 
             <!-- NEW: usage instructions -->
             <p class="instructions">
-              Show this coupon receipt to your server or cashier at the restaurant so they can
-              verify it and apply your discount to your bill.
+              Show this Current Page - "Confirm Redeem" to your server or cashier so they can
+              verify your redemption and apply your discount to your bill.
             </p>
 
             <div class="details-card">
