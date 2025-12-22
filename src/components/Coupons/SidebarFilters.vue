@@ -122,7 +122,7 @@ export default {
       activeOnly: false,
       couponType: "",
       cuisineType: "",
-      isCollapsed: false,
+      isCollapsed: true,
       // Coupon type options matching normalized UI values (percentage|amount|bogo|free)
       couponTypeOptions: [
         { value: "percentage", label: "Percentage Off" },
