@@ -150,4 +150,3 @@ This is specifically to fail CI early on:
 
 - Update [`README.md`](README.md):
 - how to run locally
-- how to deploy (Vercel only)

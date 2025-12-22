@@ -250,6 +250,16 @@ export default {
         );
       }
 
+      // Sort: active coupons first, expired coupons last
+      filtered.sort((a, b) => {
+        const aExpired = a.expires_at && new Date(a.expires_at) < now;
+        const bExpired = b.expires_at && new Date(b.expires_at) < now;
+        
+        if (aExpired && !bExpired) return 1;  // a is expired, b is not → a goes after
+        if (!aExpired && bExpired) return -1; // b is expired, a is not → a goes before
+        return 0; // both same status, keep original order
+      });
+
       return filtered;
     },
 

@@ -229,3 +229,5 @@ export const purchase = pgTable("purchase", {
     }),
     unique("purchase_stripe_checkout_id_unique").on(table.stripeCheckoutId),
 ]);
+
+
