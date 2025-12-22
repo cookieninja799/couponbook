@@ -70,20 +70,20 @@ import { getAccessToken } from '@/services/authService';
 import { ensureCouponsHaveCuisine, assembleSearchableText } from '@/utils/helpers';
 
 const getCouponSortPriority = (coupon, now = new Date()) => {
+  // 1: Redeem (not expired, not redeemed)
+  // 2: Redeemed
+  // 3: Expired OR Not yet valid (end)
+
+  if (coupon.redeemed_by_user) return 2;
+
   if (coupon.expires_at) {
     const expiresAt = new Date(coupon.expires_at);
-    if (expiresAt < now) return 5;
+    if (expiresAt < now) return 3;
   }
-
-  if (coupon.redeemed_by_user) return 4;
 
   if (coupon.valid_from) {
     const validFrom = new Date(coupon.valid_from);
     if (validFrom > now) return 3;
-  }
-
-  if (coupon.locked && coupon.foodie_group_name !== 'Vivaspot Community') {
-    return 2;
   }
 
   return 1;
@@ -109,10 +109,16 @@ export default {
   },
   mounted() {
     this.fetchCoupons();
-    // If already authenticated on load, fetch purchases
+    // If already authenticated on load, fetch purchases and redemptions
     if (this.isAuthenticated) {
       this.loadMyGroupPurchases();
+      this.fetchRedemptionsMe();
     }
+    window.addEventListener('message', this.onCouponRedeemedMessage);
+  },
+
+  beforeUnmount() {
+    window.removeEventListener('message', this.onCouponRedeemedMessage);
   },
 
   watch: {
@@ -120,8 +126,11 @@ export default {
     isAuthenticated(newVal, oldVal) {
       if (newVal && !oldVal) {
         this.loadMyGroupPurchases();
+        this.fetchRedemptionsMe();
       } else if (!newVal) {
         this.purchasedGroupIds = [];
+        // Reset redeemed status if they log out
+        this.coupons = this.coupons.map(c => ({ ...c, redeemed_by_user: false }));
       }
     }
   },
@@ -132,13 +141,66 @@ export default {
         const res = await fetch('/api/v1/coupons');
         if (!res.ok) throw new Error(`Server responded ${res.status}`);
         const rawCoupons = await res.json();
-        this.coupons = ensureCouponsHaveCuisine(rawCoupons);
+        const baseCoupons = ensureCouponsHaveCuisine(rawCoupons);
+        this.coupons = baseCoupons.map(c => ({ ...c, redeemed_by_user: false }));
+
+        if (this.isAuthenticated) {
+          this.fetchRedemptionsMe();
+        }
       } catch (err) {
         console.error("Failed to load coupons", err);
         this.error = "Could not load coupons. " + err.message;
       } finally {
         this.loading = false;
       }
+    },
+
+    async fetchRedemptionsMe() {
+      try {
+        const token = await getAccessToken();
+        if (!token) return;
+
+        const res = await fetch('/api/v1/coupons/redemptions/me', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (!res.ok) {
+          console.warn('[CouponBook] redemptions/me failed', res.status);
+          return;
+        }
+
+        const rows = await res.json();
+        rows.forEach(r => {
+          this._markRedeemed(r.couponId, true, r.redeemedAt || new Date().toISOString());
+        });
+      } catch (e) {
+        console.error('[CouponBook] failed to hydrate redemptions', e);
+      }
+    },
+
+    onCouponRedeemedMessage(event) {
+      const data = event && event.data;
+      if (!data || data.type !== 'coupon-redeemed') return;
+
+      const couponId = data.couponId;
+      if (!couponId) return;
+
+      console.log('[CouponBook] received coupon-redeemed message for', couponId);
+      this._markRedeemed(couponId, true, new Date().toISOString());
+    },
+
+    _markRedeemed(couponId, isRedeemed = true, redeemedAt = new Date().toISOString()) {
+      const idx = this.coupons.findIndex(c => String(c.id) === String(couponId));
+      if (idx === -1) return;
+
+      const updated = {
+        ...this.coupons[idx],
+        redeemed_by_user: isRedeemed,
+        redeemed_at: redeemedAt,
+      };
+      this.coupons.splice(idx, 1, updated);
     },
 
     async loadMyGroupPurchases() {
@@ -185,8 +247,19 @@ export default {
         alert('Please sign in to redeem coupons.');
         return;
       }
-      console.log("Redeeming coupon:", coupon);
-      // You can route to FoodieGroup or open a popup here if you want
+
+      const route = this.$router.resolve({
+        name: 'CouponRedeemPopup',
+        params: { id: coupon.id }
+      });
+
+      const url = route && route.href ? route.href : `/coupon-redeem/${coupon.id}`;
+
+      window.open(
+        url,
+        'coupon-redeem',
+        'width=520,height=720,noopener,noreferrer'
+      );
     },
 
     updateFilters(newFilters) {
@@ -240,6 +313,13 @@ export default {
         // keep coupons that are not yet expired OR expired less than 30 days ago
         return diffMs < THIRTY_DAYS_MS;
       });
+
+      // "My Coupons" mode: only show coupons from purchased groups
+      if (this.$route.query.my === '1') {
+        filtered = filtered.filter(c => 
+          this.purchasedGroupIds.includes(c.foodie_group_id)
+        );
+      }
 
       // Keyword search across merchant, title, description, foodie group, cuisine, coupon type
       if (this.filters.keyword) {

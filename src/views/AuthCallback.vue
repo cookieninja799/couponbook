@@ -40,9 +40,39 @@ onMounted(async () => {
       redirectPath = "/";
     }
 
+    // 4) Special logic: if landing on homepage, redirect to their coupon book if they have one
+    if (redirectPath === "/") {
+      try {
+        const token = store.state.auth.user?.access_token;
+        if (token) {
+          const res = await api.get('/groups/my/purchases', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const purchases = res.data || [];
+          const now = new Date();
+
+          // Active coupon books: status === 'paid' and not expired
+          const activePurchases = purchases.filter(p => {
+            if (p.status !== 'paid') return false;
+            if (!p.expiresAt) return true;
+            const exp = new Date(p.expiresAt);
+            return !isNaN(exp.getTime()) && exp >= now;
+          });
+
+          if (activePurchases.length === 1) {
+            redirectPath = `/foodie-group/${activePurchases[0].groupId}`;
+          } else if (activePurchases.length > 1) {
+            redirectPath = "/coupon-book?my=1";
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching purchases for redirect:", e);
+      }
+    }
+
     console.log("🔁 Redirecting user back to:", redirectPath);
 
-    // 4) Send user back to original page
+    // 5) Send user back to original page
     router.replace(redirectPath);
 
   } catch (e) {

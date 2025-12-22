@@ -82,9 +82,10 @@ export default {
       if (!this.isAuthenticated) return 'login';
 
       // When on Local Coupons page, foodie group coupons should route to group page
+      // EXCEPT if the user has already purchased access - then they can redeem directly.
       if (this.forceGoToGroupForFoodieGroupCoupons && this.isFoodieGroupCoupon) {
         if (this.hasPurchasedCouponBook) {
-          return 'goto-group'; // Purchased → "Go to ... Coupon Book to Redeem"
+          return 'active'; // Changed from 'goto-group' to 'active' for purchased access
         } else {
           return 'join-group'; // Not purchased → "Join ... Coupon Book"
         }
