@@ -3,11 +3,13 @@
   <div class="coupon-book-view">
   
     <div class="content-wrapper">
-      <!-- Sidebar Filters -->
-      <SidebarFilters 
-        :availableCuisines="availableCuisines"
-        @filter-changed="updateFilters" 
-      />
+      <!-- Sidebar Filters Container for Layout -->
+      <div class="sidebar-filters-container">
+        <SidebarFilters 
+          :availableCuisines="availableCuisines"
+          @filter-changed="updateFilters" 
+        />
+      </div>
 
       <!-- Main Content Area -->
       <div class="coupons-content">
@@ -396,13 +398,9 @@ h1 {
   margin: 0 auto;
 }
 
-/* Sidebar Filters */
-.sidebar-filters {
+/* Sidebar Filters Positioning */
+.sidebar-filters-container {
   flex: 0 0 250px;
-  background: var(--color-bg-primary);
-  padding: var(--spacing-xl);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 
 /* Main Content Area */
@@ -433,8 +431,8 @@ h1 {
 }
 
 /* Fixed sidebar on larger screens */
-@media (min-width: 768px) {
-  .sidebar-filters {
+@media (min-width: 769px) {
+  .sidebar-filters-container {
     position: fixed;
     top: 300px;
     left: var(--spacing-xl);
@@ -449,17 +447,23 @@ h1 {
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .coupon-book-view {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-sm);
   }
 
   .content-wrapper {
     flex-direction: column;
-    gap: var(--spacing-lg);
+    gap: 0; /* Remove gap, use component margins instead */
   }
 
-  .sidebar-filters {
+  .sidebar-filters-container {
     position: relative;
     width: 100%;
+    margin-bottom: var(--spacing-sm);
+    flex: none; /* Reset flex-basis to prevent fixed height in column layout */
+  }
+  
+  .coupons-content h1 {
+    margin-top: var(--spacing-sm);
   }
 }
 
