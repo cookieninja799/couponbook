@@ -232,3 +232,6 @@ export const purchase = pgTable("purchase", {
 
 
 
+
+
+

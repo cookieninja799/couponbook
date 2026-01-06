@@ -45,9 +45,31 @@
       </p>
     </section>
 
-    <!-- AUTHENTICATED + AUTHORIZED: SHOW SURVEY -->
+    <!-- AUTHENTICATED + AUTHORIZED: SHOW SURVEY OR SUCCESS -->
     <template v-else>
-      <div class="submissions">
+      <!-- SUCCESS STATE -->
+      <section v-if="submissionSuccess" class="section-card success-card">
+        <div class="success-content">
+          <div class="success-icon">
+            <i class="pi pi-check-circle"></i>
+          </div>
+          <h1>Coupon Submitted Successfully!</h1>
+          <p class="success-message">
+            Your coupon has been sent for approval. You'll see it live once your Foodie Group accepts it.
+          </p>
+          <div class="success-actions">
+            <button class="btn primary" @click="goToCouponBook">
+              <i class="pi pi-arrow-right icon-spacing-sm"></i>View Coupon Book
+            </button>
+            <button class="btn secondary" @click="submitAnother">
+              <i class="pi pi-plus icon-spacing-sm"></i>Submit Another Coupon
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SURVEY FORM -->
+      <div v-else class="submissions">
         <h1>Submit a New Coupon</h1>
         <survey-component :model="survey" />
       </div>
@@ -87,6 +109,9 @@ export default {
 
       // Survey
       survey: null,
+      
+      // Submission state
+      submissionSuccess: false,
     }
   },
 
@@ -200,6 +225,9 @@ export default {
       // Create survey model
       this.survey = new Model(couponSurveyJson)
 
+      // Hide the default completion page - we'll show our own success message
+      this.survey.showCompletedPage = false
+
       // Load dropdown choices
       await Promise.all([
         this.loadChoices('group_id', 'groups'),
@@ -285,12 +313,22 @@ export default {
           }),
         })
 
-        alert("✅ Coupon sent for approval! You'll see it live once your Foodie Group accepts it.")
-        this.$router.push({ name: 'CouponBook' })
+        // Show success state instead of alert popup
+        this.submissionSuccess = true
       } catch (err) {
         console.error('❌ Submission error:', err)
         alert(`⚠️ Coupon creation failed: ${err.message}`)
       }
+    },
+
+    goToCouponBook() {
+      this.$router.push({ name: 'CouponBook' })
+    },
+
+    submitAnother() {
+      this.submissionSuccess = false
+      // Reinitialize the survey to allow another submission
+      this.initializeSurvey()
     },
   },
 }
@@ -331,12 +369,59 @@ export default {
 .signin-card,
 .access-check-card,
 .access-denied-card,
-.empty-state-card {
+.empty-state-card,
+.success-card {
   text-align: center;
-  max-width: 500px;
+  max-width: 600px;
   margin: var(--spacing-3xl) auto;
   padding: var(--spacing-xl);
   color: var(--color-text-primary);
+}
+
+.success-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.success-icon {
+  font-size: 4rem;
+  color: var(--color-success);
+  margin-bottom: var(--spacing-sm);
+}
+
+.success-icon .pi-check-circle {
+  font-size: 4rem;
+}
+
+.success-card h1 {
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.success-message {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-relaxed);
+  margin: 0;
+}
+
+.success-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn.secondary {
+  background: var(--color-success);
+  color: var(--color-text-on-success);
+}
+
+.btn.secondary:hover:not(:disabled) {
+  background: var(--color-success-hover);
 }
 
 .subtitle {

@@ -849,13 +849,13 @@ textarea:focus {
 
 .submissions-board {
   display: flex;
+  flex-direction: row;
   gap: var(--spacing-2xl);
   flex-wrap: wrap;
 }
 
 @media (max-width: 768px) {
   .submissions-board {
-    flex-direction: column;
     gap: var(--spacing-lg);
   }
 }
@@ -894,6 +894,20 @@ textarea:focus {
 .card h3,
 .card p {
   color: var(--color-text-primary);
+}
+
+.card ul {
+  padding-left: var(--spacing-lg);
+  margin: 0;
+}
+
+.card li {
+  margin-bottom: var(--spacing-md);
+  padding-left: var(--spacing-xs);
+}
+
+.card li:last-child {
+  margin-bottom: 0;
 }
 
 .action-buttons {
@@ -977,5 +991,19 @@ textarea:focus {
 
 .error-text {
   color: var(--color-error);
+}
+
+.group-stats ul {
+  padding-left: var(--spacing-lg);
+  margin: 0;
+}
+
+.group-stats li {
+  margin-bottom: var(--spacing-md);
+  padding-left: var(--spacing-xs);
+}
+
+.group-stats li:last-child {
+  margin-bottom: 0;
 }
 </style>
