@@ -219,7 +219,8 @@
             <ul class="link-list">
               <!-- Create / Submit -->
               <li class="link-row clickable" @click="goToCouponSubmissions">
-                <span class="link-label"><i class="pi pi-plus-circle icon-spacing-sm"></i>Create / Submit a Coupon</span>
+                <span class="link-label"><i class="pi pi-plus-circle icon-spacing-sm"></i>Create / Submit a
+                  Coupon</span>
                 <span class="link-helper">
                   Open the submission form and choose which restaurant the coupon belongs to.
                 </span>
@@ -417,21 +418,24 @@
 
               <ul class="link-list">
                 <li class="link-row clickable" @click="goToCouponSubmissions">
-                  <span class="link-label"><i class="pi pi-plus-circle icon-spacing-sm"></i>Create / Submit a Coupon</span>
+                  <span class="link-label"><i class="pi pi-plus-circle icon-spacing-sm"></i>Create / Submit a
+                    Coupon</span>
                   <span class="link-helper">
                     Open the submission form and choose which restaurant the coupon belongs to.
                   </span>
                 </li>
 
                 <li class="link-row clickable" @click="loadApprovedCoupons">
-                  <span class="link-label"><i class="pi pi-check-circle icon-spacing-sm"></i>View Approved Coupons</span>
+                  <span class="link-label"><i class="pi pi-check-circle icon-spacing-sm"></i>View Approved
+                    Coupons</span>
                   <span class="link-helper">
                     See all live, approved coupons across your restaurants.
                   </span>
                 </li>
 
                 <li class="link-row clickable" @click="loadRejectedCoupons">
-                  <span class="link-label"><i class="pi pi-times-circle icon-spacing-sm"></i>View Rejected Coupons</span>
+                  <span class="link-label"><i class="pi pi-times-circle icon-spacing-sm"></i>View Rejected
+                    Coupons</span>
                   <span class="link-helper">
                     Review coupons that were not approved and see the reason.
                   </span>
@@ -678,7 +682,7 @@ export default {
     goToAdminDashboard() {
       this.$router.push({ name: 'SuperAdminDashboard' });
     },
-    
+
     async onLogoFileChange(merchant, event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -688,7 +692,21 @@ export default {
       this.uploadingLogoId = merchant.id;
 
       try {
-        const token = await getAccessToken();
+        const raw = await getAccessToken();
+
+        // Normalize token (prod-safe)
+        const token =
+          typeof raw === "string" ? raw.replace(/^Bearer\s+/i, "").trim() : "";
+
+        if (!token || token.split(".").length !== 3) {
+          console.error("Invalid access token returned by getAccessToken()", raw);
+          this.logoUploadError =
+            "Auth token missing or invalid. Please sign out and sign in again.";
+          this.uploadErrorMerchantId = merchant.id;
+          return;
+        }
+
+        // ✅ DEFINE FIRST
         const formData = new FormData();
         formData.append("file", file);
 
@@ -700,27 +718,24 @@ export default {
           body: formData,
         });
 
-        console.log('logo upload response status', res.status);
+        console.log("logo upload response status", res.status);
 
         if (!res.ok) {
           let message = "Upload failed";
           try {
             const errJson = await res.json();
-            console.log('logo upload error payload', errJson);
-            if (errJson && errJson.error) {
-              message = errJson.error;
-            }
-          } catch (_) {
-            // ignore json parse error
+            console.log("logo upload error payload", errJson);
+            if (errJson?.error) message = errJson.error;
+          } catch (e) {
+            console.warn("logo upload error payload was not JSON", e);
           }
           this.logoUploadError = message;
           this.uploadErrorMerchantId = merchant.id;
           return;
         }
 
-        const updated = await res.json(); // { id, name, logo_url, owner_id }
+        const updated = await res.json();
 
-        // Update merchants array in-place
         this.merchants = this.merchants.map((m) =>
           m.id === updated.id
             ? { ...m, logo_url: updated.logo_url || updated.logoUrl }
@@ -732,10 +747,10 @@ export default {
         this.uploadErrorMerchantId = merchant.id;
       } finally {
         this.uploadingLogoId = null;
-        // Reset the input so selecting the same file again still triggers change
         event.target.value = "";
       }
-    },
+    }
+    ,
 
     signOutNow() {
       signOut();
