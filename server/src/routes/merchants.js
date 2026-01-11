@@ -273,12 +273,6 @@ router.post(
         Body: buffer,
         ContentType: mimetype,
       };      
-
-      console.log('AWS creds present?', {
-        accessKeyId: !!accessKeyId,
-        secretAccessKey: !!secretAccessKey,
-        sessionToken: !!sessionToken,
-      });
       
       console.log("AWS key prefix", {
         accessKeyPrefix: process.env.AWS_ACCESS_KEY_ID?.slice(0, 4),
