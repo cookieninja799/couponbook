@@ -29,36 +29,28 @@ const upload = multer({
 // ────────────────────────────────────────────────────────────────
 // S3 client setup
 // ────────────────────────────────────────────────────────────────
-const REGION = (process.env.AWS_REGION || 'us-east-1').trim();
-const LOGO_BUCKET = process.env.AWS_S3_MERCHANT_LOGO_BUCKET?.trim();
+const REGION = (process.env.AWS_REGION || "us-east-1").trim();
+const LOGO_BUCKET = process.env.AWS_S3_MERCHANT_LOGO_BUCKET;
 
 const LOGO_BASE_URL =
-  process.env.AWS_S3_MERCHANT_LOGO_BASE_URL?.trim() ||
-  (LOGO_BUCKET
-    ? `https://${LOGO_BUCKET}.s3.${REGION}.amazonaws.com`
-    : null);
+  process.env.AWS_S3_MERCHANT_LOGO_BASE_URL ||
+  (LOGO_BUCKET ? `https://${LOGO_BUCKET}.s3.${REGION}.amazonaws.com` : null);
 
-// ✅ Explicit credentials (trimmed)
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID?.trim();
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY?.trim();
-const sessionToken = process.env.AWS_SESSION_TOKEN?.trim(); // should usually be undefined
 
 if (!accessKeyId || !secretAccessKey) {
-  console.warn('⚠️ AWS creds missing: AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY');
-}
-if (sessionToken) {
-  console.warn('⚠️ AWS_SESSION_TOKEN is set. If these are not temporary STS creds, remove it from Vercel.');
+  console.error("❌ Missing AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY");
 }
 
+// ✅ DO NOT pass session token at all
 const s3 = new S3Client({
   region: REGION,
   credentials: {
     accessKeyId,
     secretAccessKey,
-    ...(sessionToken ? { sessionToken } : {}),
   },
 });
-
 
 // helper to map mimetype → extension
 function getExtensionFromMime(mime) {
@@ -286,6 +278,11 @@ router.post(
         accessKeyId: !!accessKeyId,
         secretAccessKey: !!secretAccessKey,
         sessionToken: !!sessionToken,
+      });
+      
+      console.log("AWS key prefix", {
+        accessKeyPrefix: process.env.AWS_ACCESS_KEY_ID?.slice(0, 4),
+        sessionTokenPrefix: process.env.AWS_SESSION_TOKEN?.slice(0, 4),
       });
       
       console.time('s3:putObject');
