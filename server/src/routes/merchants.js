@@ -29,17 +29,36 @@ const upload = multer({
 // ────────────────────────────────────────────────────────────────
 // S3 client setup
 // ────────────────────────────────────────────────────────────────
-const REGION = process.env.AWS_REGION || 'us-east-1';
-const LOGO_BUCKET = process.env.AWS_S3_MERCHANT_LOGO_BUCKET;
+const REGION = (process.env.AWS_REGION || 'us-east-1').trim();
+const LOGO_BUCKET = process.env.AWS_S3_MERCHANT_LOGO_BUCKET?.trim();
 
-// Optional: custom base URL (CloudFront, etc.)
 const LOGO_BASE_URL =
-  process.env.AWS_S3_MERCHANT_LOGO_BASE_URL ||
+  process.env.AWS_S3_MERCHANT_LOGO_BASE_URL?.trim() ||
   (LOGO_BUCKET
     ? `https://${LOGO_BUCKET}.s3.${REGION}.amazonaws.com`
     : null);
 
-const s3 = new S3Client({ region: REGION });
+// ✅ Explicit credentials (trimmed)
+const accessKeyId = process.env.AWS_ACCESS_KEY_ID?.trim();
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY?.trim();
+const sessionToken = process.env.AWS_SESSION_TOKEN?.trim(); // should usually be undefined
+
+if (!accessKeyId || !secretAccessKey) {
+  console.warn('⚠️ AWS creds missing: AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY');
+}
+if (sessionToken) {
+  console.warn('⚠️ AWS_SESSION_TOKEN is set. If these are not temporary STS creds, remove it from Vercel.');
+}
+
+const s3 = new S3Client({
+  region: REGION,
+  credentials: {
+    accessKeyId,
+    secretAccessKey,
+    ...(sessionToken ? { sessionToken } : {}),
+  },
+});
+
 
 // helper to map mimetype → extension
 function getExtensionFromMime(mime) {
@@ -263,6 +282,12 @@ router.post(
         ContentType: mimetype,
       };      
 
+      console.log('AWS creds present?', {
+        accessKeyId: !!accessKeyId,
+        secretAccessKey: !!secretAccessKey,
+        sessionToken: !!sessionToken,
+      });
+      
       console.time('s3:putObject');
       await s3.send(new PutObjectCommand(putParams));
       console.timeEnd('s3:putObject');
