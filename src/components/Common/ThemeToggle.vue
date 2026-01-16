@@ -85,7 +85,7 @@ export default {
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-md);
   background: transparent;
-  border: 1px solid var(--color-border-light);
+  border: none;
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
@@ -93,12 +93,13 @@ export default {
   cursor: pointer;
   transition: all var(--transition-base);
   min-height: var(--button-height-md);
+  box-shadow: var(--shadow-xs);
 }
 
 .theme-toggle:hover {
   background: var(--color-bg-muted);
-  border-color: var(--color-border);
   color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .theme-toggle:focus {

@@ -58,9 +58,9 @@ export default {
 .user-management {
   margin-bottom: var(--spacing-2xl);
   padding: var(--spacing-lg);
-  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   background-color: var(--color-bg-muted);
+  box-shadow: var(--shadow-xs);
 }
 
 .overview h2,

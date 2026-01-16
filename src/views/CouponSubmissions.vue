@@ -456,4 +456,253 @@ export default {
 .tiny {
   font-size: var(--font-size-xs);
 }
+
+/* ============================================
+   SURVEYJS THEME OVERRIDES
+   ============================================ */
+
+/* SurveyJS Container */
+.submissions :deep(.sv-root) {
+  background-color: transparent;
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+}
+
+/* SurveyJS Title */
+.submissions :deep(.sv-title) {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-lg);
+}
+
+/* SurveyJS Question Titles */
+.submissions :deep(.sv-question__title) {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-md);
+}
+
+/* SurveyJS Question Descriptions */
+.submissions :deep(.sv-question__description) {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* SurveyJS Input Fields */
+.submissions :deep(.sv-input),
+.submissions :deep(.sv-text),
+.submissions :deep(.sv-dropdown),
+.submissions :deep(.sv-comment),
+.submissions :deep(.sv-date),
+.submissions :deep(.sv-time) {
+  background-color: var(--color-bg-surface);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  padding: var(--spacing-sm) var(--spacing-md);
+  min-height: var(--button-height-md);
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition-base);
+}
+
+.submissions :deep(.sv-input:focus),
+.submissions :deep(.sv-text:focus),
+.submissions :deep(.sv-dropdown:focus),
+.submissions :deep(.sv-comment:focus),
+.submissions :deep(.sv-date:focus),
+.submissions :deep(.sv-time:focus) {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 84, 45, 0.1), var(--shadow-xs);
+}
+
+.submissions :deep(.sv-input:hover),
+.submissions :deep(.sv-text:hover),
+.submissions :deep(.sv-dropdown:hover),
+.submissions :deep(.sv-comment:hover) {
+  box-shadow: var(--shadow-sm);
+}
+
+/* SurveyJS Dropdown */
+.submissions :deep(.sv-dropdown) {
+  cursor: pointer;
+}
+
+.submissions :deep(.sv-dropdown__option) {
+  background-color: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.submissions :deep(.sv-dropdown__option:hover) {
+  background-color: var(--color-bg-secondary);
+}
+
+/* SurveyJS Textarea/Comment */
+.submissions :deep(.sv-comment) {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* SurveyJS Buttons */
+.submissions :deep(.sv-btn) {
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  min-height: var(--button-height-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-family: var(--font-family-base);
+}
+
+.submissions :deep(.sv-btn:hover) {
+  background-color: var(--color-primary-hover);
+}
+
+.submissions :deep(.sv-btn:active) {
+  transform: translateY(1px);
+}
+
+.submissions :deep(.sv-btn:disabled) {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+/* SurveyJS Navigation Buttons */
+.submissions :deep(.sv-nav-btn) {
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+}
+
+.submissions :deep(.sv-nav-btn:hover) {
+  background-color: var(--color-primary-hover);
+}
+
+/* SurveyJS Progress Bar */
+.submissions :deep(.sv-progress) {
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-full);
+  height: 8px;
+  margin-bottom: var(--spacing-xl);
+}
+
+.submissions :deep(.sv-progress__bar) {
+  background-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-base);
+}
+
+/* SurveyJS Error Messages */
+.submissions :deep(.sv-question__erbox) {
+  background-color: var(--color-error-light);
+  border-radius: var(--radius-md);
+  color: var(--color-error);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  box-shadow: 0 4px 12px rgba(176, 0, 32, 0.15);
+}
+
+/* SurveyJS Required Indicator */
+.submissions :deep(.sv-question__required-text) {
+  color: var(--color-error);
+}
+
+/* SurveyJS Help Text */
+.submissions :deep(.sv-question__description) {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* SurveyJS Panel */
+.submissions :deep(.sv-panel) {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* SurveyJS Page */
+.submissions :deep(.sv-page) {
+  background-color: transparent;
+}
+
+/* SurveyJS Radio/Checkbox */
+.submissions :deep(.sv-radio),
+.submissions :deep(.sv-checkbox) {
+  accent-color: var(--color-primary);
+}
+
+.submissions :deep(.sv-radio__label),
+.submissions :deep(.sv-checkbox__label) {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+}
+
+/* SurveyJS Select Base (for dropdowns) */
+.submissions :deep(.sv-selectbase) {
+  margin-top: var(--spacing-sm);
+}
+
+/* SurveyJS Select Base Item */
+.submissions :deep(.sv-selectbase__item) {
+  padding: var(--spacing-sm) 0;
+}
+
+/* SurveyJS Item Value (for radio/checkbox items) */
+.submissions :deep(.sv-item__control-label) {
+  color: var(--color-text-primary);
+}
+
+/* SurveyJS Item Hover */
+.submissions :deep(.sv-item:hover) {
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+/* Dark Mode Support */
+:root[data-theme="dark"] .submissions :deep(.sv-root),
+:root[data-theme="dark"] .submissions :deep(.sv-page),
+:root[data-theme="dark"] .submissions :deep(.sv-panel) {
+  background-color: transparent;
+  color: var(--color-text-primary);
+}
+
+:root[data-theme="dark"] .submissions :deep(.sv-input),
+:root[data-theme="dark"] .submissions :deep(.sv-text),
+:root[data-theme="dark"] .submissions :deep(.sv-dropdown),
+:root[data-theme="dark"] .submissions :deep(.sv-comment),
+:root[data-theme="dark"] .submissions :deep(.sv-date),
+:root[data-theme="dark"] .submissions :deep(.sv-time) {
+  background-color: var(--color-bg-surface);
+  border-color: var(--border-subtle);
+  color: var(--color-text-primary);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .submissions :deep(.sv-root),
+  :root:not([data-theme="light"]) .submissions :deep(.sv-page),
+  :root:not([data-theme="light"]) .submissions :deep(.sv-panel) {
+    background-color: transparent;
+    color: var(--color-text-primary);
+  }
+
+  :root:not([data-theme="light"]) .submissions :deep(.sv-input),
+  :root:not([data-theme="light"]) .submissions :deep(.sv-text),
+  :root:not([data-theme="light"]) .submissions :deep(.sv-dropdown),
+  :root:not([data-theme="light"]) .submissions :deep(.sv-comment),
+  :root:not([data-theme="light"]) .submissions :deep(.sv-date),
+  :root:not([data-theme="light"]) .submissions :deep(.sv-time) {
+    background-color: var(--color-bg-surface);
+    border-color: var(--border-subtle);
+    color: var(--color-text-primary);
+  }
+}
 </style>

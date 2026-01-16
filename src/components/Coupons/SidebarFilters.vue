@@ -179,15 +179,22 @@ export default {
 .sidebar-filters {
   width: 250px;
   padding: var(--spacing-lg);
-  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   background: var(--color-bg-surface);
   margin-bottom: var(--spacing-lg);
   transition: all var(--transition-slow);
+  box-shadow: var(--shadow-sm);
 }
 
 .sidebar-filters.collapsed {
-  padding-bottom: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--color-bg-primary);
+  box-shadow: var(--shadow-md);
+}
+
+:root[data-theme="dark"] .sidebar-filters.collapsed {
+  background: var(--clr-surface-dark-a30);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 }
 
 .filter-header {
@@ -204,13 +211,14 @@ export default {
 
 .toggle-btn {
   background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
+  border: none;
   padding: var(--spacing-xs) var(--spacing-md);
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   color: var(--color-secondary);
   cursor: pointer;
   transition: all var(--transition-fast);
+  box-shadow: var(--shadow-xs);
 }
 
 .toggle-btn:hover {
@@ -221,7 +229,7 @@ export default {
 .sidebar-filters.collapsed .toggle-btn {
   background: var(--color-primary);
   color: white;
-  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .filter-content {
@@ -243,17 +251,18 @@ export default {
 .filter-group select {
   width: 100%;
   padding: var(--spacing-sm);
-  border: 1px solid var(--color-border);
+  border: none;
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
   font-family: var(--font-family-base);
-  transition: border-color var(--transition-fast);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition-fast);
 }
 
 .filter-group input[type="text"]:focus,
 .filter-group select:focus {
   outline: none;
-  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 3px rgba(56, 66, 76, 0.1), var(--shadow-xs);
 }
 
 .collapse-enter-active,
@@ -343,22 +352,22 @@ export default {
 }
 .chip {
   padding: var(--spacing-xs) var(--spacing-sm);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-full, 9999px);
   background: var(--color-bg-surface);
   color: var(--color-text-primary);
   font-size: var(--font-size-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
+  box-shadow: var(--shadow-xs);
 }
 .chip:hover {
-  border-color: var(--color-primary);
   background: var(--color-bg-secondary);
+  box-shadow: var(--shadow-sm);
 }
 .chip.active {
   background: var(--color-primary);
   color: white;
-  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Responsive visibility utilities (scoped) */

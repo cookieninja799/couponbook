@@ -193,21 +193,20 @@ export default {
 
 /* Features Section */
 .features {
-  background-color: var(--color-slate);
+  background-color: var(--surface-2);
   padding: var(--spacing-2xl);
   text-align: center;
-  color: var(--color-text-on-slate);
+  color: var(--color-text-primary);
 }
 
 .features h2 {
-  color: var(--color-text-on-slate);
+  color: var(--color-text-primary);
   font-size: var(--font-size-4xl);
   margin-bottom: var(--spacing-xl);
 }
 
 .features p {
-  color: var(--color-text-on-slate);
-  opacity: 0.9;
+  color: var(--color-text-secondary);
 }
 
 .feature-cards {
@@ -218,10 +217,10 @@ export default {
 }
 
 .feature-cards .card {
-  background-color: var(--color-bg-surface);
+  background-color: var(--color-bg-primary);
   padding: var(--spacing-xl);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
   color: var(--color-text-primary);
 }
 

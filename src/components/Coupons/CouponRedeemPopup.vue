@@ -600,14 +600,14 @@ export default {
 
 .btn.ghost {
   background: transparent;
-  border: 1px solid var(--color-border);
   color: var(--color-text-primary);
+  box-shadow: var(--shadow-xs);
 }
 
 .btn.ghost:hover {
-  border-color: var(--color-border-dark);
   background: var(--color-bg-muted);
   color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .success {
@@ -638,8 +638,8 @@ export default {
   padding: var(--spacing-lg);
   border-radius: var(--radius-lg);
   background: var(--color-bg-surface);
-  border: 1px solid var(--color-border);
   color: var(--color-text-primary);
+  box-shadow: var(--shadow-xs);
 }
 
 .details-card h3 {

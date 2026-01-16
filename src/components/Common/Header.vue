@@ -163,18 +163,20 @@ export default {
 <style scoped>
 .auth-btn {
   background: none;
-  border: 1px solid var(--color-secondary);
+  border: none;
   color: var(--color-secondary);
   padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--transition-base);
   min-height: var(--button-height-md);
+  box-shadow: var(--shadow-xs);
 }
 
 .auth-btn:hover {
   background: var(--color-secondary);
   color: var(--color-text-on-secondary);
+  box-shadow: var(--shadow-sm);
 }
 
 .profile-btn {
@@ -201,7 +203,6 @@ export default {
   top: calc(100% + var(--spacing-xs));
   right: 0;
   background-color: var(--color-bg-surface);
-  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   list-style: none;
@@ -224,7 +225,7 @@ export default {
 }
 
 .profile-dropdown li:not(:last-child) {
-  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .dropdown-item {
@@ -266,10 +267,10 @@ export default {
 
 .app-header {
   background-color: var(--color-bg-primary);
-  border-bottom: 1px solid var(--border-subtle);
   padding: var(--spacing-lg) 0;
   position: relative;
   z-index: var(--z-index-fixed);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .header-container {
@@ -469,7 +470,7 @@ export default {
   }
 
   .profile-dropdown li:not(:last-child) {
-    border-bottom: 1px solid var(--border-subtle);
+    box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.06);
   }
 
   .dropdown-item {

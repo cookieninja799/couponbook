@@ -173,7 +173,6 @@ export default {
 }
 
 .group-card {
-  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
   width: 300px;
@@ -182,8 +181,13 @@ export default {
   flex-direction: column;
   justify-content: space-between;
   min-height: 350px;
-  transition: box-shadow var(--transition-base), border-color var(--transition-base),
-    transform var(--transition-base);
+  transition: box-shadow var(--transition-base), transform var(--transition-base);
+  box-shadow: var(--shadow-xs);
+}
+
+:root[data-theme="dark"] .group-card {
+  background-color: var(--clr-surface-dark-a30);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 }
 
 /* Highlight when user has an active coupon book for this group */
@@ -220,8 +224,7 @@ export default {
   background-color: var(--color-primary-light);
   background-color: rgba(242, 84, 45, 0.1);
   color: var(--color-primary);
-  border: 1px solid var(--color-primary-light);
-  border: 1px solid rgba(242, 84, 45, 0.2);
+  box-shadow: var(--shadow-xs);
 }
 
 .location {

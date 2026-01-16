@@ -353,10 +353,15 @@
   --color-secondary-dark: var(--clr-surface-a10);
   
   /* Background Colors - Dark Mode */
-  --color-bg-primary: var(--clr-surface-dark-a0);
-  --color-bg-secondary: var(--clr-surface-dark-a10);
-  --color-bg-muted: var(--clr-surface-dark-a0);
-  --color-bg-surface: var(--clr-surface-dark-a10);
+  --color-bg-primary: var(--clr-surface-dark-a10);
+  --color-bg-secondary: var(--clr-surface-dark-a0);
+  --color-bg-muted: var(--clr-surface-dark-a20);
+  --color-bg-surface: var(--clr-surface-dark-a20);
+
+  /* Surface layers - Dark Mode (elevated surfaces are lighter) */
+  --surface-0: var(--color-bg-secondary);
+  --surface-1: var(--color-bg-primary);
+  --surface-2: var(--color-bg-surface);
   
   /* Text Colors - Dark Mode (light text on dark backgrounds) */
   --color-text-primary: #E8EEF5;

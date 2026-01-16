@@ -807,10 +807,10 @@ export default {
 
 .dashboard-section {
   background: var(--color-bg-muted);
-  border: 1px solid var(--color-border-light);
   padding: var(--spacing-lg);
   border-radius: var(--radius-lg);
   margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-xs);
 }
 
 .edit-group form {
@@ -833,18 +833,18 @@ label {
 input,
 textarea {
   padding: var(--spacing-sm);
-  border: 1px solid var(--color-border);
+  border: none;
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
   font-family: var(--font-family-base);
-  transition: border-color var(--transition-fast);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition-fast);
 }
 
 input:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--color-secondary);
-  box-shadow: 0 0 0 3px rgba(56, 66, 76, 0.1);
+  box-shadow: 0 0 0 3px rgba(56, 66, 76, 0.1), var(--shadow-xs);
 }
 
 .submissions-board {
@@ -864,11 +864,11 @@ textarea:focus {
   flex: 1;
   min-width: 300px;
   background: var(--color-bg-primary);
-  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
   max-height: 500px;
   overflow-y: auto;
+  box-shadow: var(--shadow-sm);
 }
 
 @media (max-width: 768px) {
@@ -886,9 +886,9 @@ textarea:focus {
 .card {
   background: var(--color-bg-primary);
   padding: var(--spacing-md);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
+  box-shadow: var(--shadow-xs);
 }
 
 .card h3,

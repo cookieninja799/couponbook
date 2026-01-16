@@ -1115,7 +1115,6 @@ export default {
   padding: var(--spacing-md) var(--spacing-lg);
   border-radius: var(--radius-lg);
   background: var(--color-bg-surface);
-  border: 1px solid var(--color-border-light);
   color: var(--color-text-primary);
   box-shadow: var(--shadow-xs);
   transition: box-shadow var(--transition-base);
@@ -1163,10 +1162,10 @@ export default {
 
 .merchant-card {
   border-radius: var(--radius-xl);
-  border: 1px solid var(--color-border-light);
   padding: var(--spacing-md) var(--spacing-lg);
   background: var(--color-bg-surface);
   color: var(--color-text-primary);
+  box-shadow: var(--shadow-xs);
 }
 
 .merchant-card-header {
@@ -1205,11 +1204,11 @@ export default {
   height: 120px;
   border-radius: 50%;
   background: var(--surface-2);
-  border: 1px dashed var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  box-shadow: var(--shadow-xs);
 }
 
 .merchant-logo-placeholder .initials {
@@ -1243,15 +1242,15 @@ export default {
   justify-content: center;
   padding: var(--spacing-xs) var(--spacing-md);
   border-radius: var(--radius-full);
-  border: 1px solid var(--color-border-light);
   background: var(--color-bg-primary);
   font-size: var(--font-size-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
+  box-shadow: var(--shadow-xs);
 }
 
 .file-label:hover {
-  border-color: var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
 .file-label input[type="file"] {
@@ -1278,11 +1277,11 @@ export default {
 
 .link-list li {
   padding: var(--spacing-md) 0;
-  border-bottom: 1px solid var(--color-border-light);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .link-list li:last-child {
-  border-bottom: none;
+  box-shadow: none;
 }
 
 .link-label {
@@ -1323,13 +1322,13 @@ export default {
 .btn.tertiary {
   background: var(--color-bg-muted);
   color: var(--color-text-primary);
-  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-xs);
 }
 
 .btn.tertiary:hover:not(:disabled) {
   background: var(--color-bg-secondary);
   color: var(--color-text-primary);
-  border-color: var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn[disabled] {
@@ -1358,7 +1357,7 @@ export default {
 .tools-results-block {
   margin-top: var(--spacing-lg);
   padding-top: var(--spacing-md);
-  border-top: 1px solid var(--color-border-light);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .tiny-heading {
@@ -1396,11 +1395,11 @@ export default {
 
 .purchase-item {
   padding: var(--spacing-md) 0;
-  border-top: 1px solid var(--color-border-light);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .purchase-item:first-child {
-  border-top: none;
+  box-shadow: none;
 }
 
 .purchase-main {

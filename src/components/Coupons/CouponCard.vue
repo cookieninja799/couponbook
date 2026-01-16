@@ -196,16 +196,25 @@ export default {
   justify-content: space-between;
   width: 250px;
   padding: var(--spacing-lg);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background-color: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg-surface);
   text-align: center;
-  box-shadow: var(--shadow-xs);
-  transition: box-shadow var(--transition-base);
+  box-shadow: var(--shadow-md);
+  transition: box-shadow var(--transition-base), transform var(--transition-base);
 }
 
 .coupon-card:hover {
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+:root[data-theme="dark"] .coupon-card {
+  background-color: var(--clr-surface-dark-a30);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme="dark"] .coupon-card:hover {
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
 }
 
 .coupon-title {

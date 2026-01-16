@@ -102,10 +102,10 @@ export default {
 .coupon-filter {
   margin-bottom: var(--spacing-lg);
   padding: var(--spacing-lg);
-  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   text-align: left;
   background: var(--color-bg-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .filter-header {
@@ -141,18 +141,18 @@ export default {
 .filter-group select {
   width: 100%;
   padding: var(--spacing-sm);
-  border: 1px solid var(--color-border);
+  border: none;
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
   font-family: var(--font-family-base);
-  transition: border-color var(--transition-fast);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition-fast);
 }
 
 .filter-group input[type="text"]:focus,
 .filter-group select:focus {
   outline: none;
-  border-color: var(--color-secondary);
-  box-shadow: 0 0 0 3px rgba(56, 66, 76, 0.1);
+  box-shadow: 0 0 0 3px rgba(56, 66, 76, 0.1), var(--shadow-xs);
 }
 
 .filter-group input[type="checkbox"] {

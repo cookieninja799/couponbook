@@ -96,7 +96,6 @@
     width: min(92%, 640px);
     background: var(--overlay-card-bg);
     color: var(--overlay-card-fg);
-    border: 1px solid var(--overlay-card-border);
     border-radius: var(--overlay-radius);
     padding: 1.25rem 1.5rem;
     text-align: center;

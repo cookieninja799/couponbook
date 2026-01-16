@@ -479,7 +479,7 @@ h1 {
   padding: var(--spacing-xl);
   background: var(--color-error-light);
   background: rgba(176, 0, 32, 0.1);
-  border: 1px solid var(--color-error-light);
   border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(176, 0, 32, 0.15);
 }
 </style>

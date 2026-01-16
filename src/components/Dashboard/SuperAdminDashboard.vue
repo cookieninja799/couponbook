@@ -255,11 +255,11 @@ export default {
 
 .dashboard-section {
   background: var(--color-bg-muted);
-  border: 1px solid var(--color-border-light);
   padding: var(--spacing-lg);
   border-radius: var(--radius-lg);
   margin-bottom: var(--spacing-xl);
   color: var(--color-text-primary);
+  box-shadow: var(--shadow-xs);
 }
 
 .dashboard-section h2 {

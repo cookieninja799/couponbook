@@ -85,7 +85,8 @@ export default {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-xl);
+  padding: var(--spacing-lg) 0;
 }
 
 @media (max-width: 768px) {
@@ -94,7 +95,8 @@ export default {
   }
   
   .coupons-container {
-    gap: var(--spacing-md);
+    gap: var(--spacing-lg);
+    padding: var(--spacing-md) 0;
   }
 }
 </style>

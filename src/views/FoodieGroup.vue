@@ -639,7 +639,6 @@ export default {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   color: #FFFFFF !important;
-  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: var(--radius-md);
   text-decoration: none;
   transition: all var(--transition-slow);
@@ -656,7 +655,6 @@ export default {
   transform: translateY(-2px);
   background: rgba(255, 255, 255, 0.3);
   color: #FFFFFF !important;
-  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .container {
@@ -686,9 +684,9 @@ export default {
   background: var(--color-bg-muted);
   padding: var(--spacing-lg);
   text-align: center;
-  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   margin-bottom: var(--spacing-lg);
+  box-shadow: var(--shadow-xs);
 }
 
 .purchase-btn {

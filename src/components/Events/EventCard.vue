@@ -89,9 +89,9 @@ export default {
   width: 300px;
   margin-bottom: var(--spacing-2xl);
   padding: var(--spacing-lg);
-  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   background: var(--color-bg-muted);
+  box-shadow: var(--shadow-sm);
 }
 
 .event-details h2 {

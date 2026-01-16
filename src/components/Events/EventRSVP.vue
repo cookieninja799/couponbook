@@ -57,9 +57,9 @@ export default {
   padding: var(--spacing-lg);
   max-width: 400px;
   margin: var(--spacing-2xl) auto;
-  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   background: var(--color-bg-surface);
+  box-shadow: var(--shadow-sm);
 }
 .form-group {
   margin-bottom: var(--spacing-lg);
@@ -73,15 +73,16 @@ label {
 input, select {
   width: 100%;
   padding: var(--spacing-sm);
-  border: 1px solid var(--color-border);
+  border: none;
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
   font-family: var(--font-family-base);
-  transition: border-color var(--transition-fast);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition-fast);
 }
 input:focus, select:focus {
   outline: none;
-  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 3px rgba(56, 66, 76, 0.1), var(--shadow-xs);
 }
 button {
   margin-right: var(--spacing-sm);

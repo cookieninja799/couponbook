@@ -170,10 +170,10 @@ export default {
   text-align: center;
   max-width: 400px;
   margin: var(--spacing-2xl) auto;
-  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   background: var(--color-bg-surface);
   color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .coupon-redemption h2 {
@@ -196,20 +196,20 @@ export default {
   background: var(--color-error-light);
   background: rgba(176, 0, 32, 0.1);
   color: var(--color-error-dark);
-  border: 1px solid var(--color-error-light);
+  box-shadow: 0 4px 12px rgba(176, 0, 32, 0.15);
 }
 .banner-success {
   background: var(--color-success-light);
   background: rgba(40, 167, 69, 0.1);
   color: var(--color-success-dark);
-  border: 1px solid var(--color-success-light);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);
 }
 .coupon-details {
-  border: 1px solid var(--border-subtle);
   padding: var(--spacing-lg);
   margin-bottom: var(--spacing-lg);
   background: var(--color-bg-muted);
   color: var(--color-text-primary);
+  box-shadow: var(--shadow-xs);
 }
 .coupon-description {
   font-size: var(--font-size-lg);
