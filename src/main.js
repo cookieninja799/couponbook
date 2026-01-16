@@ -5,6 +5,7 @@ import router from './router'
 import store from './store'
 import { surveyPlugin } from 'survey-vue3-ui'
 import 'survey-core/survey-core.css'
+import './assets/styles/surveyjs-theme.css'
 import 'primeicons/primeicons.css'
 import './assets/styles/global.css'
 

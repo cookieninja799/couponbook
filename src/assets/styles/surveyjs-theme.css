@@ -1,0 +1,320 @@
+/* SurveyJS theme overrides to match app design tokens */
+
+/* Map SurveyJS design tokens to app theme variables */
+:root {
+  --sjs-font-family: var(--font-family-base);
+  --sjs-font-size: var(--font-size-base);
+  --sjs-base-unit: 8px;
+
+  --sjs-general-backcolor: var(--surface-1);
+  --sjs-general-backcolor-dim: var(--color-bg-secondary);
+  --sjs-general-forecolor: var(--color-text-primary);
+  --sjs-general-forecolor-light: var(--color-text-secondary);
+  --sjs-general-dim-forecolor: var(--color-text-secondary);
+  --sjs-general-dim-forecolor-light: var(--color-text-muted);
+
+  --sjs-primary-backcolor: var(--color-primary);
+  --sjs-primary-forecolor: var(--color-text-on-primary);
+
+  --sjs-border-default: var(--border-subtle);
+  --sjs-corner-radius: var(--radius-md);
+  --sjs-shadow-small: var(--shadow-sm);
+
+  --sjs-page-bg-color: var(--surface-1);
+  --sjs-questionpanel-backcolor: var(--surface-1);
+  --sjs-questionpanel-hovercolor: var(--color-bg-secondary);
+
+  --sjs-editor-background: var(--surface-1);
+  --sjs-editorpanel-backcolor: var(--surface-1);
+
+  --sjs-font-pagetitle-color: var(--color-text-primary);
+  --sjs-font-questiontitle-color: var(--color-text-primary);
+  --sjs-font-questiondescription-color: var(--color-text-secondary);
+}
+
+:root[data-theme="dark"] {
+  --sjs-general-backcolor: var(--surface-1);
+  --sjs-general-backcolor-dim: var(--color-bg-secondary);
+  --sjs-general-forecolor: var(--color-text-primary);
+  --sjs-general-forecolor-light: var(--color-text-secondary);
+  --sjs-general-dim-forecolor: var(--color-text-secondary);
+  --sjs-general-dim-forecolor-light: var(--color-text-muted);
+
+  --sjs-primary-backcolor: var(--color-primary);
+  --sjs-primary-forecolor: var(--color-text-on-primary);
+
+  --sjs-border-default: var(--border-subtle);
+  --sjs-page-bg-color: var(--surface-1);
+  --sjs-questionpanel-backcolor: var(--surface-1);
+  --sjs-questionpanel-hovercolor: var(--color-bg-secondary);
+  --sjs-editor-background: var(--surface-1);
+  --sjs-editorpanel-backcolor: var(--surface-1);
+  --sjs-font-pagetitle-color: var(--color-text-primary);
+  --sjs-font-questiontitle-color: var(--color-text-primary);
+  --sjs-font-questiondescription-color: var(--color-text-secondary);
+}
+
+.sd-root-modern,
+.sd-container-modern,
+.sd-body {
+  font-family: var(--font-family-base);
+  color: var(--color-text-primary);
+  background: transparent;
+}
+
+.sd-container-modern {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+}
+
+.sd-page {
+  background: transparent;
+}
+
+.sd-title,
+.sd-page__title {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-semibold);
+}
+
+.sd-container-modern__title {
+  color: var(--color-text-primary);
+}
+
+.sd-description,
+.sd-question__description {
+  color: var(--color-text-secondary);
+}
+
+.sd-question__title {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.sd-question__title--required {
+  color: var(--color-text-primary);
+}
+
+.sd-question__title .sv-string-viewer {
+  color: var(--color-text-primary);
+}
+
+.sd-element--with-frame,
+.sd-question--with-frame {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+}
+
+.sd-element--with-frame .sd-question__title,
+.sd-question--with-frame .sd-question__title {
+  margin-bottom: var(--spacing-sm);
+}
+
+.sd-input,
+.sd-text,
+.sd-comment,
+.sd-dropdown,
+.sd-selectbase,
+.sd-textarea,
+.sd-input.sd-dropdown {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-1);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.sd-dropdown .sv-svg-icon,
+.sd-selectbase .sv-svg-icon,
+.sd-input .sv-svg-icon,
+.sd-editor-button-item .sv-svg-icon {
+  fill: currentColor;
+  color: var(--color-text-secondary);
+}
+
+.sd-dropdown .sd-editor-button-item,
+.sd-selectbase .sd-editor-button-item {
+  color: var(--color-text-secondary);
+}
+
+.sd-editor-button-item:hover,
+.sd-editor-button-item:focus-visible {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.sd-input::placeholder,
+.sd-comment::placeholder,
+.sd-textarea::placeholder {
+  color: var(--text-3);
+}
+
+.sd-input:focus,
+.sd-input:focus-visible,
+.sd-text:focus,
+.sd-text:focus-visible,
+.sd-comment:focus,
+.sd-comment:focus-visible,
+.sd-dropdown:focus,
+.sd-dropdown:focus-visible,
+.sd-textarea:focus,
+.sd-textarea:focus-visible {
+  outline: none;
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 0 3px rgba(242, 84, 45, 0.15);
+}
+
+.sd-question--error .sd-input,
+.sd-question--error .sd-text,
+.sd-question--error .sd-comment,
+.sd-question--error .sd-dropdown,
+.sd-question--error .sd-textarea {
+  border-color: var(--color-error);
+}
+
+.sd-question__required-text {
+  color: var(--color-error);
+}
+
+.sd-btn {
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  min-height: var(--button-height-md);
+  transition: all var(--transition-base);
+}
+
+.sd-navigation__next-btn,
+.sd-navigation__complete-btn {
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  border: none;
+}
+
+.sd-navigation__next-btn:hover:not(:disabled),
+.sd-navigation__complete-btn:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.sd-navigation__prev-btn {
+  background: var(--color-secondary);
+  color: var(--color-text-on-secondary);
+  border: none;
+}
+
+.sd-navigation__prev-btn:hover:not(:disabled) {
+  background: var(--color-secondary-hover);
+}
+
+.sd-btn:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.sd-progress {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-full);
+}
+
+.sd-progress__bar {
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+}
+
+.sd-progress__text {
+  color: var(--color-text-secondary);
+}
+
+.sd-progress-buttons__connector {
+  background-color: var(--border-subtle);
+  opacity: 1;
+}
+
+.sd-progress-buttons__list-container,
+.sd-progress-buttons__list {
+  background: transparent;
+}
+
+.sd-progress-buttons__list li:not(:first-child) > .sd-progress-buttons__connector {
+  background-color: var(--border-subtle);
+  opacity: 1;
+}
+
+.sd-progress-buttons__list li .sd-progress-buttons__button {
+  color: var(--color-text-secondary);
+}
+
+.sd-progress-buttons__list li .sd-progress-buttons__button .sd-progress-buttons__button-content {
+  background-color: var(--color-bg-secondary);
+  border-color: var(--border-subtle);
+  opacity: 1;
+}
+
+.sd-progress-buttons__list li:hover .sd-progress-buttons__button {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-surface);
+}
+
+.sd-progress-buttons__list li:hover .sd-progress-buttons__button .sd-progress-buttons__button-content {
+  background-color: var(--color-bg-surface);
+  border-color: var(--color-primary);
+}
+
+.sd-progress-buttons__list .sd-progress-buttons__list-element--passed .sd-progress-buttons__button,
+.sd-progress-buttons__list .sd-progress-buttons__list-element--passed .sd-progress-buttons__button .sd-progress-buttons__button-content,
+.sd-progress-buttons__list .sd-progress-buttons__list-element--current .sd-progress-buttons__button .sd-progress-buttons__button-content {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  opacity: 1;
+}
+
+.sd-progress-buttons__list .sd-progress-buttons__list-element--passed .sd-progress-buttons__button {
+  color: var(--color-text-on-primary);
+}
+
+.sd-progress-buttons__list .sd-progress-buttons__list-element--current .sd-progress-buttons__button {
+  background-color: var(--color-bg-surface);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.sd-progress-buttons__page-title {
+  color: var(--color-text-secondary) !important;
+  font-size: var(--font-size-sm);
+}
+
+/* Dark mode tweaks to override SurveyJS defaults */
+:root[data-theme="dark"] .sd-container-modern {
+  background: var(--surface-1);
+  border-color: var(--border-subtle);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme="dark"] .sd-element--with-frame,
+:root[data-theme="dark"] .sd-question--with-frame {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sd-container-modern {
+    background: var(--surface-1);
+    border-color: var(--border-subtle);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  }
+
+  :root:not([data-theme="light"]) .sd-element--with-frame,
+  :root:not([data-theme="light"]) .sd-question--with-frame {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  }
+}
