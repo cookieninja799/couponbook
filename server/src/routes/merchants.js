@@ -201,6 +201,25 @@ router.delete('/:id', async (req, res, next) => {
 });
 
 // ────────────────────────────────────────────────────────────────
+// Multer error handler middleware
+// Catches MulterError instances and converts them to user-friendly JSON responses
+// ────────────────────────────────────────────────────────────────
+function handleMulterError(err, req, res, next) {
+  if (err && err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ error: 'File too large. Maximum size is 5 MB.' });
+  }
+  if (err && err.code === 'LIMIT_UNEXPECTED_FILE') {
+    return res.status(400).json({ error: 'Unexpected file field. Use "file" as the field name.' });
+  }
+  // If it's a multer error or any other file upload error, handle it
+  if (err) {
+    return res.status(400).json({ error: err.message || 'File upload error' });
+  }
+  // If no error, pass to next middleware
+  next();
+}
+
+// ────────────────────────────────────────────────────────────────
 // POST /api/v1/merchants/:id/logo
 // Upload/update logo for a merchant (owner only)
 // Field name: "file" in multipart/form-data
@@ -210,6 +229,7 @@ router.post(
   auth(),               // ⬅️ verify Cognito JWT → sets req.user
   resolveLocalUser,
   upload.single('file'),
+  handleMulterError,    // ⬅️ handle multer errors (file size, etc.)
   async (req, res, next) => {
     const merchantId = req.params.id;
     console.log('📦  POST /api/v1/merchants/' + merchantId + '/logo');
@@ -233,10 +253,18 @@ router.post(
         return res.status(403).json({ error: 'Forbidden: You do not own this merchant' });
       }
 
-      // 4) If S3 is not configured in dev, just fake a URL so the UI works
+      // 4) Validate file type (must be done before S3 check to ensure validation always runs)
+      const { mimetype, buffer, originalname } = req.file;
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
+      if (!allowedTypes.includes(mimetype)) {
+        return res.status(400).json({ error: 'Unsupported file type' });
+      }
+
+      // 5) If S3 is not configured in dev, just fake a URL so the UI works
       if (!LOGO_BUCKET || !LOGO_BASE_URL) {
         console.warn('📦  Logo bucket/base URL not configured – skipping S3, dev fake URL only');
-        const fakeUrl = `/dev-merchant-logo/${merchantId}.png`;
+        const ext = getExtensionFromMime(mimetype);
+        const fakeUrl = `/dev-merchant-logo/${merchantId}.${ext}`;
 
         const [updatedDev] = await db
           .update(merchant)
@@ -253,12 +281,7 @@ router.post(
         });
       }
 
-      // 5) Real S3 upload path
-      const { mimetype, buffer, originalname } = req.file;
-      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
-      if (!allowedTypes.includes(mimetype)) {
-        return res.status(400).json({ error: 'Unsupported file type' });
-      }
+      // 6) Real S3 upload path
 
       const ext = getExtensionFromMime(mimetype);
       const safeName = originalname
