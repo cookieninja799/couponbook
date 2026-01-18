@@ -455,7 +455,7 @@ export default {
     width: 100%;
     box-shadow: none;
     border: none;
-    border-left: 2px solid var(--border-subtle);
+    box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.06);
     border-radius: 0;
     background-color: var(--color-bg-muted);
     padding: var(--spacing-xs) 0;

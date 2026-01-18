@@ -140,7 +140,6 @@ export default {
   width: 80px;
   object-fit: contain;
   border-radius: 50%;
-  border: 2px solid var(--border-subtle);
   box-shadow: var(--shadow-sm);
   margin-bottom: var(--spacing-sm);
   background-color: #FFFFFF !important;

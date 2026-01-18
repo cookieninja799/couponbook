@@ -182,7 +182,7 @@ export default {
   justify-content: space-between;
   min-height: 350px;
   transition: box-shadow var(--transition-base), transform var(--transition-base);
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-card);
 }
 
 :root[data-theme="dark"] .group-card {
@@ -192,10 +192,9 @@ export default {
 
 /* Highlight when user has an active coupon book for this group */
 .group-card--joined {
-  border: 2px solid var(--color-primary);
   box-shadow:
-    0 0 0 1px rgba(242, 84, 45, 0.08),
-    var(--shadow-md);
+    0 0 0 2px rgba(242, 84, 45, 0.35),
+    var(--shadow-card-hover);
   transform: translateY(-2px);
 }
 

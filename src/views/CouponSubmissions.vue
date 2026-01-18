@@ -506,7 +506,7 @@ export default {
   font-size: var(--font-size-base);
   padding: var(--spacing-sm) var(--spacing-md);
   min-height: var(--button-height-md);
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-input);
   transition: all var(--transition-base);
 }
 
@@ -517,7 +517,7 @@ export default {
 .submissions :deep(.sv-date:focus),
 .submissions :deep(.sv-time:focus) {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(242, 84, 45, 0.1), var(--shadow-xs);
+  box-shadow: var(--shadow-input-focus);
 }
 
 .submissions :deep(.sv-input:hover),
@@ -682,7 +682,7 @@ export default {
 :root[data-theme="dark"] .submissions :deep(.sv-date),
 :root[data-theme="dark"] .submissions :deep(.sv-time) {
   background-color: var(--color-bg-surface);
-  border-color: var(--border-subtle);
+  box-shadow: var(--shadow-input);
   color: var(--color-text-primary);
 }
 
@@ -701,7 +701,7 @@ export default {
   :root:not([data-theme="light"]) .submissions :deep(.sv-date),
   :root:not([data-theme="light"]) .submissions :deep(.sv-time) {
     background-color: var(--color-bg-surface);
-    border-color: var(--border-subtle);
+    box-shadow: var(--shadow-input);
     color: var(--color-text-primary);
   }
 }

@@ -255,14 +255,14 @@ export default {
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
   font-family: var(--font-family-base);
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-input);
   transition: box-shadow var(--transition-fast);
 }
 
 .filter-group input[type="text"]:focus,
 .filter-group select:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(56, 66, 76, 0.1), var(--shadow-xs);
+  box-shadow: var(--shadow-input-focus);
 }
 
 .collapse-enter-active,

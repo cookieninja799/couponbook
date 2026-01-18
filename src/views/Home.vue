@@ -217,10 +217,10 @@ export default {
 }
 
 .feature-cards .card {
-  background-color: var(--color-bg-primary);
+  background-color: var(--surface-1);
   padding: var(--spacing-xl);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-card);
   color: var(--color-text-primary);
 }
 
