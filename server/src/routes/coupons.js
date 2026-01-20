@@ -95,7 +95,7 @@ router.post('/', auth(), resolveLocalUser, async (req, res, next) => {
       return res.status(400).json({ error: 'merchant_id is required' });
     }
 
-    // 🔐 Authz: admin OR merchant owner
+    // 🔐 Authz: super admin OR merchant owner
     const allowed = await canManageMerchant(req.dbUser, merchant_id);
     if (!allowed) {
       return res.status(403).json({ error: 'Forbidden: You do not own this merchant' });
@@ -273,7 +273,7 @@ router.patch('/:id', auth(), resolveLocalUser, async (req, res, next) => {
   try {
     const couponId = req.params.id;
 
-    // 🔐 Authz: admin OR merchant owner
+    // 🔐 Authz: super admin OR merchant owner
     const allowed = await canManageCoupon(req.dbUser, couponId);
     if (!allowed) {
       return res.status(403).json({ error: 'Forbidden: You do not own this coupon' });
@@ -319,7 +319,7 @@ router.delete('/:id', auth(), resolveLocalUser, async (req, res, next) => {
   try {
     const couponId = req.params.id;
 
-    // 🔐 Authz: admin OR merchant owner
+    // 🔐 Authz: super admin OR merchant owner
     const allowed = await canManageCoupon(req.dbUser, couponId);
     if (!allowed) {
       return res.status(403).json({ error: 'Forbidden: You do not own this coupon' });

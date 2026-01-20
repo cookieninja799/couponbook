@@ -10,7 +10,6 @@ import AuthCallback from '@/views/AuthCallback.vue'
 import CouponSubmissions from '@/views/CouponSubmissions.vue'
 
 // Import dashboards directly from their component paths:
-import AdminDashboard from '../components/Dashboard/AdminDashboard.vue'
 import FoodieGroupDashboard from '../components/Dashboard/FoodieGroupDashboard.vue'
 import SuperAdminDashboard from '../components/Dashboard/SuperAdminDashboard.vue'
 
@@ -57,14 +56,14 @@ const routes = [
   },
   // Dashboard routes (for testing purposes)
   {
-    path: '/dashboard/admin',
-    name: 'AdminDashboard',
-    component: AdminDashboard
+    path: '/dashboard/foodie-group',
+    redirect: '/profile'
   },
   {
-    path: '/dashboard/foodie-group',
+    path: '/dashboard/foodie-group/:groupId',
     name: 'FoodieGroupDashboard',
-    component: FoodieGroupDashboard
+    component: FoodieGroupDashboard,
+    props: true
   },
   {
     path: '/dashboard/super-admin',

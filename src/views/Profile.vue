@@ -326,7 +326,7 @@
         </template>
 
         <!-- FOODIE GROUP ADMIN VIEW -->
-        <template v-else-if="role === 'foodie_group_admin'">
+        <template v-else-if="adminMemberships.length > 0 && role !== 'super_admin'">
           <section class="section-card">
             <h2>Foodie Group Admin</h2>
             <p class="muted">
@@ -340,7 +340,11 @@
                 we’ll show a summary of your groups and key metrics here.
               </p>
 
-              <button class="btn primary" @click="goToFoodieGroupDashboard">
+              <button
+                class="btn primary"
+                data-test="foodie-group-dashboard-btn"
+                @click="goToFoodieGroupDashboard"
+              >
                 Go to Foodie Group Dashboard
               </button>
               <p class="muted tiny">Access is limited to approved admins.</p>
@@ -510,7 +514,7 @@
         </template>
 
         <!-- Admin View -->
-        <section v-else-if="role === 'admin'" class="section-card admin-card">
+        <section v-else-if="role === 'super_admin'" class="section-card admin-card">
           <h2>Admin View</h2>
           <p class="subtitle">
             View high-level metrics, manage users, and oversee system-wide settings.
@@ -520,7 +524,11 @@
             <div class="role-card">
               <h3>Super Admin Dashboard</h3>
               <p>Access advanced tools and metrics for the entire platform.</p>
-              <button class="btn primary" @click="goToAdminDashboard">
+              <button
+                class="btn primary"
+                data-test="super-admin-dashboard-btn"
+                @click="goToAdminDashboard"
+              >
                 <i class="pi pi-cog icon-spacing-sm"></i>Go to Super Admin Dashboard
               </button>
               <p class="muted tiny">
@@ -565,6 +573,8 @@ export default {
         activeCouponBooks: null,
         purchases: [],
       },
+      adminMemberships: [],
+      adminMembershipsLoading: false,
 
       // logo upload state
       uploadingLogoId: null,
@@ -599,6 +609,8 @@ export default {
           return "Customer";
         case "foodie_group_admin":
           return "Foodie Group Admin";
+        case "super_admin":
+          return "Super Admin";
         default:
           return null;
       }
@@ -632,6 +644,7 @@ export default {
     }
 
     await this.loadUserFromApi();
+    await this.loadAdminMemberships();
   },
 
   methods: {
@@ -673,9 +686,45 @@ export default {
       }
     },
 
+    async loadAdminMemberships() {
+      this.adminMembershipsLoading = true;
+      try {
+        const token = await getAccessToken();
+        const res = await fetch("/api/v1/groups/my/admin-memberships", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          this.adminMemberships = Array.isArray(data) ? data : [];
+        }
+      } catch (err) {
+        console.error("Error fetching /api/v1/groups/my/admin-memberships", err);
+      } finally {
+        this.adminMembershipsLoading = false;
+      }
+    },
+
     // 🔹 Foodie Group Admin → dashboard
     goToFoodieGroupDashboard() {
-      this.$router.push({ name: 'FoodieGroupDashboard' });
+      if (!this.adminMemberships.length) {
+        return;
+      }
+
+      const lastGroupId = localStorage.getItem("lastAdminGroupId");
+      const validLast = this.adminMemberships.find(
+        (g) => g.groupId === lastGroupId
+      );
+
+      const targetGroupId = validLast
+        ? validLast.groupId
+        : this.adminMemberships[0].groupId;
+
+      this.$router.push({
+        name: "FoodieGroupDashboard",
+        params: { groupId: targetGroupId },
+      });
     },
 
     // 🔹 Super Admin → dashboard

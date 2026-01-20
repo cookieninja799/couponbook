@@ -50,6 +50,23 @@
             {{ role || 'foodie_group_admin' }}
           </span>
         </div>
+
+        <div v-if="adminMemberships.length > 1" class="group-selector">
+          <label for="groupSelector">Managing:</label>
+          <select
+            id="groupSelector"
+            :value="groupId"
+            @change="switchGroup($event.target.value)"
+          >
+            <option
+              v-for="g in adminMemberships"
+              :key="g.groupId"
+              :value="g.groupId"
+            >
+              {{ g.name }}
+            </option>
+          </select>
+        </div>
       </header>
 
       <!-- Edit Group Section -->
@@ -214,9 +231,8 @@ export default {
       userLoading: false,
       userError: null,
 
+      groupId: null,
       group: {
-        // Hard-coded for now; later you’ll infer this from membership / API
-        id: "28e7dccf-4a8f-4894-b50a-0f439958e9d8",
         name: "",
         description: "",
         location: "",
@@ -225,6 +241,9 @@ export default {
       },
       groupLoaded: false,
       groupError: null,
+
+      adminMemberships: [],
+      membershipsLoading: false,
 
       pendingCoupons: [],
       pendingLoading: false,
@@ -259,7 +278,26 @@ export default {
     },
   },
 
+  watch: {
+    "$route.params.groupId": {
+      handler(newGroupId) {
+        if (newGroupId && newGroupId !== this.groupId) {
+          this.groupId = newGroupId;
+          this.reloadAllGroupData();
+        }
+      },
+      immediate: false,
+    },
+  },
+
   async created() {
+    this.groupId = this.$route.params.groupId;
+
+    if (!this.groupId) {
+      this.$router.replace('/profile');
+      return;
+    }
+
     // If not logged in, do not attempt API calls – let the gate render.
     if (!this.isAuthenticated) {
       this.authChecked = true;
@@ -267,7 +305,8 @@ export default {
     }
 
     try {
-      await Promise.all([this.loadCurrentUser(), this.loadGroupDetails()]);
+      await Promise.all([this.loadCurrentUser(), this.loadAdminMemberships()]);
+      await this.loadGroupDetails();
       if (this.notAuthorized) return;
 
       await Promise.all([
@@ -288,6 +327,44 @@ export default {
       this.notAuthorized = true;
       if (msg) {
         this.notAuthorizedMessage = msg;
+      }
+      this.authChecked = true;
+    },
+
+    async loadAdminMemberships() {
+      this.membershipsLoading = true;
+      try {
+        const token = await getAccessToken();
+        const res = await fetch(`${API_BASE}/groups/my/admin-memberships`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          this.adminMemberships = Array.isArray(data) ? data : [];
+        }
+      } catch (err) {
+        console.error("[FoodieGroupDashboard] loadAdminMemberships error", err);
+      } finally {
+        this.membershipsLoading = false;
+      }
+    },
+
+    switchGroup(newGroupId) {
+      localStorage.setItem("lastAdminGroupId", newGroupId);
+      this.$router.push({
+        name: "FoodieGroupDashboard",
+        params: { groupId: newGroupId },
+      });
+    },
+
+    async reloadAllGroupData() {
+      this.authChecked = false;
+      this.notAuthorized = false;
+      this.groupLoaded = false;
+      this.groupError = null;
+      await this.loadGroupDetails();
+      if (!this.notAuthorized) {
+        await Promise.all([this.loadPendingCoupons(), this.loadActiveCoupons()]);
       }
       this.authChecked = true;
     },
@@ -336,9 +413,12 @@ export default {
     async loadGroupDetails() {
       this.groupLoaded = false;
       this.groupError = null;
+      if (!this.groupId) {
+        return;
+      }
       try {
         const token = await getAccessToken();
-        const res = await fetch(`${API_BASE}/groups/${this.group.id}`, {
+        const res = await fetch(`${API_BASE}/groups/${this.groupId}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
@@ -397,7 +477,7 @@ export default {
 
     // Fetch pending submissions filtered by groupId (auth-protected)
     async loadPendingCoupons() {
-      if (this.notAuthorized) return;
+      if (this.notAuthorized || !this.groupId) return;
 
       this.pendingLoading = true;
       this.pendingError = null;
@@ -405,7 +485,7 @@ export default {
         const token = await getAccessToken();
         const res = await fetch(
           `${API_BASE}/coupon-submissions?groupId=${encodeURIComponent(
-            this.group.id
+            this.groupId
           )}`,
           {
             headers: {
@@ -471,14 +551,14 @@ export default {
 
     // Fetch active coupons & update stats
     async loadActiveCoupons() {
-      if (this.notAuthorized) return;
+      if (this.notAuthorized || !this.groupId) return;
 
       this.activeLoading = true;
       this.activeError = null;
       try {
         const token = await getAccessToken();
         const res = await fetch(
-          `${API_BASE}/coupons?groupId=${encodeURIComponent(this.group.id)}`,
+          `${API_BASE}/coupons?groupId=${encodeURIComponent(this.groupId)}`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           }
@@ -689,7 +769,7 @@ export default {
 
     // Save group details to backend
     async saveGroupDetails() {
-      if (!this.group || !this.group.id) return;
+      if (!this.groupId) return;
 
       try {
         const token = await getAccessToken();
@@ -712,7 +792,7 @@ export default {
           },
         };
 
-        const res = await fetch(`${API_BASE}/groups/${this.group.id}`, {
+        const res = await fetch(`${API_BASE}/groups/${this.groupId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -783,6 +863,29 @@ export default {
   font-size: var(--font-size-sm);
 }
 
+.group-selector {
+  margin-top: var(--spacing-md);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: var(--color-bg-muted);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-full);
+}
+
+.group-selector label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.group-selector select {
+  background: var(--color-bg-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
 .user-name {
   font-weight: var(--font-weight-semibold);
 }
@@ -839,6 +942,20 @@ textarea {
   font-family: var(--font-family-base);
   box-shadow: var(--shadow-xs);
   transition: box-shadow var(--transition-fast);
+}
+
+.edit-group input,
+.edit-group textarea {
+  background: var(--color-bg-surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.12);
+  color: var(--color-text-primary);
+}
+
+.edit-group input:focus,
+.edit-group textarea:focus {
+  outline: none;
+  background: var(--color-bg-surface);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(242, 84, 45, 0.2);
 }
 
 input:focus,

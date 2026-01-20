@@ -275,6 +275,53 @@ router.post('/:id/test-purchase', auth(), async (req, res, next) => {
 });
 
 
+// ─── GET /api/v1/groups/my/admin-memberships ─────────────────────
+// Return foodie group admin memberships for the current user
+router.get('/my/admin-memberships', auth(), async (req, res, next) => {
+  console.log('📦  GET /api/v1/groups/my/admin-memberships');
+
+  try {
+    const sub = req.user && req.user.sub;
+    if (!sub) {
+      console.warn('📦  /groups/my/admin-memberships called without Cognito sub');
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const [dbUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.cognitoSub, sub));
+
+    if (!dbUser) {
+      console.warn('📦  No local user row for sub', sub);
+      return res.status(403).json({ error: 'User not registered.' });
+    }
+
+    const rows = await db
+      .select({
+        groupId: foodieGroupMembership.groupId,
+        name: foodieGroup.name,
+      })
+      .from(foodieGroupMembership)
+      .innerJoin(
+        foodieGroup,
+        eq(foodieGroup.id, foodieGroupMembership.groupId)
+      )
+      .where(
+        and(
+          eq(foodieGroupMembership.userId, dbUser.id),
+          eq(foodieGroupMembership.role, 'foodie_group_admin'),
+          isNull(foodieGroupMembership.deletedAt)
+        )
+      );
+
+    return res.json(rows);
+  } catch (err) {
+    console.error('📦  error in GET /groups/my/admin-memberships', err);
+    next(err);
+  }
+});
+
 // ─── GET /api/v1/groups/my-purchases ─────────────────────────────
 // Return all coupon-book purchases for the currently logged-in user
 router.get('/my/purchases', auth(), async (req, res, next) => {
@@ -334,7 +381,7 @@ async function ensureFoodieGroupMembership(userId, groupId) {
     );
 
   // If membership exists:
-  // - Do nothing (we don't want to overwrite an admin's role,
+  // - Do nothing (we don't want to overwrite a group admin's role,
   //   or downgrade foodie_group_admin → customer)
   if (existing) {
     // Optional: if you ever use soft delete via deletedAt, you can “restore” it here:

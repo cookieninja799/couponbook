@@ -5,7 +5,7 @@
     <section v-if="!isAuthenticated" class="section-card signin-card">
       <h1>Submit a New Coupon</h1>
       <p class="muted">
-        You need to be signed in as a merchant or admin to submit coupons.
+        You need to be signed in as a merchant or super admin to submit coupons.
       </p>
       <button class="btn primary" @click="signInNow">
         <i class="pi pi-sign-in icon-spacing-sm"></i>Sign In to Continue
@@ -89,7 +89,7 @@ const WEBHOOK_URL = 'https://n8n.vivaspot.com/webhook/7d15576d-01a3-49c8-b0f4-6c
 const TEST_EMAIL = 'thommy@ivalu8.com'
 
 // Roles allowed to access this page
-const ALLOWED_ROLES = ['admin', 'merchant', 'foodie_group_admin']
+const ALLOWED_ROLES = ['super_admin', 'merchant', 'foodie_group_admin']
 
 export default {
   name: 'CouponSubmissions',
@@ -124,7 +124,7 @@ export default {
 
     noMerchants() {
       // Show empty state if user is foodie_group_admin with no merchants
-      // (admin and merchant roles always have access regardless of merchants)
+      // (super admin and merchant roles always have access regardless of merchants)
       if (this.role === 'foodie_group_admin' && this.merchants.length === 0) {
         return true
       }

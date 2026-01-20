@@ -147,11 +147,11 @@ describe('Coupon Submission Gating (API)', () => {
     expect(res.body.state).toBe('pending');
   });
 
-  it('returns 201 when admin submits for any merchant', async () => {
+  it('returns 201 when super admin submits for any merchant', async () => {
     const group = await seedHelpers.createFoodieGroup(db);
 
     const adminUser = await seedHelpers.createUser(db, {
-      role: 'admin',
+      role: 'super_admin',
       cognitoSub: 'admin-sub',
       email: 'admin@example.com',
     });
@@ -171,7 +171,7 @@ describe('Coupon Submission Gating (API)', () => {
         merchant_id: notOwned.id,
         submission_data: {
           title: 'Admin Coupon',
-          description: 'Allowed for admin',
+          description: 'Allowed for super admin',
           coupon_type: 'amount',
           discount_value: 5,
           valid_from: new Date().toISOString(),
@@ -186,7 +186,7 @@ describe('Coupon Submission Gating (API)', () => {
     expect(res.body.state).toBe('pending');
 
     // sanity: admin exists with correct role
-    expect(adminUser.role).toBe('admin');
+    expect(adminUser.role).toBe('super_admin');
   });
 });
 

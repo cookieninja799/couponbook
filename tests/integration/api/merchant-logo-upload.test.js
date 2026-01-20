@@ -316,9 +316,9 @@ describe('Merchant Logo Upload Integration', () => {
       expect(res.body.error).toMatch(/do not own|Forbidden/i);
     }, TEST_TIMEOUT_MS);
 
-    it('should allow admin user to upload logo for any merchant', async () => {
+    it('should allow super admin user to upload logo for any merchant', async () => {
       const owner = await seedHelpers.createUser(db, { cognitoSub: 'owner-sub-2', role: 'customer' });
-      const admin = await seedHelpers.createUser(db, { cognitoSub: 'admin-sub', role: 'admin' });
+      const admin = await seedHelpers.createUser(db, { cognitoSub: 'admin-sub', role: 'super_admin' });
       const merchant = await seedHelpers.createMerchant(db, owner.id, {
         name: 'Test Merchant',
         logoUrl: null,

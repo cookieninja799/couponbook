@@ -18,7 +18,7 @@ console.log('📦  couponSubmissions router loaded');
 // ────────────────────────────────────────────────────────────────
 // GET all pending submissions for a specific group (dashboard)
 // If groupId is not provided, infer it from foodie_group_membership
-// for the current foodie_group_admin / admin.
+// for the current foodie_group_admin / super_admin.
 // ────────────────────────────────────────────────────────────────
 router.get('/', auth(), resolveLocalUser, async (req, res, next) => {
   console.log('📦  GET /api/v1/coupon-submissions hit', req.query);
@@ -29,9 +29,9 @@ router.get('/', auth(), resolveLocalUser, async (req, res, next) => {
     // If no groupId passed, infer from membership
     if (!groupId) {
       // Super admin shortcut
-      if (dbUser.role === 'admin') {
-        // For now, admins must still pass groupId explicitly if they manage many groups.
-        return res.status(400).json({ error: 'groupId is required for admin users' });
+      if (dbUser.role === 'super_admin') {
+        // For now, super admins must still pass groupId explicitly if they manage many groups.
+        return res.status(400).json({ error: 'groupId is required for super admin users' });
       }
 
       // Find memberships for this user
@@ -167,11 +167,11 @@ router.get('/:id', auth(), resolveLocalUser, async (req, res, next) => {
       return res.status(404).json({ message: 'Submission not found' });
     }
 
-    // 🔐 authorize: admin OR merchant-owner OR group-admin
+    // 🔐 authorize: super admin OR merchant-owner OR group-admin
     const dbUser = req.dbUser;
 
     // Admin sees all
-    if (dbUser.role === 'admin') {
+    if (dbUser.role === 'super_admin') {
       return res.json(sub);
     }
 
@@ -295,7 +295,7 @@ router.post('/', auth(), resolveLocalUser, async (req, res, next) => {
     // Normalize submission_data (defaults for discount_value, locked, etc.)
     const normalizedData = normalizeSubmissionData(submission_data);
 
-    // Verify merchant exists and enforce ownership (admin bypass)
+    // Verify merchant exists and enforce ownership (super admin bypass)
     const allowed = await canManageMerchant(dbUser, merchant_id);
     if (!allowed) {
       return res.status(403).json({ error: 'Forbidden: You do not own this merchant' });
@@ -321,7 +321,7 @@ router.post('/', auth(), resolveLocalUser, async (req, res, next) => {
 
 // ────────────────────────────────────────────────────────────────
 // PUT update submission (approve/reject → may create coupon)
-// Only foodie_group_admin for that group (or admin) can do this.
+// Only foodie_group_admin for that group (or super admin) can do this.
 // ────────────────────────────────────────────────────────────────
 router.put('/:id', auth(), resolveLocalUser, async (req, res, next) => {
   const submissionId = req.params.id;

@@ -53,22 +53,22 @@ export async function resolveLocalUser(req, res, next) {
 
 /**
  * requireAdmin:
- * Middleware that ensures the dbUser has the 'admin' role.
+ * Middleware that ensures the dbUser has the 'super_admin' role.
  */
 export function requireAdmin(req, res, next) {
-  if (req.dbUser?.role !== 'admin') {
-    return res.status(403).json({ message: 'Forbidden: Admin access required' });
+  if (req.dbUser?.role !== 'super_admin') {
+    return res.status(403).json({ message: 'Forbidden: Super admin access required' });
   }
   next();
 }
 
 /**
  * canManageMerchant:
- * Returns true if the user is a global admin OR the owner of the merchant.
+ * Returns true if the user is a super admin OR the owner of the merchant.
  */
 export async function canManageMerchant(dbUser, merchantId) {
   if (!dbUser || !merchantId) return false;
-  if (dbUser.role === 'admin') return true;
+  if (dbUser.role === 'super_admin') return true;
 
   const [merchant] = await db
     .select({ ownerId: schema.merchant.ownerId })
@@ -81,11 +81,11 @@ export async function canManageMerchant(dbUser, merchantId) {
 
 /**
  * canManageCoupon:
- * Returns true if the user is a global admin OR the owner of the coupon's merchant.
+ * Returns true if the user is a super admin OR the owner of the coupon's merchant.
  */
 export async function canManageCoupon(dbUser, couponId) {
   if (!dbUser || !couponId) return false;
-  if (dbUser.role === 'admin') return true;
+  if (dbUser.role === 'super_admin') return true;
 
   const [couponWithMerchant] = await db
     .select({ merchantOwnerId: schema.merchant.ownerId })
@@ -99,11 +99,11 @@ export async function canManageCoupon(dbUser, couponId) {
 
 /**
  * canManageGroup:
- * Returns true if global admin OR has 'foodie_group_admin' role in that specific group.
+ * Returns true if super admin OR has 'foodie_group_admin' role in that specific group.
  */
 export async function canManageGroup(dbUser, groupId) {
   if (!dbUser || !groupId) return false;
-  if (dbUser.role === 'admin') return true;
+  if (dbUser.role === 'super_admin') return true;
 
   const [membership] = await db
     .select({ role: schema.foodieGroupMembership.role })
@@ -122,11 +122,11 @@ export async function canManageGroup(dbUser, groupId) {
 /**
  * hasEntitlement:
  * Returns true if the user has access to the given group's locked coupons.
- * (e.g. they have a paid purchase for this group or are an admin)
+ * (e.g. they have a paid purchase for this group or are a super admin)
  */
 export async function hasEntitlement(dbUser, groupId) {
   if (!dbUser || !groupId) return false;
-  if (dbUser.role === 'admin') return true;
+  if (dbUser.role === 'super_admin') return true;
 
   // 1) Check for active purchase in this group
   const [activePurchase] = await db

@@ -79,14 +79,14 @@ router.get('/', async (req, res, next) => {
 });
 
 // ────────────────────────────────────────────────────────────────
-// GET merchants owned by the current user (admin sees all)
+// GET merchants owned by the current user (super admin sees all)
 // ────────────────────────────────────────────────────────────────
 router.get('/mine', auth(), resolveLocalUser, async (req, res, next) => {
   console.log('📦  GET /api/v1/merchants/mine hit');
   try {
     const dbUser = req.dbUser;
 
-    if (dbUser.role === 'admin') {
+    if (dbUser.role === 'super_admin') {
       const all = await db.select().from(merchant);
       return res.json(all);
     }
@@ -247,7 +247,7 @@ router.post(
 
       const dbUser = req.dbUser;
 
-      // 3) Ownership check (admin OR merchant owner)
+      // 3) Ownership check (super admin OR merchant owner)
       const allowed = await canManageMerchant(dbUser, merchantId);
       if (!allowed) {
         return res.status(403).json({ error: 'Forbidden: You do not own this merchant' });

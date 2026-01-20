@@ -68,20 +68,20 @@ describe('CouponSubmissions Routes', () => {
       expect(result[0].role).toBe('customer');
     });
 
-    it('should allow admin to approve submission', async () => {
+    it('should allow super admin to approve submission', async () => {
       req.user = { sub: 'test-sub' };
       req.params = { id: 'submission-id' };
       req.body = { state: 'approved' };
 
       // Mock user query for admin check
       const mockWhere = vi.fn().mockResolvedValue([
-        { id: 'user-id', cognitoSub: 'test-sub', role: 'admin' },
+        { id: 'user-id', cognitoSub: 'test-sub', role: 'super_admin' },
       ]);
       const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
       db.select.mockReturnValue({ from: mockFrom });
 
       const user = await db.select().from().where();
-      expect(user[0].role).toBe('admin');
+      expect(user[0].role).toBe('super_admin');
     });
 
     it('should create coupon when submission is approved', async () => {

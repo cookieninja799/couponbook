@@ -2,7 +2,7 @@ import { pgTable, foreignKey, uuid, timestamp, jsonb, integer, varchar, text, do
 export const attendanceStatus = pgEnum("attendance_status", ['going', 'waitlist', 'cancelled']);
 export const couponType = pgEnum("coupon_type", ['percent', 'amount', 'bogo', 'free_item']);
 export const purchaseStatus = pgEnum("purchase_status", ['created', 'pending', 'paid', 'expired', 'refunded']);
-export const role = pgEnum("role", ['admin', 'merchant', 'customer', 'foodie_group_admin']);
+export const role = pgEnum("role", ['super_admin', 'merchant', 'customer', 'foodie_group_admin']);
 export const submissionState = pgEnum("submission_state", ['pending', 'approved', 'rejected']);
 export const couponSubmission = pgTable("coupon_submission", {
     id: uuid().defaultRandom().primaryKey().notNull(),

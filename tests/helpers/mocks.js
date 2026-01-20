@@ -94,3 +94,28 @@ export function createMockCognitoClient() {
   };
 }
 
+export function mockStoreWithRole(role) {
+  return {
+    state: {
+      auth: { isAuthenticated: true },
+      user: { role },
+    },
+    getters: {
+      isAuthenticated: true,
+      currentUser: { role },
+    },
+  };
+}
+
+export function mockAuthenticatedStore() {
+  return mockStoreWithRole('customer');
+}
+
+export function createMockRouter() {
+  return {
+    push: vi.fn(),
+    replace: vi.fn(),
+    currentRoute: { value: { path: '/', params: {} } },
+  };
+}
+

@@ -1,10 +1,11 @@
+<!-- src/components/Dashboard/SuperAdminDashboard.vue -->
 <template>
   <div class="super-admin-dashboard">
     <!-- NOT AUTHENTICATED -->
     <section v-if="!isAuthenticated" class="section-card signin-card">
       <h1>Super Admin Dashboard</h1>
       <p class="muted">
-        You need to be signed in as an admin to access this dashboard.
+        You need to be signed in as a super admin to access this dashboard.
       </p>
       <button class="btn primary" @click="signInNow">
         <i class="pi pi-sign-in icon-spacing-sm"></i>Sign In to Your Account
@@ -21,7 +22,7 @@
       class="section-card access-check-card"
     >
       <h1>Super Admin Dashboard</h1>
-      <p class="subtitle">Checking your admin permissions…</p>
+      <p class="subtitle">Checking your super admin permissions…</p>
     </section>
 
     <!-- AUTHENTICATED BUT NOT AUTHORIZED -->
@@ -43,6 +44,9 @@
         <p class="subtitle">
           Manage users, foodie groups, and system-wide settings and reports.
         </p>
+        <p class="muted tiny" data-test="super-admin-dashboard-stub">
+          This is a placeholder dashboard for navigation testing.
+        </p>
       </header>
 
       <section class="dashboard-section global-overview">
@@ -53,6 +57,15 @@
           <li>Total Foodie Groups: 45</li>
           <li>Total Coupons Submitted: 150</li>
           <li>Total Events: 30</li>
+        </ul>
+      </section>
+
+      <section class="dashboard-section quick-links">
+        <h2>Quick Actions</h2>
+        <ul>
+          <li>Review newest foodie group applications</li>
+          <li>Scan system health reports</li>
+          <li>Audit recent coupon submissions</li>
         </ul>
       </section>
 
@@ -139,7 +152,6 @@ export default {
       if (customMsg) {
         this.notAuthorizedMessage = customMsg;
       }
-      this.authChecked = true;
     },
 
     async loadCurrentUser() {
@@ -190,8 +202,8 @@ export default {
           role: data.role,
         };
 
-        // 🔐 Global role check: only 'admin' is treated as Super Admin.
-        if (this.user.role !== "admin") {
+        // 🔐 Global role check: only 'super_admin' is treated as Super Admin.
+        if (this.user.role !== "super_admin") {
           this.markNotAuthorized(
             "You are signed in, but you do not have Super Admin permissions."
           );
@@ -200,14 +212,14 @@ export default {
         console.error("[SuperAdminDashboard] loadCurrentUser error", err);
         this.userError = "Failed to load your user profile.";
         this.markNotAuthorized(
-          "Unable to verify your admin permissions at this time."
+          "Unable to verify your super admin permissions at this time."
         );
       } finally {
         this.userLoading = false;
       }
     },
 
-    // Still placeholder actions; they will later call admin-only API routes.
+    // Still placeholder actions; they will later call super admin-only API routes.
     manageGroups() {
       alert("Manage Foodie Groups functionality is not implemented yet.");
     },

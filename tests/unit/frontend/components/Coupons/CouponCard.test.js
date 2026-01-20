@@ -166,7 +166,7 @@ describe('CouponCard', () => {
       locked: false,
     };
 
-    it('should show "Go to ... Coupon Book to Redeem" when purchased and forceGoToGroup is true', () => {
+    it('should show "Redeem" when purchased and forceGoToGroup is true', () => {
       wrapper = mount(CouponCard, {
         props: {
           coupon: foodieGroupCoupon,
@@ -179,7 +179,7 @@ describe('CouponCard', () => {
         },
       });
 
-      expect(wrapper.text()).toContain('Go to Chapel Hill Foodies Coupon Book to Redeem');
+      expect(wrapper.text()).toContain('Redeem');
     });
 
     it('should show "Join ... Coupon Book" when NOT purchased and forceGoToGroup is true', () => {
@@ -198,7 +198,7 @@ describe('CouponCard', () => {
       expect(wrapper.text()).toContain('Join Chapel Hill Foodies Coupon Book');
     });
 
-    it('should route to FoodieGroupView when clicking "Go to ... Coupon Book to Redeem"', async () => {
+    it('should emit redeem event when purchased and forceGoToGroup is true', async () => {
       // Create a router with the FoodieGroupView route
       const routerWithRoute = createMockRouter([
         { path: '/', component: { template: '<div>Home</div>' } },
@@ -222,11 +222,8 @@ describe('CouponCard', () => {
 
       await wrapper.find('button').trigger('click');
 
-      // Should have navigated to FoodieGroupView
-      expect(pushSpy).toHaveBeenCalledWith({
-        name: 'FoodieGroupView',
-        params: { id: 'group-chapel-hill' },
-      });
+      expect(pushSpy).not.toHaveBeenCalled();
+      expect(wrapper.emitted('redeem')).toBeTruthy();
     });
 
     it('should route to FoodieGroupView when clicking "Join ... Coupon Book"', async () => {

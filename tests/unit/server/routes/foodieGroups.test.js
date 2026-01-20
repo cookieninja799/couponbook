@@ -1,5 +1,7 @@
 // FoodieGroups route unit tests
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import express from 'express';
+import request from 'supertest';
 import { createMockRequest, createMockResponse } from '../../../helpers/mocks.js';
 
 // Mock dependencies
@@ -8,6 +10,7 @@ vi.mock('../../../../server/src/db.js', () => ({
     select: vi.fn().mockReturnThis(),
     from: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
+    innerJoin: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
     values: vi.fn().mockReturnThis(),
     returning: vi.fn(),
@@ -19,20 +22,39 @@ vi.mock('../../../../server/src/db.js', () => ({
 
 vi.mock('../../../../server/src/middleware/auth.js', () => ({
   default: vi.fn(() => (req, res, next) => {
-    req.user = { sub: 'test-sub', email: 'test@example.com' };
+    const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    req.user = { sub: token, email: 'test@example.com' };
     next();
   }),
 }));
 
 import { db } from '../../../../server/src/db.js';
+import foodieGroupsRouter from '../../../../server/src/routes/foodieGroups.js';
 
 describe('FoodieGroups Routes', () => {
   let req, res;
+  let app;
 
   beforeEach(() => {
     req = createMockRequest();
     res = createMockResponse();
+    app = express();
+    app.use(express.json());
+    app.use('/api/v1/groups', foodieGroupsRouter);
     vi.clearAllMocks();
+    db.select.mockReset().mockReturnThis();
+    db.from.mockReset().mockReturnThis();
+    db.where.mockReset().mockReturnThis();
+    db.innerJoin.mockReset().mockReturnThis();
+    db.insert.mockReset().mockReturnThis();
+    db.values.mockReset().mockReturnThis();
+    db.returning.mockReset();
+    db.update.mockReset().mockReturnThis();
+    db.set.mockReset().mockReturnThis();
+    db.delete.mockReset().mockReturnThis();
   });
 
   describe('GET /api/v1/groups/:id/access', () => {
@@ -166,6 +188,70 @@ describe('FoodieGroups Routes', () => {
 
       const existing = await db.select().from().where();
       expect(existing.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('GET /api/v1/groups/my/admin-memberships', () => {
+    it('returns 401 for unauthenticated requests', async () => {
+      const res = await request(app).get('/api/v1/groups/my/admin-memberships');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns empty array for user with no admin memberships', async () => {
+      db.select.mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([
+            { id: 'user-id', cognitoSub: 'test-sub' },
+          ]),
+        }),
+      });
+
+      db.select.mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue([]),
+          }),
+        }),
+      });
+
+      const res = await request(app)
+        .get('/api/v1/groups/my/admin-memberships')
+        .set('Authorization', 'Bearer test-sub');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    it('returns memberships for foodie group admins', async () => {
+      db.select.mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([
+            { id: 'user-id', cognitoSub: 'test-sub' },
+          ]),
+        }),
+      });
+
+      db.select.mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue([
+              { groupId: 'group-1', name: 'Group 1' },
+              { groupId: 'group-2', name: 'Group 2' },
+            ]),
+          }),
+        }),
+      });
+
+      const res = await request(app)
+        .get('/api/v1/groups/my/admin-memberships')
+        .set('Authorization', 'Bearer test-sub');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(2);
+      expect(res.body[0]).toMatchObject({
+        groupId: 'group-1',
+        name: 'Group 1',
+      });
     });
   });
 });

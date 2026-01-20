@@ -67,7 +67,7 @@ describe('SuperAdminDashboard', () => {
         id: 'user-id',
         email: 'test@example.com',
         name: 'Test User',
-        role: 'admin',
+        role: 'super_admin',
       }),
     });
 
@@ -80,7 +80,7 @@ describe('SuperAdminDashboard', () => {
     // Wait for component to initialize and check auth
     await wrapper.vm.$nextTick();
     // The component should show checking initially
-    expect(wrapper.text()).toMatch(/Checking your admin permissions|Super Admin Dashboard/);
+    expect(wrapper.text()).toMatch(/Checking your super admin permissions|Super Admin Dashboard/);
   });
 
   it('should show access denied for non-admin users', async () => {
@@ -116,7 +116,37 @@ describe('SuperAdminDashboard', () => {
     expect(wrapper.vm.notAuthorized).toBe(true);
   });
 
-  it('should show dashboard for admin users', async () => {
+  it('should deny access for legacy admin role', async () => {
+    store.state.auth.isAuthenticated = true;
+    mockGetAccessToken.mockResolvedValue('test-token');
+
+    global.fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: vi.fn().mockResolvedValue({
+        id: 'user-id',
+        email: 'admin@example.com',
+        name: 'Admin User',
+        role: 'admin',
+      }),
+    });
+
+    wrapper = mount(SuperAdminDashboard, {
+      global: {
+        plugins: [store, router],
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.notAuthorized).toBe(true);
+    expect(wrapper.text()).toContain('Access Denied');
+  });
+
+  it('should show dashboard for super admin users', async () => {
     store.state.auth.isAuthenticated = true;
     mockGetAccessToken.mockResolvedValue('test-token');
     
@@ -124,7 +154,7 @@ describe('SuperAdminDashboard', () => {
       id: 'user-id',
       email: 'admin@example.com',
       name: 'Admin User',
-      role: 'admin',
+      role: 'super_admin',
     });
     
     global.fetch.mockResolvedValue({

@@ -17,7 +17,7 @@ describe('Submission Approval Integration', () => {
 
   it('should create coupon when submission is approved', async () => {
     await withTransaction(async (db) => {
-      const user = await seedHelpers.createUser(db, { role: 'admin' });
+      const user = await seedHelpers.createUser(db, { role: 'super_admin' });
       const group = await seedHelpers.createFoodieGroup(db);
       const merchant = await seedHelpers.createMerchant(db, user.id);
 
