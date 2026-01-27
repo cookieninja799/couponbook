@@ -38,6 +38,38 @@ vi.mock('../../../server/src/middleware/auth.js', () => ({
   },
 }));
 
+// Mock Stripe config for tests that import server app
+vi.mock('../../../server/src/config/stripe.js', () => ({
+  stripe: {
+    checkout: {
+      sessions: {
+        create: vi.fn().mockResolvedValue({
+          id: 'cs_test_mock_session_id',
+          url: 'https://checkout.stripe.com/test',
+          payment_intent: 'pi_test_123',
+          customer: 'cus_test_123',
+        }),
+      },
+    },
+    webhooks: {
+      constructEvent: vi.fn().mockImplementation((body) => {
+        const parsed = JSON.parse(body);
+        return parsed;
+      }),
+    },
+    products: {
+      create: vi.fn().mockResolvedValue({
+        id: 'prod_test_123',
+      }),
+    },
+    prices: {
+      create: vi.fn().mockResolvedValue({
+        id: 'price_test_123',
+      }),
+    },
+  },
+}));
+
 // Helper function to create test image buffer with specific size and MIME type
 function createTestImageBuffer(sizeBytes, mimeType = 'image/png') {
   const buffer = Buffer.alloc(sizeBytes);

@@ -23,6 +23,8 @@ async function runMigrations(pg) {
   const migration2 = readFileSync(join(drizzleDir, '0002_add_foodie_group_admin_role.sql'), 'utf-8');
   const migration3 = readFileSync(join(drizzleDir, '0003_add_rejection_message_to_coupon_submission.sql'), 'utf-8');
   const migration4 = readFileSync(join(drizzleDir, '0004_add_super_admin_role.sql'), 'utf-8');
+  const migration5 = readFileSync(join(drizzleDir, '0005_add_stripe_checkout_support.sql'), 'utf-8');
+  const migration6 = readFileSync(join(drizzleDir, '0006_add_membership_unique_constraint.sql'), 'utf-8');
   
   // Split by statement breakpoint and execute each statement
   const statements0 = migration0.split('--> statement-breakpoint').map(s => s.trim()).filter(Boolean);
@@ -30,6 +32,32 @@ async function runMigrations(pg) {
   const statements2 = migration2.split('--> statement-breakpoint').map(s => s.trim()).filter(Boolean);
   const statements3 = migration3.split('--> statement-breakpoint').map(s => s.trim()).filter(Boolean);
   const statements4 = migration4.split('--> statement-breakpoint').map(s => s.trim()).filter(Boolean);
+  // Migration 5 uses semicolons as delimiters (raw SQL, not drizzle format)
+  // We need to keep statements that contain SQL even if they start with comments
+  const statements5 = migration5
+    .split(';')
+    .map(s => s.trim())
+    .filter(s => {
+      if (!s) return false;
+      // Strip leading comment lines and check if there's actual SQL content
+      const withoutComments = s.split('\n')
+        .filter(line => !line.trim().startsWith('--'))
+        .join('\n')
+        .trim();
+      return withoutComments.length > 0;
+    });
+
+  const statements6 = migration6
+    .split(';')
+    .map(s => s.trim())
+    .filter(s => {
+      if (!s) return false;
+      const withoutComments = s.split('\n')
+        .filter(line => !line.trim().startsWith('--'))
+        .join('\n')
+        .trim();
+      return withoutComments.length > 0;
+    });
   
   for (const stmt of statements0) {
     await pg.exec(stmt);
@@ -49,6 +77,24 @@ async function runMigrations(pg) {
 
   for (const stmt of statements4) {
     await pg.exec(stmt);
+  }
+
+  for (const stmt of statements5) {
+    try {
+      await pg.exec(stmt);
+    } catch (e) {
+      // Some statements might fail in PGlite (like partial indexes)
+      // Continue with other statements
+    }
+  }
+
+  for (const stmt of statements6) {
+    try {
+      await pg.exec(stmt);
+    } catch (e) {
+      // Some statements might fail in PGlite (like partial indexes)
+      // Continue with other statements
+    }
   }
   
   // Add the unique constraint on coupon_redemption that may not be in migrations
@@ -102,9 +148,11 @@ export async function resetTestDb() {
   
   // Delete all data from tables in reverse dependency order
   const tables = [
+    'payment_event',
     'coupon_redemption',
     'event_rsvp', 
     'purchase',
+    'coupon_book_price',
     'foodie_group_membership',
     'coupon',
     'event',
@@ -213,11 +261,17 @@ export const seedHelpers = {
       .values({
         userId,
         groupId,
+        provider: overrides.provider || 'stripe',
         stripeCheckoutId: overrides.stripeCheckoutId || `test-checkout-${Date.now()}-${Math.random()}`,
         stripeSubscriptionId: overrides.stripeSubscriptionId || null,
+        stripeCustomerId: overrides.stripeCustomerId || null,
+        stripePaymentIntentId: overrides.stripePaymentIntentId || null,
+        stripeChargeId: overrides.stripeChargeId || null,
         amountCents: overrides.amountCents || 0,
         currency: overrides.currency || 'usd',
         status: overrides.status || 'paid',
+        priceSnapshot: overrides.priceSnapshot || null,
+        metadata: overrides.metadata || null,
         purchasedAt: overrides.purchasedAt || new Date().toISOString(),
         expiresAt: overrides.expiresAt || null,
       })

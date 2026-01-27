@@ -137,6 +137,51 @@
         </form>
       </section>
 
+      <!-- Coupon Book Pricing Section -->
+      <section class="dashboard-section pricing-section" v-if="groupLoaded">
+        <h2>Coupon Book Pricing</h2>
+        
+        <div v-if="!editingPrice" class="current-price">
+          <p>Current Price: <strong>{{ currentPriceDisplay }}</strong></p>
+          <p v-if="priceIsDefault" class="muted tiny">
+            This is the default price. Set a custom price to create a Stripe product.
+          </p>
+          <button @click="startEditPrice" class="btn-edit-price">
+            <i class="pi pi-pencil icon-spacing-sm"></i>Edit Price
+          </button>
+        </div>
+        
+        <div v-else class="price-form">
+          <div class="form-group">
+            <label for="newPrice">New Price (USD):</label>
+            <div class="price-input-wrapper">
+              <span class="currency-symbol">$</span>
+              <input 
+                id="newPrice" 
+                type="number" 
+                v-model.number="newPriceDollars" 
+                min="0.50" 
+                max="999.99" 
+                step="0.01"
+                placeholder="9.99"
+              />
+            </div>
+          </div>
+          <p class="help-text">
+            This will affect new purchases only. Existing purchases remain valid.
+          </p>
+          <div class="price-form-actions">
+            <button @click="savePrice" :disabled="savingPrice" class="btn primary">
+              {{ savingPrice ? 'Saving...' : 'Save Price' }}
+            </button>
+            <button @click="cancelEditPrice" class="btn secondary" :disabled="savingPrice">
+              Cancel
+            </button>
+          </div>
+          <p v-if="priceError" class="error-text tiny">{{ priceError }}</p>
+        </div>
+      </section>
+
       <!-- Coupons Board (Kanban Style) -->
       <section class="dashboard-section submissions-board" v-if="groupLoaded">
         <div class="kanban-column pending">
@@ -259,6 +304,14 @@ export default {
         pendingSubmissions: 0,
       },
 
+      // pricing management
+      currentPriceDisplay: '$9.99',
+      priceIsDefault: true,
+      editingPrice: false,
+      newPriceDollars: 9.99,
+      savingPrice: false,
+      priceError: null,
+
       // authorization gate
       authChecked: false,
       notAuthorized: false,
@@ -312,6 +365,7 @@ export default {
       await Promise.all([
         this.loadPendingCoupons(),
         this.loadActiveCoupons(),
+        this.fetchCurrentPrice(),
       ]);
     } finally {
       this.authChecked = true;
@@ -835,6 +889,105 @@ export default {
         );
       }
     },
+
+    // Fetch current price for this group
+    async fetchCurrentPrice() {
+      if (!this.groupId) return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/groups/${this.groupId}/price`);
+        if (!res.ok) {
+          console.warn("[FoodieGroupDashboard] fetchCurrentPrice failed", res.status);
+          return;
+        }
+        
+        const data = await res.json();
+        this.currentPriceDisplay = data.display || '$9.99';
+        this.priceIsDefault = data.isDefault === true;
+        this.newPriceDollars = data.amountCents ? data.amountCents / 100 : 9.99;
+      } catch (err) {
+        console.error("[FoodieGroupDashboard] fetchCurrentPrice error", err);
+      }
+    },
+
+    // Start editing price
+    startEditPrice() {
+      this.editingPrice = true;
+      this.priceError = null;
+    },
+
+    // Cancel editing price
+    cancelEditPrice() {
+      this.editingPrice = false;
+      this.priceError = null;
+      // Reset to current price
+      this.fetchCurrentPrice();
+    },
+
+    // Save new price
+    async savePrice() {
+      if (!this.groupId) return;
+      
+      this.savingPrice = true;
+      this.priceError = null;
+
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          this.priceError = "Please sign in to update pricing.";
+          return;
+        }
+
+        // Validate price
+        if (!this.newPriceDollars || this.newPriceDollars < 0.50 || this.newPriceDollars > 999.99) {
+          this.priceError = "Price must be between $0.50 and $999.99";
+          return;
+        }
+
+        const amountCents = Math.round(this.newPriceDollars * 100);
+
+        const res = await fetch(`${API_BASE}/groups/${this.groupId}/price`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            amountCents,
+            currency: "usd",
+          }),
+        });
+
+        if (res.status === 403) {
+          const body = await res.json().catch(() => ({}));
+          this.priceError = body.error || "You are not authorized to update pricing.";
+          return;
+        }
+
+        if (res.status === 401) {
+          this.priceError = "Session expired. Please sign in again.";
+          return;
+        }
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          this.priceError = body.error || `Failed to update price (status ${res.status})`;
+          return;
+        }
+
+        const data = await res.json();
+        this.currentPriceDisplay = data.display;
+        this.priceIsDefault = false;
+        this.editingPrice = false;
+        
+        alert("Price updated successfully!");
+      } catch (err) {
+        console.error("[FoodieGroupDashboard] savePrice error", err);
+        this.priceError = err.message || "Failed to update price.";
+      } finally {
+        this.savingPrice = false;
+      }
+    },
   },
 };
 </script>
@@ -1122,5 +1275,94 @@ textarea:focus {
 
 .group-stats li:last-child {
   margin-bottom: 0;
+}
+
+/* Pricing Section */
+.pricing-section {
+  background: var(--color-bg-primary);
+}
+
+.current-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+}
+
+.current-price p {
+  margin: 0;
+}
+
+.current-price strong {
+  font-size: var(--font-size-xl);
+  color: var(--color-primary);
+}
+
+.btn-edit-price {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--color-secondary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  transition: background var(--transition-base);
+  min-height: var(--button-height-sm);
+}
+
+.btn-edit-price:hover {
+  background: var(--color-secondary-hover);
+}
+
+.price-form {
+  max-width: 400px;
+}
+
+.price-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.currency-symbol {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+}
+
+.price-input-wrapper input {
+  flex: 1;
+  max-width: 150px;
+}
+
+.help-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: var(--spacing-sm) 0;
+}
+
+.price-form-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.price-form-actions .btn {
+  padding: var(--spacing-sm) var(--spacing-xl);
+}
+
+.price-form-actions .btn.secondary {
+  background: var(--color-bg-muted);
+  color: var(--color-text-primary);
+}
+
+.price-form-actions .btn.secondary:hover:not(:disabled) {
+  background: var(--color-bg-subtle);
+}
+
+.price-form-actions .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

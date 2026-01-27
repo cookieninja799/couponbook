@@ -329,12 +329,12 @@ router.delete('/:id', auth(), resolveLocalUser, async (req, res, next) => {
       .delete(coupon)
       .where(eq(coupon.id, couponId));
 
-    if (!result.count) {
+    if (!result.rowCount) {
       console.log('📦  coupon not found for delete');
       return res.status(404).json({ message: 'Coupon not found' });
     }
 
-    console.log('📦  deleted coupon count:', result.count);
+    console.log('📦  deleted coupon count:', result.rowCount);
     res.json({ message: 'Coupon deleted' });
   } catch (err) {
     console.error('📦  error in DELETE /api/v1/coupons/:id', err);

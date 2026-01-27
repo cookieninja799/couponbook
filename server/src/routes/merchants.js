@@ -188,11 +188,11 @@ router.delete('/:id', async (req, res, next) => {
       .delete(merchant)
       .where(eq(merchant.id, req.params.id));
 
-    if (!result.count) {
+    if (!result.rowCount) {
       console.log('📦  merchant not found for delete');
       return res.status(404).json({ message: 'Merchant not found' });
     }
-    console.log('📦  deleted merchant count:', result.count);
+    console.log('📦  deleted merchant count:', result.rowCount);
     res.json({ message: 'Merchant deleted' });
   } catch (err) {
     console.error('📦  error in DELETE /merchant/:id', err);

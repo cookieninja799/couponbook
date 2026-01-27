@@ -1,30 +1,33 @@
 <!-- src/views/FoodieGroup.vue -->
 <template>
-  <div v-if="!group" class="not-found">
-    <p>Group not found.</p>
-  </div>
-  <div v-else>
-    <!-- Dynamic Banner -->
-    <header class="group-banner" :style="{ backgroundImage: `url(${group.bannerImageUrl || '/default-banner.jpg'})` }">
-      <div class="banner-overlay">
-        <div class="banner-content">
-          <h1>{{ group.name }}</h1>
-          <p>{{ group.description }}</p>
-          <div class="social-links" v-if="group.socialLinks">
-            <a v-if="group.socialLinks.facebook" :href="group.socialLinks.facebook" target="_blank">Facebook</a>
-            <a v-if="group.socialLinks.instagram" :href="group.socialLinks.instagram" target="_blank">Instagram</a>
-            <a v-if="group.socialLinks.twitter" :href="group.socialLinks.twitter" target="_blank">Twitter</a>
+  <div>
+    <div v-if="!group" class="not-found">
+      <p>Group not found.</p>
+    </div>
+    <div v-else>
+      <!-- Dynamic Banner -->
+      <header class="group-banner" :style="{ backgroundImage: `url(${group.bannerImageUrl || '/default-banner.jpg'})` }">
+        <div class="banner-overlay">
+          <div class="banner-content">
+            <h1>{{ group.name }}</h1>
+            <p>{{ group.description }}</p>
+            <div class="social-links" v-if="group.socialLinks">
+              <a v-if="group.socialLinks.facebook" :href="group.socialLinks.facebook" target="_blank">Facebook</a>
+              <a v-if="group.socialLinks.instagram" :href="group.socialLinks.instagram" target="_blank">Instagram</a>
+              <a v-if="group.socialLinks.twitter" :href="group.socialLinks.twitter" target="_blank">Twitter</a>
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
 
-    <div class="foodie-group-view container">
-      <!-- Purchase Coupon Book Banner -->
-      <div v-if="!hasPurchasedCouponBook" class="purchase-banner">
-        <p>Purchase the coupon book to unlock all group coupons and RSVP for events.</p>
-        <button @click="onPurchaseClick" class="purchase-btn">Purchase Coupon Book</button>
-      </div>
+      <div class="foodie-group-view container">
+        <!-- Purchase Coupon Book Banner -->
+        <div v-if="!hasPurchasedCouponBook" class="purchase-banner">
+          <p>Purchase the coupon book to unlock all group coupons and RSVP for events.</p>
+          <button @click="onPurchaseClick" :disabled="checkoutLoading" class="purchase-btn">
+            {{ checkoutLoading ? 'Processing...' : `Buy Coupon Book - ${groupPriceDisplay}` }}
+          </button>
+        </div>
 
       <!-- Coupons Section -->
       <section class="coupons-section section-card">
@@ -87,6 +90,7 @@
         <iframe v-if="mapUrl" width="100%" height="300" frameborder="0" style="border:0" :src="mapUrl"
           allowfullscreen />
       </section>
+      </div>
     </div>
   </div>
 </template>
@@ -111,6 +115,10 @@ export default {
       coupons: [],
       loadingCoupons: true,
       couponError: null,
+      // Stripe checkout state
+      groupPrice: null,
+      groupPriceDisplay: '$9.99',
+      checkoutLoading: false,
       events: [
         {
           id: 1,
@@ -154,13 +162,18 @@ export default {
   },
 
   created() {
-    const id = this.$route.params.id;
-    this.fetchGroup(id);
-    this.fetchCoupons(id);
+    const idOrSlug = this.$route.params.id;
+    
+    // Fetch group first, then use its UUID for coupons and other calls
+    this.initializeGroup(idOrSlug);
 
-    // If already authenticated on load, immediately check DB-backed access
-    if (this.isAuthenticated) {
-      this.fetchAccess(id);
+    // Handle cancelled checkout (user clicked back from Stripe)
+    if (this.$route.query.cancelled === 'true') {
+      // Clean up URL
+      this.$router.replace({ 
+        path: this.$route.path, 
+        query: {} 
+      });
     }
 
     // 📨 Listen for redemption messages from popup
@@ -286,20 +299,33 @@ export default {
   },
 
   methods: {
-    async fetchGroup(id) {
+    // Initialize the group and all dependent data
+    async initializeGroup(idOrSlug) {
       try {
-        console.log('📦  GET /api/v1/groups/:id from FoodieGroup.vue', id);
-        const res = await fetch(`/api/v1/groups/${id}`);
+        // 1) Fetch group first to get the UUID
+        console.log('📦  GET /api/v1/groups/:id from FoodieGroup.vue', idOrSlug);
+        const res = await fetch(`/api/v1/groups/${idOrSlug}`);
         if (!res.ok) throw new Error(res.statusText);
         this.group = await res.json();
+
+        const groupId = this.group.id; // This is the UUID
+
+        // 2) Now fetch coupons, price, and access using the UUID
+        this.fetchCoupons(groupId);
+        this.fetchPrice(idOrSlug); // Price endpoint already supports slug
+
+        if (this.isAuthenticated) {
+          this.fetchAccess(idOrSlug); // Access endpoint already supports slug
+        }
       } catch (err) {
         console.error('Failed to load group', err);
+        this.group = null;
       }
     },
 
     async fetchCoupons(groupId) {
       try {
-        console.log('📦  GET /api/v1/coupons from FoodieGroup.vue');
+        console.log('📦  GET /api/v1/coupons from FoodieGroup.vue, filtering by groupId:', groupId);
         const res = await fetch('/api/v1/coupons');
         if (!res.ok) throw new Error(`Status ${res.status}`);
         const allPayload = await res.json();
@@ -448,8 +474,25 @@ export default {
       this.coupons.splice(idx, 1, updated);
     },
 
+    // Fetch coupon book price for this group
+    async fetchPrice(groupId) {
+      try {
+        console.log('📦  GET /api/v1/groups/:id/price from FoodieGroup.vue', groupId);
+        const res = await fetch(`/api/v1/groups/${groupId}/price`);
+        if (!res.ok) {
+          console.warn('[FoodieGroup] price fetch failed', res.status);
+          return;
+        }
+        const data = await res.json();
+        this.groupPrice = data;
+        this.groupPriceDisplay = data.display || '$9.99';
+      } catch (e) {
+        console.error('[FoodieGroup] failed to fetch price', e);
+      }
+    },
+
     // Click handler for "Purchase Coupon Book" banner
-    onPurchaseClick() {
+    async onPurchaseClick() {
       const groupId = this.$route.params.id;
 
       // If not authenticated, send to sign-in first
@@ -463,35 +506,30 @@ export default {
         return;
       }
 
-      const raw = window.prompt('Enter unlock code to purchase:');
-      if (!raw) return;
-
-      const code = raw.trim().toUpperCase();
-      this.unlockWithTestCode(groupId, code);
+      // Initiate Stripe checkout
+      await this.initiateStripeCheckout(groupId);
     },
 
-    // Call dev-only /test-purchase endpoint with TESTCODE
-    async unlockWithTestCode(groupId, code) {
+    // Create Stripe Checkout Session and redirect
+    async initiateStripeCheckout(groupId) {
+      this.checkoutLoading = true;
+
       try {
         const token = await getAccessToken();
         if (!token) {
-          console.warn('[FoodieGroup] no access token while unlocking with code');
-          alert('Please sign in again to unlock this coupon book.');
+          console.warn('[FoodieGroup] no access token for checkout');
+          alert('Please sign in to purchase.');
           return;
         }
 
-        console.log('📦  POST /api/v1/groups/:id/test-purchase from FoodieGroup.vue', {
-          groupId,
-          code
-        });
+        console.log('📦  POST /api/v1/groups/:id/checkout from FoodieGroup.vue', groupId);
 
-        const res = await fetch(`/api/v1/groups/${groupId}/test-purchase`, {
+        const res = await fetch(`/api/v1/groups/${groupId}/checkout`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ code })
+          }
         });
 
         if (!res.ok) {
@@ -499,29 +537,32 @@ export default {
           try {
             problem = await res.json();
           } catch (_) { /* ignore */ }
-          const msg = problem.error || `Unlock failed (status ${res.status}).`;
+          
+          // Already owns the coupon book
+          if (problem.hasAccess) {
+            this.hasPurchasedCouponBook = true;
+            alert('You already own this coupon book!');
+            return;
+          }
+
+          const msg = problem.error || `Checkout failed (status ${res.status}).`;
           alert(msg);
           return;
         }
 
-        const payload = await res.json().catch(() => ({}));
-        const hasAccess = !!payload.hasAccess;
-
-        this.hasPurchasedCouponBook = hasAccess;
-
-        if (hasAccess) {
-          alert('Coupon book unlocked for your account!');
+        const { checkoutUrl } = await res.json();
+        
+        if (checkoutUrl) {
+          // Redirect to Stripe Checkout
+          window.location.href = checkoutUrl;
         } else {
-          alert('Unlock did not succeed. Please check the code and try again.');
-        }
-
-        // Re-check access from server for consistency
-        if (this.isAuthenticated) {
-          await this.fetchAccess(groupId);
+          alert('Failed to create checkout session. Please try again.');
         }
       } catch (e) {
-        console.error('[FoodieGroup] failed to unlock with test code', e);
-        alert('Failed to unlock. Please try again.');
+        console.error('[FoodieGroup] checkout error', e);
+        alert('Something went wrong. Please try again.');
+      } finally {
+        this.checkoutLoading = false;
       }
     },
 
@@ -535,7 +576,7 @@ export default {
       } else {
         this.filters[key] = '';
       }
-    }
+    },
 
   }
 };
@@ -702,8 +743,13 @@ export default {
   font-weight: var(--font-weight-medium);
 }
 
-.purchase-btn:hover {
+.purchase-btn:hover:not(:disabled) {
   background: var(--color-secondary-hover);
+}
+
+.purchase-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .error {

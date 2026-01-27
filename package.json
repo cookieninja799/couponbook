@@ -13,8 +13,11 @@
     "test": "vitest",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
+    "test:api": "vitest run tests/integration/api",
+    "test:stripe": "vitest run tests/integration/api/stripe-checkout.test.js",
     "test:watch": "vitest watch",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "stripe:listen": "stripe listen --forward-to http://localhost:${PORT:-3000}/api/v1/stripe/webhook"
   },
   "dependencies": {
     "@aws-amplify/auth": "^6.12.3",
@@ -36,6 +39,7 @@
     "pg-hstore": "^2.3.4",
     "primeicons": "^7.0.0",
     "qrcode.vue": "^3.6.0",
+    "stripe": "^20.2.0",
     "survey-core": "^2.2.0",
     "survey-vue": "^1.12.40",
     "survey-vue3-ui": "^2.2.0",

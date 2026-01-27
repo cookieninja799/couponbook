@@ -4,8 +4,9 @@ node_modules
 server-dist/
 
 
-# local env files
+# local env files (do not commit secrets)
 .env
+.env.development
 .env.local
 .env.*.local
 

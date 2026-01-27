@@ -1,0 +1,457 @@
+================================================================================
+STRIPE CHECKOUT INTEGRATION - PROGRESS TRACKER
+================================================================================
+Plan File: .cursor/plans/stripe_checkout_integration_d288e656.plan.md
+Last Updated: 2026-01-24 (Manual Testing Completed)
+================================================================================
+
+HOW TO USE THIS FILE
+--------------------------------------------------------------------------------
+1. Before starting work: Read this file to see current status
+2. When starting a phase: Mark it [~] In Progress
+3. When completing a task: Check it off with [x]
+4. When hitting an error: Log it in the phase's "Errors Encountered" section
+5. When trying a solution: Log it in "Solutions Tried" with result
+6. When completing a phase: Mark it [x] Complete and update "Last Updated"
+
+QUICK REFERENCE - What to check when resuming:
+  - Phase Status Overview (below) - see what's done/pending
+  - Current [~] In Progress phase - continue from there
+  - Errors section - don't retry failed solutions
+  - Global Errors Log - check for cross-phase issues
+
+================================================================================
+
+PHASE STATUS OVERVIEW
+--------------------------------------------------------------------------------
+[x] Phase 0: Sandbox Setup (Stripe SDK + config)
+[x] Phase 1: Database Schema Changes
+[x] Phase 2: Checkout Session Creation
+[x] Phase 3: Webhook Handler
+[x] Phase 4: Legacy Purchase Migration
+[x] Phase 5: Frontend Checkout Flow
+[x] Phase 6: Admin Price Management API
+[x] Phase 7: Admin Pricing UI
+[x] Phase 8: Tests
+[x] Manual Testing: Local checkout flow verified
+
+Legend: [ ] Not Started | [~] In Progress | [x] Complete | [!] Blocked
+
+================================================================================
+PHASE 0: SANDBOX SETUP
+================================================================================
+Status: [x] Complete
+
+Tasks:
+  [x] Install Stripe SDK: npm install stripe
+  [x] Create server/src/config/stripe.js
+  [x] Add env vars to .env.development:
+      - STRIPE_SECRET_KEY
+      - STRIPE_PUBLISHABLE_KEY  
+      - STRIPE_WEBHOOK_SECRET
+  [ ] Add env vars to Vercel project settings (MANUAL - do later)
+  [x] Verify Stripe sandbox (CeruleanBridge) credentials work
+
+Files Created:
+  - server/src/config/stripe.js
+
+Files Modified:
+  - package.json (added stripe ^20.2.0)
+  - .env.development (added Stripe keys)
+
+Errors Encountered:
+  (none yet)
+
+Solutions Tried:
+  (none yet)
+
+================================================================================
+PHASE 1: DATABASE SCHEMA CHANGES
+================================================================================
+Status: [x] Complete
+
+Tasks:
+  [x] Create migration: drizzle/0005_add_stripe_checkout_support.sql
+  [x] Add purchase_provider enum ('stripe', 'test')
+  [x] Extend purchase table with new columns:
+      - provider
+      - stripe_customer_id
+      - stripe_payment_intent_id
+      - stripe_charge_id
+      - price_snapshot (jsonb)
+      - metadata (jsonb)
+  [x] Make stripe_checkout_id nullable
+  [x] Create coupon_book_price table
+  [x] Create payment_event table
+  [x] Update drizzle/schema.ts with new tables/columns
+  [x] Update server/src/schema.js with new tables/columns
+  [x] Run migration against database
+  [x] Verify schema in database
+
+Files Created:
+  - drizzle/0005_add_stripe_checkout_support.sql
+
+Files Modified:
+  - drizzle/schema.ts
+  - server/src/schema.js
+
+Errors Encountered:
+  (none yet)
+
+Solutions Tried:
+  (none yet)
+
+================================================================================
+PHASE 2: CHECKOUT SESSION CREATION
+================================================================================
+Status: [x] Complete
+
+Tasks:
+  [x] Add GET /api/v1/groups/:id/price endpoint (public)
+  [x] Add POST /api/v1/groups/:id/checkout endpoint (auth required)
+  [x] Create Stripe Checkout Session with correct metadata
+  [x] Insert purchase row with status='pending'
+  [x] Return checkout URL to frontend
+  [ ] Test with Stripe test mode (MANUAL - during integration testing)
+
+Files Created:
+  (none)
+
+Files Modified:
+  - server/src/routes/foodieGroups.js (added price + checkout endpoints)
+
+Errors Encountered:
+  (none yet)
+
+Solutions Tried:
+  (none yet)
+
+================================================================================
+PHASE 3: WEBHOOK HANDLER
+================================================================================
+Status: [x] Complete
+
+Tasks:
+  [x] Create server/src/routes/stripe.js
+  [x] Add raw body handling BEFORE express.json() in app.js
+  [x] Register /api/v1/stripe route in app.js
+  [x] Implement webhook signature verification
+  [x] Handle checkout.session.completed event
+  [x] Handle checkout.session.expired event (bonus)
+  [x] Handle charge.refunded event
+  [x] Implement idempotency via payment_event table
+  [ ] Test with Stripe CLI (MANUAL - during integration testing)
+
+Files Created:
+  - server/src/routes/stripe.js
+
+Files Modified:
+  - server/src/app.js (added raw body handling + stripe router)
+
+Errors Encountered:
+  (none yet)
+
+Solutions Tried:
+  (none yet)
+
+================================================================================
+PHASE 4: LEGACY PURCHASE MIGRATION
+================================================================================
+Status: [x] Complete
+
+Tasks:
+  [x] Create scripts/migrate-test-purchases.js
+  [x] Run with --dry-run first to preview changes
+  [x] Run migration to apply changes (6 purchases migrated)
+  [ ] Verify legacy users still have access via GET /access (MANUAL)
+
+Files Created:
+  - scripts/migrate-test-purchases.js
+
+Files Modified:
+  (none)
+
+Errors Encountered:
+  1. SSL certificate error: "unable to get local issuer certificate"
+     - Cause: Script wasn't using the RDS CA certificate bundle
+     - Solution: Updated script to load CA from server/certs/us-east-1-bundle.pem
+     - Result: [x] Fixed
+
+  2. JSON syntax error: "invalid input syntax for type json"
+     - Cause: String concatenation in SQL breaking JSON syntax when building metadata
+     - Original code: '{"migrated": true, "originalCheckoutId": "' || stripe_checkout_id || '"}'
+     - Solution: Used jsonb_build_object() function instead of string concatenation
+     - Result: [x] Fixed
+
+Errors Encountered:
+  (none yet)
+
+Solutions Tried:
+  (none yet)
+
+================================================================================
+PHASE 5: FRONTEND CHECKOUT FLOW
+================================================================================
+Status: [x] Complete
+
+Tasks:
+  [x] Add price fetching on FoodieGroup.vue mount
+  [x] Update purchase banner to show price
+  [x] Replace onPurchaseClick() to call /checkout endpoint
+  [x] Add checkoutLoading state
+  [x] Redirect to Stripe Checkout URL
+  [x] Handle ?session_id= and ?success=true in URL for success
+  [x] Poll /access endpoint after success (with retry logic)
+  [x] Handle ?cancelled=true for cancelled checkouts
+  [x] Add error handling for checkout failures
+  [x] Show success banner after payment
+
+Files Created:
+  (none)
+
+Files Modified:
+  - src/views/FoodieGroup.vue (complete Stripe checkout integration)
+
+Errors Encountered:
+  (none yet)
+
+Solutions Tried:
+  (none yet)
+
+================================================================================
+PHASE 6: ADMIN PRICE MANAGEMENT API
+================================================================================
+Status: [x] Complete
+
+Tasks:
+  [x] Add PUT /api/v1/groups/:id/price endpoint
+  [x] Implement checkFoodieGroupAdmin() helper
+  [x] Authorize foodie_group_admin or super_admin
+  [x] Validate price amount (min $0.50, max $999.99)
+  [x] Create Stripe Product if not exists
+  [x] Create new Stripe Price
+  [x] Deactivate old coupon_book_price row
+  [x] Insert new active coupon_book_price row
+  [x] Return updated price
+
+Files Created:
+  (none)
+
+Files Modified:
+  - server/src/routes/foodieGroups.js (added PUT price endpoint + checkFoodieGroupAdmin helper)
+
+Errors Encountered:
+  (none yet)
+
+Solutions Tried:
+  (none yet)
+
+================================================================================
+PHASE 7: ADMIN PRICING UI
+================================================================================
+Status: [x] Complete
+
+Tasks:
+  [x] Add pricing section to FoodieGroupDashboard.vue
+  [x] Display current price with default indicator
+  [x] Add edit form with validation ($0.50 - $999.99)
+  [x] Show help text about new purchases only
+  [x] Implement fetchCurrentPrice() method
+  [x] Implement savePrice() method with error handling
+  [ ] Test as foodie_group_admin (MANUAL)
+  [ ] Test as super_admin (MANUAL)
+
+Files Created:
+  (none)
+
+Files Modified:
+  - src/components/Dashboard/FoodieGroupDashboard.vue (added pricing management section)
+
+Errors Encountered:
+  (none yet)
+
+Solutions Tried:
+  (none yet)
+
+================================================================================
+PHASE 8: TESTS
+================================================================================
+Status: [x] Complete
+
+Tasks:
+  [x] Create tests/integration/api/stripe-checkout.test.js
+  [x] Create tests/integration/api/pricing.test.js
+  [x] Integration test: purchase with provider field (stripe/test)
+  [x] Integration test: access check logic (paid/pending/refunded)
+  [x] Integration test: payment event idempotency
+  [x] Integration test: coupon book price management
+  [x] Integration test: pricing authorization (group admin / super admin)
+  [x] Integration test: price history (deactivate old, create new)
+  [x] Integration test: price snapshot in purchase
+  [x] Update test helpers for new schema (migration 0005, new tables)
+  [ ] Run: npm test (MANUAL)
+
+Files Created:
+  - tests/integration/api/stripe-checkout.test.js
+  - tests/integration/api/pricing.test.js
+
+Files Modified:
+  - tests/helpers/db.js (added migration 0005, new tables, updated seedHelpers)
+
+Errors Encountered:
+  (none yet)
+
+Solutions Tried:
+  (none yet)
+
+================================================================================
+GLOBAL ERRORS & SOLUTIONS LOG
+================================================================================
+This section tracks errors that span multiple phases or general issues.
+
+--------------------------------------------------------------------------------
+Error #1: (template)
+--------------------------------------------------------------------------------
+Date: 
+Phase: 
+Error Message:
+
+
+Stack Trace (if applicable):
+
+
+Root Cause:
+
+
+Solution Attempted:
+
+
+Result: [ ] Fixed | [ ] Partially Fixed | [ ] Did Not Work
+
+Notes:
+
+
+--------------------------------------------------------------------------------
+Error #3: Test migrations not applying (19 test failures)
+--------------------------------------------------------------------------------
+Date: 2026-01-24
+Phase: Phase 8 - Testing
+Error Message:
+column "provider" of relation "purchase" does not exist
+relation "coupon_book_price" does not exist
+relation "payment_event" does not exist
+
+Stack Trace (if applicable):
+Multiple test failures in stripe-checkout.test.js, pricing.test.js, purchase-flow.test.js, authz-flows.test.js
+
+Root Cause:
+The test helper's migration parsing logic in tests/helpers/db.js used:
+`.filter(s => s && !s.startsWith('--'))`
+This incorrectly filtered out SQL chunks that had comment headers (e.g., 
+"-- 1. Add provider enum\nCREATE TYPE...") even when they contained valid 
+SQL statements below the comments.
+
+Solution Attempted:
+Updated tests/helpers/db.js to use a smarter filter that strips leading comment 
+lines from each chunk before checking if it's empty:
+```javascript
+.filter(s => {
+  if (!s) return false;
+  const withoutComments = s.split('\n')
+    .filter(line => !line.trim().startsWith('--'))
+    .join('\n').trim();
+  return withoutComments.length > 0;
+});
+```
+
+Result: [x] Fixed | [ ] Partially Fixed | [ ] Did Not Work
+
+Notes:
+All 232 tests now pass. The fix ensures SQL statements with comment headers 
+(common in well-documented migrations) are correctly executed in the test database.
+
+================================================================================
+MANUAL TESTING COMPLETED - 2026-01-24
+================================================================================
+Local Testing Results:
+  [x] Frontend served at http://localhost:8080/
+  [x] Backend served at http://localhost:3000/
+  [x] Stripe SDK initialized successfully
+  [x] Checkout session created via POST /api/v1/groups/:id/checkout
+  [x] User redirected to Stripe Checkout page
+  [x] Payment completed with test card 4242 4242 4242 4242
+  [x] Redirect back to app with ?success=true&session_id=...
+  [x] Purchase record created in database (status: pending)
+  [x] Simulated webhook: purchase updated to 'paid', membership created
+  [x] User gained access to coupons after purchase
+
+Test Session Details:
+  - Session ID: cs_test_a1dCj3Imxv2UgLgdl8Kerd4OGNvmFhlurYcSbbADr2TIkJSlCdcZ01Ex10
+  - User ID: 1a71dc60-d8da-40d6-afe2-f186f27564f0
+  - Group ID: 28e7dccf-4a8f-4894-b50a-0f439958e9d8 (Chapel Hill Foodies)
+  - Purchase ID: 89f4fef7-fd3c-49d8-80b5-42068eac601a
+
+Note: Webhook was simulated manually (localhost not reachable from Stripe).
+In production, configure webhook at: https://your-domain/api/v1/stripe/webhook
+
+================================================================================
+IMPORTANT NOTES & DECISIONS
+================================================================================
+1. Stripe sandbox account: CeruleanBridge
+2. Chapel Hill group is the first test group for payments
+3. Initial price: $9.99 (999 cents)
+4. Stripe Prices are IMMUTABLE - price changes create new Price objects
+5. Legacy test-code purchases use provider='test' and retain access
+6. Access check is simple: status='paid' grants access (ignores provider)
+
+================================================================================
+ENVIRONMENT VARIABLES CHECKLIST
+================================================================================
+Development (.env and .env.development):
+  [x] STRIPE_SECRET_KEY=sk_test_51SChFz...
+  [x] STRIPE_PUBLISHABLE_KEY=pk_test_51SChFz...
+  [x] STRIPE_WEBHOOK_SECRET=whsec_test_placeholder (use Stripe CLI for local testing)
+
+Production (Vercel):
+  [ ] STRIPE_SECRET_KEY (copy from .env)
+  [ ] STRIPE_PUBLISHABLE_KEY (copy from .env)
+  [ ] STRIPE_WEBHOOK_SECRET (get from Stripe Dashboard after configuring webhook)
+
+================================================================================
+STRIPE DASHBOARD SETUP CHECKLIST
+================================================================================
+  [x] Product created automatically on first checkout (default $9.99 price)
+  [x] Price created at $9.99 (999 cents) - default fallback
+  [ ] Webhook endpoint configured (MANUAL - required for production)
+      URL: https://your-domain.vercel.app/api/v1/stripe/webhook
+      Events to listen for:
+        - checkout.session.completed
+        - checkout.session.expired  
+        - charge.refunded
+
+================================================================================
+ROLLBACK PLAN
+================================================================================
+If something goes wrong:
+
+1. Database: 
+   - Migrations can be reverted by restoring from backup
+   - New columns are nullable/have defaults, so old code still works
+
+2. Frontend:
+   - Keep /test-purchase endpoint working during transition
+   - Can revert FoodieGroup.vue to use test code flow
+
+3. Stripe:
+   - Sandbox testing means no real money involved
+   - Can delete test data in Stripe Dashboard
+
+================================================================================
+CONTACTS & RESOURCES
+================================================================================
+- Stripe Dashboard: https://dashboard.stripe.com/test/
+- Stripe Docs: https://stripe.com/docs/payments/checkout
+- Stripe CLI: https://stripe.com/docs/stripe-cli
+- Webhook Testing: stripe listen --forward-to localhost:3000/api/v1/stripe/webhook
+
+================================================================================

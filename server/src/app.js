@@ -8,9 +8,16 @@ import eventsRouter from './routes/events.js';
 import groupsRouter from './routes/foodieGroups.js';
 import merchantsRouter from './routes/merchants.js';
 import couponSubmissionsRouter from './routes/couponSubmissions.js';
+import stripeRouter from './routes/stripe.js';
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
+
+// IMPORTANT: Raw body handling for Stripe webhook MUST come BEFORE express.json()
+// Stripe requires the raw request body to verify webhook signatures
+app.use('/api/v1/stripe/webhook', express.raw({ type: 'application/json' }));
+
+// JSON parsing for all other routes
 app.use(express.json());
 
 // health should work even if DB is down
@@ -39,6 +46,8 @@ app.use('/api/v1/merchants', merchantsRouter);
 app.use('/api/v1/coupons', couponsRouter);
 app.use('/api/v1/groups', groupsRouter);
 app.use('/api/v1/coupon-submissions', couponSubmissionsRouter);
+// Stripe webhook is unauthenticated; security is Stripe-Signature + STRIPE_WEBHOOK_SECRET
+app.use('/api/v1/stripe', stripeRouter);
 
 // 🔐 protect everything else
 app.use('/api/v1', auth());               

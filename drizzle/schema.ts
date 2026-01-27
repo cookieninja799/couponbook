@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm"
 export const attendanceStatus = pgEnum("attendance_status", ['going', 'waitlist', 'cancelled'])
 export const couponType = pgEnum("coupon_type", ['percent', 'amount', 'bogo', 'free_item'])
 export const purchaseStatus = pgEnum("purchase_status", ['created', 'pending', 'paid', 'expired', 'refunded'])
+export const purchaseProvider = pgEnum("purchase_provider", ['stripe', 'test'])
 export const role = pgEnum("role", ['super_admin', 'merchant', 'customer', 'foodie_group_admin'])
 export const submissionState = pgEnum("submission_state", ['pending', 'approved', 'rejected'])
 
@@ -213,18 +214,25 @@ export const foodieGroupMembership = pgTable("foodie_group_membership", {
 			foreignColumns: [foodieGroup.id],
 			name: "foodie_group_membership_group_id_foodie_group_id_fk"
 		}).onDelete("cascade"),
+	unique("foodie_group_membership_user_group_unique").on(table.userId, table.groupId),
 ]);
 
 export const purchase = pgTable("purchase", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	userId: uuid("user_id").notNull(),
 	groupId: uuid("group_id").notNull(),
-	stripeCheckoutId: varchar("stripe_checkout_id", { length: 255 }).notNull(),
+	provider: purchaseProvider().default('stripe').notNull(),
+	stripeCheckoutId: varchar("stripe_checkout_id", { length: 255 }),
 	stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
+	stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
+	stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
+	stripeChargeId: varchar("stripe_charge_id", { length: 255 }),
 	amountCents: integer("amount_cents").notNull(),
 	currency: varchar({ length: 10 }).notNull(),
 	status: purchaseStatus().notNull(),
-	purchasedAt: timestamp("purchased_at", { mode: 'string' }).notNull(),
+	priceSnapshot: jsonb("price_snapshot"),
+	metadata: jsonb("metadata"),
+	purchasedAt: timestamp("purchased_at", { mode: 'string' }),
 	expiresAt: timestamp("expires_at", { mode: 'string' }),
 	refundedAt: timestamp("refunded_at", { mode: 'string' }),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
@@ -241,4 +249,48 @@ export const purchase = pgTable("purchase", {
 			name: "purchase_group_id_foodie_group_id_fk"
 		}),
 	unique("purchase_stripe_checkout_id_unique").on(table.stripeCheckoutId),
+]);
+
+export const couponBookPrice = pgTable("coupon_book_price", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	groupId: uuid("group_id").notNull(),
+	amountCents: integer("amount_cents").notNull(),
+	currency: varchar({ length: 10 }).default('usd').notNull(),
+	isActive: boolean("is_active").default(true).notNull(),
+	stripeProductId: varchar("stripe_product_id", { length: 255 }),
+	stripePriceId: varchar("stripe_price_id", { length: 255 }),
+	createdByUserId: uuid("created_by_user_id"),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+	archivedAt: timestamp("archived_at", { mode: 'string' }),
+}, (table) => [
+	foreignKey({
+			columns: [table.groupId],
+			foreignColumns: [foodieGroup.id],
+			name: "coupon_book_price_group_id_foodie_group_id_fk"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.createdByUserId],
+			foreignColumns: [user.id],
+			name: "coupon_book_price_created_by_user_id_user_id_fk"
+		}).onDelete("set null"),
+]);
+
+export const paymentEvent = pgTable("payment_event", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	provider: varchar({ length: 32 }).notNull(),
+	eventId: varchar("event_id", { length: 255 }).notNull(),
+	eventType: varchar("event_type", { length: 255 }).notNull(),
+	receivedAt: timestamp("received_at", { mode: 'string' }).defaultNow().notNull(),
+	purchaseId: uuid("purchase_id"),
+	processedAt: timestamp("processed_at", { mode: 'string' }),
+	processingError: text("processing_error"),
+	payload: jsonb(),
+}, (table) => [
+	foreignKey({
+			columns: [table.purchaseId],
+			foreignColumns: [purchase.id],
+			name: "payment_event_purchase_id_purchase_id_fk"
+		}).onDelete("set null"),
+	unique("payment_event_event_id_unique").on(table.eventId),
 ]);

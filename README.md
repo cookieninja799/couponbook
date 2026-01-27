@@ -75,6 +75,31 @@ npm run serve
 npm run dev
 ```
 
+### Stripe webhooks: dev vs production
+
+Webhooks go to **different URLs** depending on environment. You don’t change app code—you use different Stripe config and secrets per environment.
+
+| Environment | Where webhooks go | How to set it up |
+|-------------|-------------------|-------------------|
+| **Dev** | Your local machine | 1. Install [Stripe CLI](https://stripe.com/docs/stripe-cli).<br>2. Run `npm run stripe:listen` (forwards to `http://localhost:3000/api/v1/stripe/webhook` by default; set `PORT` if your backend uses another port).<br>3. Copy the printed `whsec_...` into `.env.development` as `STRIPE_WEBHOOK_SECRET`. |
+| **Production** | Your Vercel app | 1. In [Stripe Dashboard → Webhooks](https://dashboard.stripe.com/webhooks), add an endpoint.<br>2. URL: `https://<your-vercel-domain>/api/v1/stripe/webhook`.<br>3. Subscribe events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`.<br>4. Copy the endpoint’s **Signing secret** into Vercel’s env as `STRIPE_WEBHOOK_SECRET`. |
+
+In dev, keep `npm run stripe:listen` running in a separate terminal so events from Stripe (or the CLI) are forwarded to your local server.
+
+#### Verifying the production webhook (before or after deploy)
+
+1. **Stripe CLI in live mode**  
+   Forward live events to your production URL (use the same signing secret from Stripe Dashboard for that endpoint):
+   ```bash
+   stripe listen --forward-to https://<production-domain>/api/v1/stripe/webhook
+   ```
+   Then trigger a test payment or use the CLI to send a test event.
+
+2. **Stripe Dashboard**  
+   **Webhooks** → your production endpoint → **Send test webhook** → choose `checkout.session.completed` (or another subscribed event).
+
+If signature verification fails in production (e.g. 400 "Webhook Error"), the request body may have been parsed before verification. This app avoids that on Vercel by routing `POST /api/v1/stripe/webhook` to a dedicated serverless function (`api/stripe-webhook.js`) that never uses a body parser and reads the raw stream before calling Stripe’s `constructEvent`. The rewrite is in `vercel.json`; the shared logic lives in `server/src/stripeWebhookHandler.js`.
+
 ---
 
 ## 🛠️ Database Management
@@ -138,6 +163,14 @@ Create a `.env` file in the root directory. Key variables include:
 |----------|-------------|
 | `VUE_APP_API_URL` | Backend API base URL |
 | `VUE_APP_GOOGLE_MAPS_API_KEY`| API key for map features |
+
+### Stripe
+| Variable | Description |
+|----------|-------------|
+| `STRIPE_SECRET_KEY` | Secret key (`sk_test_...` or `sk_live_...`) |
+| `STRIPE_PUBLISHABLE_KEY` | Publishable key (`pk_test_...` or `pk_live_...`) |
+| `STRIPE_WEBHOOK_SECRET` | Per-environment: dev = from `stripe listen`; production = from Dashboard webhook endpoint |
+| `APP_URL` | App base URL for redirects (e.g. `https://your-app.vercel.app` in production) |
 
 ---
 

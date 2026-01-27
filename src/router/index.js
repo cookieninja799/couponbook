@@ -8,6 +8,7 @@ import FoodieGroupList from '../views/FoodieGroupList.vue'
 import Profile from '../views/Profile.vue'
 import AuthCallback from '@/views/AuthCallback.vue'
 import CouponSubmissions from '@/views/CouponSubmissions.vue'
+import CheckoutSuccess from '@/views/CheckoutSuccess.vue'
 
 // Import dashboards directly from their component paths:
 import FoodieGroupDashboard from '../components/Dashboard/FoodieGroupDashboard.vue'
@@ -38,6 +39,12 @@ const routes = [
     path: '/foodie-group/:id',
     name: 'FoodieGroupView',
     component: FoodieGroupView,
+    props: true
+  },
+  {
+    path: '/checkout/success/:groupSlug',
+    name: 'CheckoutSuccess',
+    component: CheckoutSuccess,
     props: true
   },
   {
