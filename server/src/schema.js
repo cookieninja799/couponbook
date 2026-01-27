@@ -236,7 +236,6 @@ export const purchase = pgTable("purchase", {
     }),
     unique("purchase_stripe_checkout_id_unique").on(table.stripeCheckoutId),
 ]);
-
 export const couponBookPrice = pgTable("coupon_book_price", {
     id: uuid().defaultRandom().primaryKey().notNull(),
     groupId: uuid("group_id").notNull(),
@@ -261,7 +260,6 @@ export const couponBookPrice = pgTable("coupon_book_price", {
         name: "coupon_book_price_created_by_user_id_user_id_fk"
     }).onDelete("set null"),
 ]);
-
 export const paymentEvent = pgTable("payment_event", {
     id: uuid().defaultRandom().primaryKey().notNull(),
     provider: varchar({ length: 32 }).notNull(),
@@ -280,9 +278,3 @@ export const paymentEvent = pgTable("payment_event", {
     }).onDelete("set null"),
     unique("payment_event_event_id_unique").on(table.eventId),
 ]);
-
-
-
-
-
-
