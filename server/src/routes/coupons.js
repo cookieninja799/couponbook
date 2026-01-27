@@ -2,7 +2,7 @@
 import express from 'express';
 import { db } from '../db.js';
 import { coupon, merchant, foodieGroup, couponRedemption, user } from '../schema.js';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, inArray, sql } from 'drizzle-orm';
 import auth from '../middleware/auth.js'; // auth() verifies Cognito token and sets req.user
 import { resolveLocalUser, canManageMerchant, canManageCoupon, hasEntitlement } from '../authz/index.js';
 
@@ -13,7 +13,9 @@ console.log('📦  coupons router loaded');
 // GET all coupons
 router.get('/', async (req, res, next) => {
   try {
-    const allCoupons = await db
+    const { groupId } = req.query;
+
+    let couponsQuery = db
       .select({
         id:                coupon.id,
         title:             coupon.title,
@@ -35,7 +37,35 @@ router.get('/', async (req, res, next) => {
       .leftJoin(merchant, eq(merchant.id, coupon.merchantId))
       .leftJoin(foodieGroup, eq(foodieGroup.id, coupon.groupId));
 
-    res.json(allCoupons);
+    if (groupId) {
+      couponsQuery = couponsQuery.where(eq(coupon.groupId, groupId));
+    }
+
+    const allCoupons = await couponsQuery;
+    const couponIds = allCoupons.map((c) => c.id);
+
+    let redemptionCounts = new Map();
+    if (couponIds.length) {
+      const redemptions = await db
+        .select({
+          couponId: couponRedemption.couponId,
+          redemptions: sql`count(${couponRedemption.id})`.as('redemptions'),
+        })
+        .from(couponRedemption)
+        .where(inArray(couponRedemption.couponId, couponIds))
+        .groupBy(couponRedemption.couponId);
+
+      redemptionCounts = new Map(
+        redemptions.map((row) => [row.couponId, Number(row.redemptions || 0)])
+      );
+    }
+
+    const response = allCoupons.map((couponRow) => ({
+      ...couponRow,
+      redemptions: redemptionCounts.get(couponRow.id) || 0,
+    }));
+
+    res.json(response);
   } catch (err) {
     console.error('📦 error in GET /api/v1/coupons', err);
 

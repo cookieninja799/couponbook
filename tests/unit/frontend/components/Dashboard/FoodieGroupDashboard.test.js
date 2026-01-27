@@ -157,6 +157,44 @@ describe('FoodieGroupDashboard', () => {
     expect(wrapper.find('.group-selector').exists()).toBe(true);
   });
 
+  it('renders redemption counts for active coupons', async () => {
+    store.state.auth.isAuthenticated = true;
+    const couponPayload = [
+      {
+        id: 'coupon-1',
+        description: 'Test coupon',
+        merchant_name: 'Acme Widgets',
+        redemptions: 5,
+      },
+    ];
+
+    global.fetch.mockImplementation((url) => {
+      if (String(url).includes('/coupons?')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(couponPayload),
+        });
+      }
+      return mockFetchOk(url);
+    });
+
+    const wrapper = mount(FoodieGroupDashboard, {
+      global: {
+        plugins: [store],
+        mocks: {
+          $route: { params: { groupId: 'group-1' } },
+          $router: { replace: vi.fn() },
+        },
+      },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain('Redemptions: 5');
+  });
+
   it('navigates to new group when selector changes', () => {
     store.state.auth.isAuthenticated = false;
     const pushSpy = vi.fn();
