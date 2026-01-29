@@ -416,9 +416,19 @@ export default {
       this.notAuthorized = false;
       this.groupLoaded = false;
       this.groupError = null;
+      
+      // Reset price editing state when switching groups to prevent
+      // accidentally saving a price to the wrong group
+      this.editingPrice = false;
+      this.priceError = null;
+      
       await this.loadGroupDetails();
       if (!this.notAuthorized) {
-        await Promise.all([this.loadPendingCoupons(), this.loadActiveCoupons()]);
+        await Promise.all([
+          this.loadPendingCoupons(),
+          this.loadActiveCoupons(),
+          this.fetchCurrentPrice(),
+        ]);
       }
       this.authChecked = true;
     },

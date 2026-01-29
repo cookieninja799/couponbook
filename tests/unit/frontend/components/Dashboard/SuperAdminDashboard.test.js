@@ -177,7 +177,7 @@ describe('SuperAdminDashboard', () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain('Super Admin Dashboard');
-    expect(wrapper.text()).toContain('Global Overview');
+    expect(wrapper.text()).toContain('Platform Overview');
     expect(wrapper.vm.notAuthorized).toBe(false);
   });
 

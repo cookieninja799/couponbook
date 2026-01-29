@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import { pool } from './db.js';
-import auth from './middleware/auth.js';    
+import auth from './middleware/auth.js';
+import { resolveLocalUser, requireSuperAdmin } from './authz/index.js';
 import usersRouter from './routes/users.js';
 import couponsRouter from './routes/coupons.js';
 import eventsRouter from './routes/events.js';
@@ -9,6 +10,7 @@ import groupsRouter from './routes/foodieGroups.js';
 import merchantsRouter from './routes/merchants.js';
 import couponSubmissionsRouter from './routes/couponSubmissions.js';
 import stripeRouter from './routes/stripe.js';
+import adminRouter from './routes/admin.js';
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -40,7 +42,7 @@ app.get('/api/db-ping', async (req, res, next) => {
   }
 });
 
-// public routes
+// public routes (individual endpoints within may still require auth)
 app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/merchants', merchantsRouter);
 app.use('/api/v1/coupons', couponsRouter);
@@ -49,9 +51,14 @@ app.use('/api/v1/coupon-submissions', couponSubmissionsRouter);
 // Stripe webhook is unauthenticated; security is Stripe-Signature + STRIPE_WEBHOOK_SECRET
 app.use('/api/v1/stripe', stripeRouter);
 
-// 🔐 protect everything else
-app.use('/api/v1', auth());               
+// 🔐 Super Admin "god mode" routes - require authentication + super_admin role
+// Mounted with full auth chain for auditing and security
+app.use('/api/v1/admin', auth(), resolveLocalUser, requireSuperAdmin, adminRouter);
 
+// 🔐 protect everything else
+app.use('/api/v1', auth());
+
+// Events router - read endpoints are public-ish, write endpoints require super_admin
 app.use('/api/v1/events', eventsRouter);
 
 // global error handler (get JSON instead of opaque 500)

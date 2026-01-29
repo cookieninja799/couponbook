@@ -162,9 +162,17 @@ export const user = pgTable("user", {
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 	deletedAt: timestamp("deleted_at", { mode: 'string' }),
+	anonymizedAt: timestamp("anonymized_at", { mode: 'string' }),
+	anonymizedByUserId: uuid("anonymized_by_user_id"),
+	anonymizedReason: text("anonymized_reason"),
 }, (table) => [
 	unique("user_cognito_sub_unique").on(table.cognitoSub),
 	unique("user_email_unique").on(table.email),
+	foreignKey({
+		columns: [table.anonymizedByUserId],
+		foreignColumns: [table.id],
+		name: "user_anonymized_by_user_id_user_id_fk"
+	}),
 ]);
 
 export const foodieGroup = pgTable("foodie_group", {
@@ -295,4 +303,20 @@ export const paymentEvent = pgTable("payment_event", {
 		name: "payment_event_purchase_id_purchase_id_fk"
 	}).onDelete("set null"),
 	unique("payment_event_event_id_unique").on(table.eventId),
+]);
+
+export const adminAuditLog = pgTable("admin_audit_log", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	actorUserId: uuid("actor_user_id").notNull(),
+	action: varchar({ length: 100 }).notNull(),
+	targetType: varchar("target_type", { length: 50 }).notNull(),
+	targetId: varchar("target_id", { length: 255 }).notNull(),
+	metadata: jsonb(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	foreignKey({
+		columns: [table.actorUserId],
+		foreignColumns: [user.id],
+		name: "admin_audit_log_actor_user_id_user_id_fk"
+	}),
 ]);

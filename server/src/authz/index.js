@@ -4,8 +4,10 @@ import { eq, and } from 'drizzle-orm';
 
 /**
  * resolveLocalUser:
- * Middleware that fetches the DB user by Cognito sub and attaches it to req.user.
+ * Middleware that fetches the DB user by Cognito sub and attaches it to req.dbUser.
  * Requires the standard auth middleware to have already run.
+ * 
+ * Security: Blocks access for users with deletedAt set (disabled/removed users).
  */
 export async function resolveLocalUser(req, res, next) {
   if (!req.user || !req.user.sub) {
@@ -20,6 +22,8 @@ export async function resolveLocalUser(req, res, next) {
       .limit(1);
 
     if (!user) {
+      // Check if this sub was previously registered but is now disabled/anonymized
+      // We check by email pattern to prevent re-creation of disabled accounts
       console.warn(`User with sub ${req.user.sub} not found in DB; creating on-the-fly`);
       
       const safeName =
@@ -27,6 +31,20 @@ export async function resolveLocalUser(req, res, next) {
         (req.user.email ? req.user.email.split('@')[0] : 'user-' + req.user.sub.slice(0, 6));
 
       const safeEmail = req.user.email || `${req.user.sub}@unknown.local`;
+
+      // Check if email exists but is deleted (prevent re-creation of disabled accounts)
+      const [existingByEmail] = await db
+        .select()
+        .from(schema.user)
+        .where(eq(schema.user.email, safeEmail))
+        .limit(1);
+      
+      if (existingByEmail && existingByEmail.deletedAt) {
+        console.warn(`Blocked auto-creation: email ${safeEmail} belongs to a disabled account`);
+        return res.status(403).json({ 
+          message: 'Forbidden: This account has been disabled. Contact support if you believe this is an error.' 
+        });
+      }
 
       const [newUser] = await db
         .insert(schema.user)
@@ -42,6 +60,14 @@ export async function resolveLocalUser(req, res, next) {
       return next();
     }
 
+    // Block disabled/deleted users from accessing protected endpoints
+    if (user.deletedAt) {
+      console.warn(`Blocked disabled user ${user.id} (deletedAt: ${user.deletedAt})`);
+      return res.status(403).json({ 
+        message: 'Forbidden: This account has been disabled. Contact support if you believe this is an error.' 
+      });
+    }
+
     // Attach full DB user record
     req.dbUser = user;
     next();
@@ -52,15 +78,19 @@ export async function resolveLocalUser(req, res, next) {
 }
 
 /**
- * requireAdmin:
+ * requireSuperAdmin:
  * Middleware that ensures the dbUser has the 'super_admin' role.
+ * (Renamed from requireAdmin for clarity - there is only one privileged platform role)
  */
-export function requireAdmin(req, res, next) {
+export function requireSuperAdmin(req, res, next) {
   if (req.dbUser?.role !== 'super_admin') {
     return res.status(403).json({ message: 'Forbidden: Super admin access required' });
   }
   next();
 }
+
+// Backwards compatibility alias (deprecated, use requireSuperAdmin)
+export const requireAdmin = requireSuperAdmin;
 
 /**
  * canManageMerchant:

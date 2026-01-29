@@ -4,45 +4,54 @@ import { db } from '../db.js';
 import { event } from '../schema.js';
 import { eq } from 'drizzle-orm';
 import auth from '../middleware/auth.js';
+import { resolveLocalUser, requireSuperAdmin } from '../authz/index.js';
 
 const router = express.Router();
 
-// GET /api/v1/events
+// GET /api/v1/events - public read
 router.get('/', async (req, res, next) => {
   try {
-    const allEvent = await db.select().from(event);
-    res.json(allEvent);
+    const allEvents = await db.select().from(event);
+    res.json(allEvents);
   } catch (err) {
     next(err);
   }
 });
 
-// GET /api/v1/events/:id
+// GET /api/v1/events/:id - public read
 router.get('/:id', async (req, res, next) => {
   try {
-    const [event] = await db
+    const [foundEvent] = await db
       .select()
       .from(event)
       .where(eq(event.id, req.params.id));
-    if (event) return res.json(event);
+    if (foundEvent) return res.json(foundEvent);
     res.status(404).json({ message: 'Event not found' });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/v1/events
-router.post('/', auth(), async (req, res, next) => {
+// POST /api/v1/events - super admin only
+router.post('/', auth(), resolveLocalUser, requireSuperAdmin, async (req, res, next) => {
   try {
-    const { name, description, startDate, endDate, location } = req.body;
+    const { name, description, startDate, endDate, location, groupId, merchantId, capacity } = req.body;
+    
+    if (!groupId || !merchantId) {
+      return res.status(400).json({ message: 'groupId and merchantId are required' });
+    }
+
     const [newEvent] = await db
       .insert(event)
       .values({
         name,
         description,
         startDatetime: new Date(startDate),
-        endDatetime: new Date(endDate),
+        endDatetime: endDate ? new Date(endDate) : null,
         location,
+        groupId,
+        merchantId,
+        capacity: capacity || 0,
       })
       .returning();
     res.status(201).json(newEvent);
@@ -51,19 +60,23 @@ router.post('/', auth(), async (req, res, next) => {
   }
 });
 
-// PUT /api/v1/events/:id
-router.put('/:id', auth(), async (req, res, next) => {
+// PUT /api/v1/events/:id - super admin only
+router.put('/:id', auth(), resolveLocalUser, requireSuperAdmin, async (req, res, next) => {
   try {
-    const { name, description, startDate, endDate, location } = req.body;
+    const { name, description, startDate, endDate, location, capacity } = req.body;
+    const updates = {};
+    
+    if (name !== undefined) updates.name = name;
+    if (description !== undefined) updates.description = description;
+    if (startDate !== undefined) updates.startDatetime = new Date(startDate);
+    if (endDate !== undefined) updates.endDatetime = new Date(endDate);
+    if (location !== undefined) updates.location = location;
+    if (capacity !== undefined) updates.capacity = capacity;
+    updates.updatedAt = new Date().toISOString();
+
     const [updated] = await db
       .update(event)
-      .set({
-        name,
-        description,
-        startDatetime: new Date(startDate),
-        endDatetime: new Date(endDate),
-        location,
-      })
+      .set(updates)
       .where(eq(event.id, req.params.id))
       .returning();
     if (updated) return res.json(updated);
@@ -73,8 +86,8 @@ router.put('/:id', auth(), async (req, res, next) => {
   }
 });
 
-// DELETE /api/v1/events/:id
-router.delete('/:id', auth(), async (req, res, next) => {
+// DELETE /api/v1/events/:id - super admin only
+router.delete('/:id', auth(), resolveLocalUser, requireSuperAdmin, async (req, res, next) => {
   try {
     const deleteResult = await db.delete(event).where(eq(event.id, req.params.id));
     if (deleteResult.rowCount) return res.json({ message: 'Event deleted' });

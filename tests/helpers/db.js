@@ -25,6 +25,7 @@ async function runMigrations(pg) {
   const migration4 = readFileSync(join(drizzleDir, '0004_add_super_admin_role.sql'), 'utf-8');
   const migration5 = readFileSync(join(drizzleDir, '0005_add_stripe_checkout_support.sql'), 'utf-8');
   const migration6 = readFileSync(join(drizzleDir, '0006_add_membership_unique_constraint.sql'), 'utf-8');
+  const migration7 = readFileSync(join(drizzleDir, '0007_add_admin_audit_and_user_anonymization.sql'), 'utf-8');
   
   // Split by statement breakpoint and execute each statement
   const statements0 = migration0.split('--> statement-breakpoint').map(s => s.trim()).filter(Boolean);
@@ -32,7 +33,7 @@ async function runMigrations(pg) {
   const statements2 = migration2.split('--> statement-breakpoint').map(s => s.trim()).filter(Boolean);
   const statements3 = migration3.split('--> statement-breakpoint').map(s => s.trim()).filter(Boolean);
   const statements4 = migration4.split('--> statement-breakpoint').map(s => s.trim()).filter(Boolean);
-  // Migration 5 uses semicolons as delimiters (raw SQL, not drizzle format)
+  // Migration 5+ use semicolons as delimiters (raw SQL, not drizzle format)
   // We need to keep statements that contain SQL even if they start with comments
   const statements5 = migration5
     .split(';')
@@ -48,6 +49,18 @@ async function runMigrations(pg) {
     });
 
   const statements6 = migration6
+    .split(';')
+    .map(s => s.trim())
+    .filter(s => {
+      if (!s) return false;
+      const withoutComments = s.split('\n')
+        .filter(line => !line.trim().startsWith('--'))
+        .join('\n')
+        .trim();
+      return withoutComments.length > 0;
+    });
+
+  const statements7 = migration7
     .split(';')
     .map(s => s.trim())
     .filter(s => {
@@ -89,6 +102,15 @@ async function runMigrations(pg) {
   }
 
   for (const stmt of statements6) {
+    try {
+      await pg.exec(stmt);
+    } catch (e) {
+      // Some statements might fail in PGlite (like partial indexes)
+      // Continue with other statements
+    }
+  }
+
+  for (const stmt of statements7) {
     try {
       await pg.exec(stmt);
     } catch (e) {
@@ -148,6 +170,7 @@ export async function resetTestDb() {
   
   // Delete all data from tables in reverse dependency order
   const tables = [
+    'admin_audit_log',
     'payment_event',
     'coupon_redemption',
     'event_rsvp', 
@@ -196,14 +219,19 @@ export async function withTransaction(testFn) {
 export const seedHelpers = {
   async createUser(db, overrides = {}) {
     const { user } = schema;
+    const values = {
+      cognitoSub: overrides.cognitoSub || `test-sub-${Date.now()}-${Math.random()}`,
+      email: overrides.email || `test-${Date.now()}-${Math.random()}@example.com`,
+      name: overrides.name || 'Test User',
+      role: overrides.role || 'customer',
+    };
+    // Support creating disabled users for testing
+    if (overrides.deletedAt) {
+      values.deletedAt = overrides.deletedAt;
+    }
     const [newUser] = await db
       .insert(user)
-      .values({
-        cognitoSub: overrides.cognitoSub || `test-sub-${Date.now()}-${Math.random()}`,
-        email: overrides.email || `test-${Date.now()}-${Math.random()}@example.com`,
-        name: overrides.name || 'Test User',
-        role: overrides.role || 'customer',
-      })
+      .values(values)
       .returning();
     return newUser;
   },
