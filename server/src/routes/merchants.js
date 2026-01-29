@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 
 // 🔐 Auth middleware (default export is verifyJwt → auth())
 import auth from '../middleware/auth.js';
-import { resolveLocalUser, canManageMerchant } from '../authz/index.js';
+import { resolveLocalUser, requireAdmin, canManageMerchant } from '../authz/index.js';
 
 // 📦 File upload & S3
 import multer from 'multer';
@@ -127,18 +127,25 @@ router.get('/:id', async (req, res, next) => {
 
 // ────────────────────────────────────────────────────────────────
 // POST create a new merchant
+// Secured: authenticated users can create merchants (non-admins own the merchant they create)
 // ────────────────────────────────────────────────────────────────
-router.post('/', async (req, res, next) => {
+router.post('/', auth(), resolveLocalUser, async (req, res, next) => {
   console.log('📦  POST /api/merchant', req.body);
   try {
     const { name, logo_url, owner_id } = req.body;
+
+    // Non-admin users can only create merchants they own
+    // Super admins can assign any owner_id
+    const effectiveOwnerId = req.dbUser.role === 'super_admin' && owner_id
+      ? owner_id
+      : req.dbUser.id;
 
     const [newMerchant] = await db
       .insert(merchant)
       .values({
         name,
         logoUrl: logo_url, // maps incoming snake_case to Drizzle field
-        ownerId: owner_id,
+        ownerId: effectiveOwnerId,
       })
       .returning();
 
@@ -151,10 +158,17 @@ router.post('/', async (req, res, next) => {
 
 // ────────────────────────────────────────────────────────────────
 // PUT update an existing merchant
+// Secured: super_admin OR merchant owner
 // ────────────────────────────────────────────────────────────────
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', auth(), resolveLocalUser, async (req, res, next) => {
   console.log('📦  PUT /api/merchant/' + req.params.id, req.body);
   try {
+    // Authorization check
+    const allowed = await canManageMerchant(req.dbUser, req.params.id);
+    if (!allowed) {
+      return res.status(403).json({ error: 'Forbidden: Cannot manage this merchant' });
+    }
+
     const updates = {};
     if (req.body.name !== undefined) updates.name = req.body.name;
     if (req.body.logo_url !== undefined) updates.logoUrl = req.body.logo_url;
@@ -180,10 +194,17 @@ router.put('/:id', async (req, res, next) => {
 
 // ────────────────────────────────────────────────────────────────
 // DELETE a merchant
+// Secured: super_admin OR merchant owner
 // ────────────────────────────────────────────────────────────────
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', auth(), resolveLocalUser, async (req, res, next) => {
   console.log('📦  DELETE /api/merchant/' + req.params.id);
   try {
+    // Authorization check
+    const allowed = await canManageMerchant(req.dbUser, req.params.id);
+    if (!allowed) {
+      return res.status(403).json({ error: 'Forbidden: Cannot manage this merchant' });
+    }
+
     const result = await db
       .delete(merchant)
       .where(eq(merchant.id, req.params.id));

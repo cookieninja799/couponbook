@@ -4,6 +4,7 @@ import { db } from '../db.js';
 import { foodieGroup, purchase, user, foodieGroupMembership, couponBookPrice } from '../schema.js';
 import { eq, and, count, isNull, or, sql } from 'drizzle-orm';
 import auth from '../middleware/auth.js';
+import { resolveLocalUser, requireAdmin, canManageGroup } from '../authz/index.js';
 import { stripe } from '../config/stripe.js';
 
 const router = express.Router();
@@ -481,16 +482,21 @@ function formatPrice(amountCents, currency = 'usd') {
 }
 
 // ─── POST /api/v1/groups ──────────────────────────────────────────────
-router.post('/', async (req, res, next) => {
+// Secured: Only super_admin can create groups
+router.post('/', auth(), resolveLocalUser, requireAdmin, async (req, res, next) => {
   console.log('📦  POST /api/v1/groups', req.body);
   try {
-    const { name, description } = req.body;
+    const { name, description, slug } = req.body;
+
+    // Generate slug from name if not provided
+    const finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
     const [newGroup] = await db
       .insert(foodieGroup)
       .values({
-        name,           // incoming snake_case = field name
-        description
+        name,
+        description,
+        slug: finalSlug,
       })
       .returning();
 
@@ -502,9 +508,16 @@ router.post('/', async (req, res, next) => {
 });
 
 // ─── PUT /api/v1/groups/:id ───────────────────────────────────────────
-router.put('/:id', async (req, res, next) => {
+// Secured: super_admin OR foodie_group_admin for this specific group
+router.put('/:id', auth(), resolveLocalUser, async (req, res, next) => {
   console.log('📦  PUT /api/v1/groups/' + req.params.id, req.body);
   try {
+    // Authorization check
+    const allowed = await canManageGroup(req.dbUser, req.params.id);
+    if (!allowed) {
+      return res.status(403).json({ error: 'Forbidden: Cannot manage this group' });
+    }
+
     const updates = {};
     if (req.body.name        !== undefined) updates.name        = req.body.name;
     if (req.body.description !== undefined) updates.description = req.body.description;
@@ -528,7 +541,8 @@ router.put('/:id', async (req, res, next) => {
 });
 
 // ─── DELETE /api/v1/groups/:id ────────────────────────────────────────
-router.delete('/:id', async (req, res, next) => {
+// Secured: Only super_admin can delete groups
+router.delete('/:id', auth(), resolveLocalUser, requireAdmin, async (req, res, next) => {
   console.log('📦  DELETE /api/v1/groups/' + req.params.id);
   try {
     const result = await db
