@@ -301,20 +301,18 @@ export default {
         const saved = await res.json()
         console.log('🗂 Saved submission:', saved)
 
-        // 2) Hit the webhook once per foodie group admin (each gets their own email)
-        const groupAdminEmails = Array.isArray(saved.groupAdminEmails) ? saved.groupAdminEmails : []
-        const payload = {
-          groupId: d.group_id,
-          merchantId: d.merchant_id,
-          submission_data: submissionData,
-        }
-        for (const userEmail of groupAdminEmails) {
-          await fetch(WEBHOOK_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...payload, userEmail }),
-          })
-        }
+        // 2) Fire off the n8n webhook to email the submitter (merchant)
+        const userEmail = this.user?.email || ''
+        await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userEmail,
+            groupId: d.group_id,
+            merchantId: d.merchant_id,
+            submission_data: submissionData,
+          }),
+        })
 
         // Show success state instead of alert popup
         this.submissionSuccess = true

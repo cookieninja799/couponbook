@@ -310,23 +310,7 @@ router.post('/', auth(), resolveLocalUser, async (req, res, next) => {
         submissionData: normalizedData,
       })
       .returning();
-
-    // Resolve all foodie group admin emails for notification
-    const adminRows = await db
-      .select({ email: user.email })
-      .from(foodieGroupMembership)
-      .innerJoin(user, eq(user.id, foodieGroupMembership.userId))
-      .where(
-        and(
-          eq(foodieGroupMembership.groupId, group_id),
-          eq(foodieGroupMembership.role, 'foodie_group_admin'),
-          isNull(foodieGroupMembership.deletedAt),
-          isNull(user.deletedAt)
-        )
-      );
-    const groupAdminEmails = adminRows.map((r) => r.email).filter(Boolean);
-
-    res.status(201).json({ ...newSub, groupAdminEmails });
+    res.status(201).json(newSub);
   } catch (err) {
     console.error('📦  error in POST /coupon-submissions', err);
     return res
