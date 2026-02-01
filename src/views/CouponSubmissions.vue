@@ -86,7 +86,6 @@ import { getAccessToken, signIn } from '@/services/authService'
 
 const API_BASE = '/api/v1'
 const WEBHOOK_URL = 'https://n8n.vivaspot.com/webhook/7d15576d-01a3-49c8-b0f4-6c490e54baa7'
-const TEST_EMAIL = 'thommy@ivalu8.com'
 
 // Roles allowed to access this page
 const ALLOWED_ROLES = ['super_admin', 'merchant', 'foodie_group_admin']
@@ -301,12 +300,13 @@ export default {
         if (!res.ok) throw new Error(`Status ${res.status}`)
         console.log('🗂 Saved submission:', await res.json())
 
-        // 2) Fire off the n8n webhook for email notification
+        // 2) Fire off the n8n webhook for email notification (use current user's email)
+        const userEmail = this.user?.email || ''
         await fetch(WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            userEmail: TEST_EMAIL,
+            userEmail,
             groupId: d.group_id,
             merchantId: d.merchant_id,
             submission_data: submissionData,
