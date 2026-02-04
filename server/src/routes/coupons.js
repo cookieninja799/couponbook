@@ -2,7 +2,7 @@
 import express from 'express';
 import { db } from '../db.js';
 import { coupon, merchant, foodieGroup, couponRedemption, user } from '../schema.js';
-import { eq, and, inArray, sql } from 'drizzle-orm';
+import { eq, and, inArray, sql, isNull } from 'drizzle-orm';
 import auth from '../middleware/auth.js'; // auth() verifies Cognito token and sets req.user
 import { resolveLocalUser, canManageMerchant, canManageCoupon, hasEntitlement } from '../authz/index.js';
 
@@ -38,7 +38,9 @@ router.get('/', async (req, res, next) => {
       .leftJoin(foodieGroup, eq(foodieGroup.id, coupon.groupId));
 
     if (groupId) {
-      couponsQuery = couponsQuery.where(eq(coupon.groupId, groupId));
+      couponsQuery = couponsQuery.where(and(eq(coupon.groupId, groupId), isNull(coupon.deletedAt)));
+    } else {
+      couponsQuery = couponsQuery.where(isNull(coupon.deletedAt));
     }
 
     const allCoupons = await couponsQuery;
@@ -52,7 +54,7 @@ router.get('/', async (req, res, next) => {
           redemptions: sql`count(${couponRedemption.id})`.as('redemptions'),
         })
         .from(couponRedemption)
-        .where(inArray(couponRedemption.couponId, couponIds))
+        .where(and(inArray(couponRedemption.couponId, couponIds), isNull(couponRedemption.deletedAt)))
         .groupBy(couponRedemption.couponId);
 
       redemptionCounts = new Map(
@@ -92,7 +94,7 @@ router.get('/:id', async (req, res, next) => {
     const [found] = await db
       .select()
       .from(coupon)
-      .where(eq(coupon.id, req.params.id));
+      .where(and(eq(coupon.id, req.params.id), isNull(coupon.deletedAt)));
 
     if (!found) {
       console.log('📦  coupon not found');
