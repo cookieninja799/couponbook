@@ -1562,9 +1562,9 @@ export default {
       if (tabId === 'users' && this.users.length === 0) {
         this.searchUsers();
       } else if (tabId === 'merchants' && this.merchants.length === 0) {
-        this.loadMerchants();
+        this.searchMerchants();
       } else if (tabId === 'groups' && this.groups.length === 0) {
-        this.loadGroups();
+        this.searchGroups();
       } else if (tabId === 'payments' && this.purchases.length === 0) {
         this.loadPurchases();
       }

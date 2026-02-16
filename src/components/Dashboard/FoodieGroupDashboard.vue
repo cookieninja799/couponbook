@@ -69,6 +69,71 @@
         </div>
       </header>
 
+      <!-- Group Overview Section -->
+      <section class="dashboard-section group-overview" v-if="groupLoaded">
+        <h2>Group Overview</h2>
+        
+        <div v-if="overviewLoading" class="loading-state">Loading analytics...</div>
+        <div v-else-if="overviewError" class="error-state">{{ overviewError }}</div>
+        <div v-else class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Paid Purchases</span>
+            <span class="stat-value highlight-success">
+              {{ groupOverview.counts?.purchases?.paid || 0 }}
+            </span>
+          </div>
+          <div class="stat-card wide">
+            <span class="stat-label">Gross Revenue</span>
+            <span class="stat-value highlight-success">
+              {{ formatCurrency(groupOverview.revenue?.grossCents || 0) }}
+            </span>
+          </div>
+          <div class="stat-card clickable" @click="scrollToSection('active-coupons')" title="View active coupons">
+            <span class="stat-label">Coupons</span>
+            <span class="stat-value">
+              {{ groupOverview.counts?.coupons || 0 }}
+            </span>
+            <span class="stat-hint">Click to view</span>
+          </div>
+          <div class="stat-card clickable" @click="scrollToSection('pending-submissions')" title="View pending submissions">
+            <span class="stat-label">Pending Submissions</span>
+            <span class="stat-value highlight-warning">
+              {{ stats.pendingSubmissions || 0 }}
+            </span>
+            <span class="stat-hint">Click to view</span>
+          </div>
+        </div>
+
+        <h3 style="margin-top: var(--spacing-xl);">Recent Purchases</h3>
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in groupOverview.recentPurchases" :key="p.id">
+                <td>{{ p.userEmail || 'Unknown' }}</td>
+                <td>{{ formatCurrency(p.amountCents) }}</td>
+                <td>
+                  <span :class="['status-badge', getStatusClass(p.status)]">
+                    {{ p.status }}
+                  </span>
+                </td>
+                <td>{{ formatDate(p.createdAt) }}</td>
+              </tr>
+              <tr v-if="!groupOverview.recentPurchases || groupOverview.recentPurchases.length === 0">
+                <td colspan="4" class="empty-state">No purchases yet</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- Edit Group Section -->
       <section class="dashboard-section edit-group" v-if="groupLoaded">
         <h2>Edit Group Details</h2>
@@ -183,8 +248,8 @@
       </section>
 
       <!-- Coupons Board (Kanban Style) -->
-      <section class="dashboard-section submissions-board" v-if="groupLoaded">
-        <div class="kanban-column pending">
+      <section id="coupons-board" class="dashboard-section submissions-board" v-if="groupLoaded">
+        <div id="pending-submissions" class="kanban-column pending">
           <h2>Pending Submissions</h2>
           <div class="column-content">
             <div class="pending-coupons card">
@@ -219,7 +284,7 @@
           </div>
         </div>
 
-        <div class="kanban-column active">
+        <div id="active-coupons" class="kanban-column active">
           <h2>Active Coupons</h2>
           <div class="column-content">
             <div class="active-coupons card">
@@ -245,16 +310,6 @@
             </div>
           </div>
         </div>
-      </section>
-
-      <!-- Group Statistics Section -->
-      <section class="dashboard-section group-stats" v-if="groupLoaded">
-        <h2>Group Statistics</h2>
-        <ul>
-          <li>Total Members: {{ stats.totalMembers }}</li>
-          <li>Total Coupons: {{ stats.totalCoupons }}</li>
-          <li>Pending Submissions: {{ stats.pendingSubmissions }}</li>
-        </ul>
       </section>
     </template>
   </div>
@@ -312,6 +367,15 @@ export default {
       savingPrice: false,
       priceError: null,
 
+      // group overview analytics
+      groupOverview: {
+        counts: { coupons: 0, purchases: { paid: 0 } },
+        revenue: { grossCents: 0 },
+        recentPurchases: []
+      },
+      overviewLoading: false,
+      overviewError: null,
+
       // authorization gate
       authChecked: false,
       notAuthorized: false,
@@ -366,6 +430,7 @@ export default {
         this.loadPendingCoupons(),
         this.loadActiveCoupons(),
         this.fetchCurrentPrice(),
+        this.loadGroupOverview(),
       ]);
     } finally {
       this.authChecked = true;
@@ -428,6 +493,7 @@ export default {
           this.loadPendingCoupons(),
           this.loadActiveCoupons(),
           this.fetchCurrentPrice(),
+          this.loadGroupOverview(),
         ]);
       }
       this.authChecked = true;
@@ -678,6 +744,36 @@ export default {
       }
     },
 
+    // Fetch group overview analytics
+    async loadGroupOverview() {
+      if (this.notAuthorized || !this.groupId) return;
+      
+      this.overviewLoading = true;
+      this.overviewError = null;
+      try {
+        const token = await getAccessToken();
+        const res = await fetch(
+          `${API_BASE}/groups/${this.groupId}/admin/overview`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        
+        if (res.status === 403 || res.status === 401) {
+          const body = await res.json().catch(() => ({}));
+          this.markNotAuthorized(body.error || 'Not authorized');
+          return;
+        }
+        
+        if (!res.ok) throw new Error(`Failed to load overview: ${res.status}`);
+        
+        this.groupOverview = await res.json();
+      } catch (err) {
+        console.error('[FoodieGroupDashboard] loadGroupOverview error', err);
+        this.overviewError = err.message || 'Could not load group overview';
+      } finally {
+        this.overviewLoading = false;
+      }
+    },
+
     // Approve a pending submission
     async approveCoupon(coupon) {
       if (this.notAuthorized) return;
@@ -829,6 +925,29 @@ export default {
       const d = new Date(s);
       if (Number.isNaN(d.getTime())) return "—";
       return d.toLocaleDateString();
+    },
+
+    // Format currency from cents
+    formatCurrency(cents) {
+      return `$${(cents / 100).toFixed(2)}`;
+    },
+
+    // Get status badge class
+    getStatusClass(status) {
+      switch (status) {
+        case 'paid': return 'success';
+        case 'pending': return 'warning';
+        case 'refunded': return 'info';
+        default: return '';
+      }
+    },
+
+    // Scroll to a section by ID
+    scrollToSection(sectionId) {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     },
 
     // Save group details to backend
@@ -1273,20 +1392,6 @@ textarea:focus {
   color: var(--color-error);
 }
 
-.group-stats ul {
-  padding-left: var(--spacing-lg);
-  margin: 0;
-}
-
-.group-stats li {
-  margin-bottom: var(--spacing-md);
-  padding-left: var(--spacing-xs);
-}
-
-.group-stats li:last-child {
-  margin-bottom: 0;
-}
-
 /* Pricing Section */
 .pricing-section {
   background: var(--color-bg-primary);
@@ -1374,5 +1479,152 @@ textarea:focus {
 .price-form-actions .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Group Overview Section */
+.group-overview {
+  background: var(--color-bg-primary);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.stat-card {
+  background: var(--color-bg-muted);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  box-shadow: var(--shadow-xs);
+}
+
+.stat-card.wide {
+  grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+  .stat-card.wide {
+    grid-column: span 1;
+  }
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.stat-value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+.stat-value.highlight-success {
+  color: var(--color-success);
+}
+
+.stat-value.highlight-warning {
+  color: var(--color-warning);
+}
+
+.stat-card.clickable {
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.stat-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--spacing-xs);
+}
+
+.data-table-container {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-bg-primary);
+}
+
+.data-table thead {
+  background: var(--color-bg-muted);
+}
+
+.data-table th {
+  padding: var(--spacing-md);
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.data-table td {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.data-table tbody tr:hover {
+  background: var(--color-bg-hover);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.status-badge.warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.status-badge.info {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-style: italic;
+  padding: var(--spacing-xl);
+}
+
+.loading-state {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--spacing-xl);
+}
+
+.error-state {
+  text-align: center;
+  color: var(--color-error);
+  padding: var(--spacing-xl);
 }
 </style>
