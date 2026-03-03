@@ -112,8 +112,11 @@ try {
   });
   console.log(`✅ Stripe client initialized successfully (mode: ${stripeConfig.mode})`);
 } catch (error) {
-  console.error('❌ Stripe configuration error:', error.message);
-  throw error;
+  // Log but do not re-throw — a misconfigured Stripe should only break Stripe
+  // routes, not crash every endpoint on startup.
+  console.error('❌ Stripe configuration error (Stripe routes will be unavailable):', error.message);
+  stripe = null;
+  stripeConfig = null;
 }
 
 export { stripe, stripeConfig, validateStripeIdMode, getStripeMode };
