@@ -267,8 +267,14 @@ export const couponBookPrice = pgTable("coupon_book_price", {
 	amountCents: integer("amount_cents").notNull(),
 	currency: varchar({ length: 10 }).default('usd').notNull(),
 	isActive: boolean("is_active").default(true).notNull(),
+	// Legacy columns (kept for backward compatibility)
 	stripeProductId: varchar("stripe_product_id", { length: 255 }),
 	stripePriceId: varchar("stripe_price_id", { length: 255 }),
+	// Environment-specific Stripe IDs
+	stripeProductIdTest: varchar("stripe_product_id_test", { length: 255 }),
+	stripePriceIdTest: varchar("stripe_price_id_test", { length: 255 }),
+	stripeProductIdLive: varchar("stripe_product_id_live", { length: 255 }),
+	stripePriceIdLive: varchar("stripe_price_id_live", { length: 255 }),
 	createdByUserId: uuid("created_by_user_id"),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),

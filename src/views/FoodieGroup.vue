@@ -24,6 +24,22 @@
         <!-- Purchase Coupon Book Banner -->
         <div v-if="!hasPurchasedCouponBook" class="purchase-banner">
           <p>Purchase the coupon book to unlock all group coupons and RSVP for events.</p>
+
+          <div class="promo-code-row">
+            <input
+              v-model="promoCode"
+              type="text"
+              placeholder="Promo code"
+              class="promo-input"
+              :disabled="promoLoading"
+              @keyup.enter="applyPromoCode"
+            />
+            <button @click="applyPromoCode" :disabled="promoLoading || !promoCode.trim()" class="promo-btn">
+              {{ promoLoading ? 'Applying...' : 'Apply' }}
+            </button>
+          </div>
+          <p v-if="promoError" class="promo-error">{{ promoError }}</p>
+
           <button @click="onPurchaseClick" :disabled="checkoutLoading" class="purchase-btn">
             {{ checkoutLoading ? 'Processing...' : `Buy Coupon Book - ${groupPriceDisplay}` }}
           </button>
@@ -119,6 +135,10 @@ export default {
       groupPrice: null,
       groupPriceDisplay: '$9.99',
       checkoutLoading: false,
+      // Promo code state
+      promoCode: '',
+      promoLoading: false,
+      promoError: null,
       events: [
         {
           id: 1,
@@ -566,6 +586,34 @@ export default {
       }
     },
 
+    async applyPromoCode() {
+      this.promoError = null;
+      this.promoLoading = true;
+      const groupId = this.group?.id;
+      try {
+        const token = await getAccessToken();
+        const res = await fetch(`/api/v1/groups/${groupId}/promo-unlock`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ code: this.promoCode.trim() }),
+        });
+        if (res.ok) {
+          await this.fetchAccess(groupId);
+        } else {
+          const payload = await res.json().catch(() => ({}));
+          this.promoError = payload.error || 'Invalid promo code';
+        }
+      } catch (e) {
+        console.error('[FoodieGroup] promo-unlock error', e);
+        this.promoError = 'Something went wrong. Please try again.';
+      } finally {
+        this.promoLoading = false;
+      }
+    },
+
     updateFilters(newFilters) {
       this.filters = newFilters;
     },
@@ -750,6 +798,75 @@ export default {
 .purchase-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.promo-code-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  justify-content: center;
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+}
+
+.promo-input {
+  flex: 0 1 220px;
+  background: var(--surface-1);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-base);
+  min-height: var(--button-height-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.promo-input::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+.promo-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(242, 84, 45, 0.2);
+}
+
+.promo-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.promo-btn {
+  flex-shrink: 0;
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family-base);
+  min-height: var(--button-height-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  white-space: nowrap;
+}
+
+.promo-btn:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.promo-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.promo-error {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-xs);
+  margin-bottom: 0;
 }
 
 .error {

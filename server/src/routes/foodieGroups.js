@@ -6,6 +6,7 @@ import { eq, and, count, isNull, or, sql, desc } from 'drizzle-orm';
 import auth from '../middleware/auth.js';
 import { resolveLocalUser, requireAdmin, canManageGroup } from '../authz/index.js';
 import { stripe } from '../config/stripe.js';
+import { getValidatedStripeIds, prepareStripeIdFields } from '../utils/stripeIdHelper.js';
 
 const router = express.Router();
 
@@ -299,12 +300,16 @@ router.get('/:id/price', async (req, res, next) => {
     }
 
     const display = formatPrice(activePrice.amountCents, activePrice.currency);
+    
+    // Get environment-appropriate Stripe Price ID
+    const { priceId } = getValidatedStripeIds(activePrice);
+    
     return res.json({
       available: true,
       amountCents: activePrice.amountCents,
       currency: activePrice.currency,
       display,
-      stripePriceId: activePrice.stripePriceId,
+      stripePriceId: priceId,
       isDefault: false,
     });
   } catch (err) {
@@ -378,8 +383,12 @@ router.put('/:id/price', auth(), async (req, res, next) => {
         )
       );
 
-    // 6) Get or create Stripe Product
-    let stripeProductId = existingPrice?.stripeProductId;
+    // 6) Get or create Stripe Product (use environment-appropriate ID)
+    let stripeProductId;
+    if (existingPrice) {
+      const { productId } = getValidatedStripeIds(existingPrice);
+      stripeProductId = productId;
+    }
 
     if (!stripeProductId) {
       console.log('📦  Creating new Stripe Product for group', groupId);
@@ -421,6 +430,9 @@ router.put('/:id/price', auth(), async (req, res, next) => {
         );
     }
 
+    // Prepare Stripe ID fields (automatically detects test vs live)
+    const stripeIdFields = prepareStripeIdFields(stripeProductId, stripePrice.id);
+
     // Insert new active price
     const [newPrice] = await db
       .insert(couponBookPrice)
@@ -429,8 +441,7 @@ router.put('/:id/price', auth(), async (req, res, next) => {
         amountCents,
         currency: currency.toLowerCase(),
         isActive: true,
-        stripeProductId,
-        stripePriceId: stripePrice.id,
+        ...stripeIdFields,
         createdByUserId: dbUser.id,
       })
       .returning();
@@ -557,15 +568,19 @@ router.post('/:id/checkout', auth(), async (req, res, next) => {
     let stripePriceId = null;
     let couponBookPriceId = null;
 
-    if (activePrice && activePrice.stripePriceId) {
+    if (activePrice) {
       amountCents = activePrice.amountCents;
       currency = activePrice.currency;
-      stripePriceId = activePrice.stripePriceId;
       couponBookPriceId = activePrice.id;
+      
+      // Get environment-appropriate Stripe Price ID with validation
+      const { priceId } = getValidatedStripeIds(activePrice);
+      stripePriceId = priceId;
     }
 
     // 5) Build success and cancel URLs
-    const baseUrl = process.env.APP_URL || 'http://localhost:8080';
+    // Use APP_PUBLIC_URL to prevent redirect issues with proxies/CDNs
+    const baseUrl = process.env.APP_PUBLIC_URL || process.env.APP_URL || 'http://localhost:8080';
     const successUrl = `${baseUrl}/checkout/success/${groupRow.slug}?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${baseUrl}/foodie-group/${groupRow.slug}?cancelled=true`;
 
@@ -825,6 +840,95 @@ router.get('/:id/access', auth(), async (req, res, next) => {
     return res.json({ hasAccess });
   } catch (err) {
     console.error('📦  error in GET /groups/:id/access', err);
+    next(err);
+  }
+});
+
+// ─── POST /api/v1/groups/:id/promo-unlock ─────────────────────────────────
+// Production-safe endpoint: validates a promo code from env vars and grants
+// access by inserting a zero-dollar paid purchase row.
+// Gated behind TRIAL_PROMO_ENABLED=true env var.
+router.post('/:id/promo-unlock', auth(), async (req, res, next) => {
+  if (process.env.TRIAL_PROMO_ENABLED !== 'true') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+
+  const groupId = req.params.id;
+  const rawCode = (req.body && req.body.code) || '';
+  const code = String(rawCode).trim().toUpperCase();
+  const validCode = String(process.env.TRIAL_PROMO_CODE || '').trim().toUpperCase();
+
+  if (!code || !validCode || code !== validCode) {
+    console.warn('📦  /promo-unlock: invalid code attempt for group', groupId);
+    return res.status(400).json({ error: 'Invalid promo code' });
+  }
+
+  console.log('📦  POST /api/v1/groups/:id/promo-unlock', { groupId });
+
+  try {
+    const sub = req.user && req.user.sub;
+    if (!sub) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // 1) Look up local user row by Cognito sub
+    const [dbUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.cognitoSub, sub));
+
+    if (!dbUser) {
+      console.warn('📦  /promo-unlock: no local user row for sub', sub);
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // 2) Check if user already has a valid paid purchase for this group
+    const [existing] = await db
+      .select()
+      .from(purchase)
+      .where(
+        and(
+          eq(purchase.userId, dbUser.id),
+          eq(purchase.groupId, groupId),
+          eq(purchase.status, 'paid')
+        )
+      );
+
+    if (existing) {
+      console.log('📦  /promo-unlock: user already has access, skipping insert', {
+        userId: dbUser.id,
+        groupId,
+      });
+      return res.json({ hasAccess: true, alreadyHadAccess: true });
+    }
+
+    // 3) Insert zero-dollar paid purchase row
+    await db.insert(purchase).values({
+      userId: dbUser.id,
+      groupId,
+      provider: 'test',
+      stripeCheckoutId: null,
+      stripeSubscriptionId: null,
+      amountCents: 0,
+      currency: 'usd',
+      status: 'paid',
+      purchasedAt: new Date().toISOString(),
+      expiresAt: null,
+      refundedAt: null,
+      metadata: { source: 'trial-promo' },
+    });
+
+    console.log('📦  /promo-unlock: granted access via promo code', {
+      userId: dbUser.id,
+      groupId,
+    });
+
+    // 4) Ensure group membership exists
+    await ensureFoodieGroupMembership(dbUser.id, groupId);
+
+    return res.json({ hasAccess: true, created: true });
+  } catch (err) {
+    console.error('📦  error in POST /groups/:id/promo-unlock', err);
     next(err);
   }
 });

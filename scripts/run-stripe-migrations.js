@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Run Stripe-related migrations (0005 and 0006) against the database.
+ * Run Stripe-related migrations (0005, 0006, 0008) against the database.
  * Uses DATABASE_URL. For production, run with production DATABASE_URL set.
  *
  * Usage:
@@ -91,15 +91,18 @@ async function main() {
   const migrationDir = path.resolve(__dirname, '..', 'drizzle');
   const sql5 = fs.readFileSync(path.join(migrationDir, '0005_add_stripe_checkout_support.sql'), 'utf8');
   const sql6 = fs.readFileSync(path.join(migrationDir, '0006_add_membership_unique_constraint.sql'), 'utf8');
+  const sql8 = fs.readFileSync(path.join(migrationDir, '0008_add_stripe_test_live_ids.sql'), 'utf8');
 
   const statements5 = parseStatements(sql5);
   const statements6 = parseStatements(sql6);
+  const statements8 = parseStatements(sql8);
 
-  console.log('Stripe migrations (0005 + 0006)');
-  console.log('==============================');
+  console.log('Stripe migrations (0005 + 0006 + 0008)');
+  console.log('======================================');
   console.log(`Mode: ${isDryRun ? 'DRY RUN (no changes)' : 'LIVE'}`);
   console.log(`Migration 0005: ${statements5.length} statement(s)`);
   console.log(`Migration 0006: ${statements6.length} statement(s)`);
+  console.log(`Migration 0008: ${statements8.length} statement(s)`);
   console.log('');
 
   if (isDryRun) {
@@ -107,6 +110,8 @@ async function main() {
     statements5.forEach((s, i) => console.log(`-- statement ${i + 1}\n${s};\n`));
     console.log('-- 0006_add_membership_unique_constraint.sql');
     statements6.forEach((s, i) => console.log(`-- statement ${i + 1}\n${s};\n`));
+    console.log('-- 0008_add_stripe_test_live_ids.sql');
+    statements8.forEach((s, i) => console.log(`-- statement ${i + 1}\n${s};\n`));
     console.log('Dry run complete.');
     return;
   }
@@ -168,6 +173,15 @@ async function main() {
       const r = await runStatement(statements6[i], `6.${i + 1}`);
       console.log(
         r.skipped ? `  ⏭ statement ${i + 1}/${statements6.length} (already exists)` : `  ✓ statement ${i + 1}/${statements6.length}`,
+      );
+    }
+    console.log('  Done.\n');
+
+    console.log('Running 0008_add_stripe_test_live_ids.sql ...');
+    for (let i = 0; i < statements8.length; i++) {
+      const r = await runStatement(statements8[i], `8.${i + 1}`);
+      console.log(
+        r.skipped ? `  ⏭ statement ${i + 1}/${statements8.length} (already exists)` : `  ✓ statement ${i + 1}/${statements8.length}`,
       );
     }
     console.log('  Done.\n');
